@@ -1,11 +1,18 @@
-import { eq } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import {
+  InsertUser, users,
+  campaigns, InsertCampaign, Campaign,
+  ads, InsertAd, Ad,
+  evaluations, InsertEvaluation,
+  iterationLogs,
+  adversarialSessions,
+  creativeSparkIdeas,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -18,26 +25,16 @@ export async function getDb() {
   return _db;
 }
 
+// ─── Users ────────────────────────────────────────────────────────────────────
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
+  if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
+  if (!db) return;
   try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
+    const values: InsertUser = { openId: user.openId };
     const updateSet: Record<string, unknown> = {};
-
     const textFields = ["name", "email", "loginMethod"] as const;
     type TextField = (typeof textFields)[number];
-
     const assignNullable = (field: TextField) => {
       const value = user[field];
       if (value === undefined) return;
@@ -45,9 +42,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values[field] = normalized;
       updateSet[field] = normalized;
     };
-
     textFields.forEach(assignNullable);
-
     if (user.lastSignedIn !== undefined) {
       values.lastSignedIn = user.lastSignedIn;
       updateSet.lastSignedIn = user.lastSignedIn;
@@ -59,18 +54,9 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.role = 'admin';
       updateSet.role = 'admin';
     }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    if (!values.lastSignedIn) values.lastSignedIn = new Date();
+    if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
+    await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -79,14 +65,156 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
+  if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ─── Campaigns ────────────────────────────────────────────────────────────────
+export async function createCampaign(data: InsertCampaign): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(campaigns).values(data);
+  return (result[0] as any).insertId as number;
+}
+
+export async function getCampaignsByUser(userId: number): Promise<Campaign[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(campaigns).where(eq(campaigns.userId, userId)).orderBy(desc(campaigns.createdAt));
+}
+
+export async function getCampaignById(id: number): Promise<Campaign | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateCampaignWeights(
+  campaignId: number,
+  weights: { weightClarity: number; weightValueProp: number; weightCta: number; weightBrandVoice: number; weightEmotionalResonance: number }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(campaigns).set(weights).where(eq(campaigns.id, campaignId));
+}
+
+export async function updateCampaignStats(campaignId: number, tokensUsed: number, costUsd: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(campaigns).set({
+    totalAdsGenerated: sql`totalAdsGenerated + 1`,
+    totalTokensUsed: sql`totalTokensUsed + ${tokensUsed}`,
+    totalCostUsd: sql`totalCostUsd + ${costUsd}`,
+  }).where(eq(campaigns.id, campaignId));
+}
+
+export async function ratchetQualityThreshold(campaignId: number, newThreshold: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(campaigns).set({ currentQualityThreshold: newThreshold }).where(eq(campaigns.id, campaignId));
+}
+
+// ─── Ads ──────────────────────────────────────────────────────────────────────
+export async function createAd(data: InsertAd): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(ads).values(data);
+  return (result[0] as any).insertId as number;
+}
+
+export async function getAdById(id: number): Promise<Ad | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(ads).where(eq(ads.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getAdsByCampaign(campaignId: number): Promise<Ad[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(ads).where(eq(ads.campaignId, campaignId)).orderBy(desc(ads.createdAt));
+}
+
+export async function updateAdStatus(adId: number, status: Ad["status"], qualityScore?: number, isPublishable?: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  const updateData: Partial<Ad> = { status };
+  if (qualityScore !== undefined) updateData.qualityScore = qualityScore;
+  if (isPublishable !== undefined) updateData.isPublishable = isPublishable;
+  await db.update(ads).set(updateData).where(eq(ads.id, adId));
+}
+
+// ─── Evaluations ──────────────────────────────────────────────────────────────
+export async function createEvaluation(data: InsertEvaluation): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(evaluations).values(data);
+  return (result[0] as any).insertId as number;
+}
+
+export async function getEvaluationByAdId(adId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(evaluations).where(eq(evaluations.adId, adId)).orderBy(desc(evaluations.createdAt)).limit(1);
+  return result[0];
+}
+
+export async function getEvaluationsByCampaign(campaignId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(evaluations).where(eq(evaluations.campaignId, campaignId)).orderBy(evaluations.createdAt);
+}
+
+// ─── Iteration Logs ───────────────────────────────────────────────────────────
+export async function createIterationLog(data: typeof iterationLogs.$inferInsert) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(iterationLogs).values(data);
+}
+
+export async function getIterationLogsByCampaign(campaignId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(iterationLogs).where(eq(iterationLogs.campaignId, campaignId)).orderBy(iterationLogs.createdAt);
+}
+
+// ─── Adversarial Sessions ─────────────────────────────────────────────────────
+export async function createAdversarialSession(data: typeof adversarialSessions.$inferInsert): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(adversarialSessions).values(data);
+  return (result[0] as any).insertId as number;
+}
+
+export async function getAdversarialSessionsByCampaign(campaignId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(adversarialSessions).where(eq(adversarialSessions.campaignId, campaignId)).orderBy(desc(adversarialSessions.createdAt));
+}
+
+export async function updateAdversarialSession(sessionId: number, data: Partial<typeof adversarialSessions.$inferInsert>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(adversarialSessions).set(data).where(eq(adversarialSessions.id, sessionId));
+}
+
+// ─── Creative Spark Ideas ─────────────────────────────────────────────────────
+export async function createCreativeSparkIdeas(ideas: (typeof creativeSparkIdeas.$inferInsert)[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(creativeSparkIdeas).values(ideas);
+}
+
+export async function getCreativeSparkIdeasByCampaign(campaignId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(creativeSparkIdeas).where(eq(creativeSparkIdeas.campaignId, campaignId)).orderBy(desc(creativeSparkIdeas.createdAt));
+}
+
+export async function toggleSaveCreativeSparkIdea(ideaId: number, isSaved: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(creativeSparkIdeas).set({ isSaved }).where(eq(creativeSparkIdeas.id, ideaId));
+}
