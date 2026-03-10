@@ -83,7 +83,7 @@ export default function CampaignBuilder() {
         </motion.div>
 
         {/* Step Indicator */}
-        <div className="flex items-center gap-0 mb-10 border border-[#0f0f0f]">
+        <div className="flex items-center gap-0 mb-10 border border-[rgba(34,211,238,0.08)]">
           {STEPS.map(({ num, label, icon: Icon, code }, i) => {
             const done = step > num;
             const active = step === num;
@@ -156,7 +156,7 @@ export default function CampaignBuilder() {
                 <label className="block font-mono text-[10px] tracking-[0.12em] uppercase text-[#555] mb-3">
                   Campaign Goal
                 </label>
-                <div className="grid grid-cols-3 gap-px bg-[#0f0f0f]">
+                <div className="grid grid-cols-3 gap-3">
                   {GOALS.map(({ value, label, desc }) => (
                     <button
                       key={value}
@@ -164,7 +164,7 @@ export default function CampaignBuilder() {
                       className={`p-4 text-left transition-all ${
                         form.campaignGoal === value
                           ? "bg-[#c8a84b]/08 border-b-2 border-[#c8a84b]"
-                          : "bg-[#060606] hover:bg-[#0a0a0a]"
+                          : "bg-[rgba(8,24,48,0.6)] hover:bg-[#0a0a0a]"
                       }`}
                     >
                       <div className={`font-mono text-[10px] font-bold uppercase tracking-wider mb-1 ${
@@ -210,7 +210,7 @@ export default function CampaignBuilder() {
                 </div>
               </div>
 
-              <div className="bracket border border-[#1a1a1a] p-5 bg-[#060606]">
+              <div className="bracket ops-card p-5">
                 <div className="section-label mb-3">Intelligence Tips</div>
                 <div className="space-y-2">
                   {[
@@ -255,7 +255,7 @@ export default function CampaignBuilder() {
                 <label className="block font-mono text-[10px] tracking-[0.12em] uppercase text-[#555] mb-3">
                   Brand Tone
                 </label>
-                <div className="grid grid-cols-1 gap-px bg-[#0f0f0f]">
+                <div className="grid grid-cols-1 gap-2">
                   {TONES.map(({ value, label, desc }) => (
                     <button
                       key={value}
@@ -263,7 +263,7 @@ export default function CampaignBuilder() {
                       className={`flex items-center gap-4 px-5 py-3.5 text-left transition-all ${
                         form.tone === value
                           ? "bg-[#c8a84b]/08 border-l-2 border-[#c8a84b]"
-                          : "bg-[#060606] border-l-2 border-transparent hover:bg-[#0a0a0a] hover:border-[#222]"
+                          : "bg-[rgba(8,24,48,0.6)] border-l-2 border-transparent hover:bg-[#0a0a0a] hover:border-[#222]"
                       }`}
                     >
                       <div className={`w-2 h-2 flex-shrink-0 ${form.tone === value ? "bg-[#c8a84b]" : "bg-[#222]"}`} />
@@ -292,7 +292,7 @@ export default function CampaignBuilder() {
               </div>
 
               {/* Summary */}
-              <div className="bracket border border-[#1a1a1a] p-5 bg-[#060606]">
+              <div className="bracket ops-card p-5">
                 <div className="section-label mb-4">Campaign Summary</div>
                 <div className="grid grid-cols-2 gap-3">
                   {[

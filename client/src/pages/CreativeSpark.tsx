@@ -51,7 +51,7 @@ export default function CreativeSpark() {
         </motion.div>
 
         {/* Controls */}
-        <div className="border border-[#1a1a1a] p-5 bg-[#060606] space-y-4">
+        <div className="ops-card p-5 space-y-4">
           <div className="section-label">Generation Parameters</div>
           <div>
             <label className="block font-mono text-[9px] tracking-widest uppercase text-[#555] mb-3">Number of Sparks</label>
@@ -80,7 +80,7 @@ export default function CreativeSpark() {
               <BookmarkCheck className="w-3 h-3 text-[#c8a84b]" />
               <div className="section-label">Saved Sparks ({savedIdeas.length})</div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[#0f0f0f]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {savedIdeas.map((idea, i) => (
                 <SparkCard key={idea.id} idea={idea} index={i} color={ACCENT_COLORS[i % ACCENT_COLORS.length]}
                   onToggleSave={() => toggleSave.mutate({ ideaId: idea.id, isSaved: !idea.isSaved })} />
@@ -102,7 +102,7 @@ export default function CreativeSpark() {
                 <RefreshCw className={"w-3 h-3 " + (generate.isPending ? "animate-spin" : "")} /> Regenerate
               </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[#0f0f0f]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <AnimatePresence>
                 {unsavedIdeas.map((idea, i) => (
                   <SparkCard key={idea.id} idea={idea} index={i + savedIdeas.length} color={ACCENT_COLORS[(i + savedIdeas.length) % ACCENT_COLORS.length]}
@@ -161,7 +161,7 @@ function SparkCard({ idea, index, color, onToggleSave }: { idea: any; index: num
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ delay: index * 0.04 }}
-      className="bg-[#060606] p-5 group relative"
+      className="bg-[rgba(8,24,48,0.6)] p-5 group relative"
       style={{ borderTop: "2px solid " + color + "30" }}
     >
       {/* Index + save */}

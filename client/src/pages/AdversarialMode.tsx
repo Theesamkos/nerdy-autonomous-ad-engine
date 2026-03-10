@@ -51,13 +51,13 @@ export default function AdversarialMode() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-3 gap-px bg-[#0f0f0f]">
+        <div className="grid grid-cols-3 gap-3">
           {[
             { icon: Swords, label: "Total Battles", value: sessions?.length || 0, color: "#c8a84b" },
             { icon: Trophy, label: "Win Rate", value: winRate + "%", color: "#4ade80" },
             { icon: Shield, label: "Campaign", value: (campaign?.name || "---").slice(0, 16), color: "#60a5fa" },
           ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="bg-[#060606] px-5 py-4">
+            <div key={label} className="bg-[rgba(8,24,48,0.6)] px-5 py-4">
               <div className="flex items-center gap-2 mb-2">
                 <Icon className="w-3 h-3" style={{ color }} />
                 <div className="section-label">{label}</div>
@@ -78,7 +78,7 @@ export default function AdversarialMode() {
                 exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="border border-[#1a1a1a] border-t-0 p-5 bg-[#060606] space-y-4">
+                <div className="border border-[#1a1a1a] border-t-0 p-5 bg-[rgba(8,24,48,0.6)] space-y-4">
                   <div className="section-label">Competitor Intelligence</div>
                   <div>
                     <label className="block font-mono text-[9px] tracking-widest uppercase text-[#555] mb-2">Competitor Brand</label>
@@ -162,7 +162,7 @@ export default function AdversarialMode() {
                         <div className="p-5 space-y-4">
                           <div>
                             <div className="section-label mb-3">Competitor Ad</div>
-                            <div className="border border-[#1a1a1a] p-3 bg-black">
+                            <div className="border border-[#1a1a1a] p-3 bg-[rgba(2,11,24,0.8)]">
                               <p className="font-mono text-[10px] text-[#555] leading-relaxed">{session.competitorAdText}</p>
                             </div>
                           </div>

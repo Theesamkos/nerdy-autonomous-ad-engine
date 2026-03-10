@@ -1,294 +1,456 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
-import { ArrowRight, Cpu, Shield, Zap, BarChart3, Brain, Target, ChevronRight } from "lucide-react";
+import {
+  ArrowRight, BarChart3, Brain, CheckCircle2, ChevronRight,
+  Cpu, Flame, Shield, Swords, Zap
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 
 const FEATURES = [
   {
-    icon: Cpu,
-    code: "01",
-    title: "Autonomous Generation",
-    body: "LLM-powered pipeline writes, evaluates, and self-heals ad copy without human intervention. Streaming output visible in real time.",
-  },
-  {
-    icon: Shield,
-    code: "02",
-    title: "5-Dimension Evaluation",
-    body: "Every ad is scored on Clarity, Value Proposition, CTA, Brand Voice, and Emotional Resonance by a second LLM acting as judge.",
-  },
-  {
     icon: Zap,
-    code: "03",
-    title: "Self-Healing Loops",
-    body: "Quality drops are detected, root causes diagnosed, and alternative generation strategies triggered automatically.",
-  },
-  {
-    icon: BarChart3,
-    code: "04",
-    title: "Quality Ratchet",
-    body: "Minimum quality thresholds rise progressively as the engine improves. The bar never drops once it has been raised.",
+    title: "Real-Time Generation",
+    desc: "Watch the AI write your ad copy token-by-token with live streaming output. Every word, every iteration — visible in real time.",
+    tag: "LIVE STREAM",
+    color: "#22d3ee",
   },
   {
     icon: Brain,
-    code: "05",
-    title: "Ad-versarial Mode",
-    body: "Pit AI-generated ads against real competitor creatives from the Meta Ad Library. Iterate until you win.",
+    title: "5-Dimension Evaluation",
+    desc: "LLM-as-judge scores every ad across Clarity, Value Prop, CTA, Brand Voice, and Emotional Resonance with detailed rationale.",
+    tag: "LLM JUDGE",
+    color: "#a78bfa",
   },
   {
-    icon: Target,
-    code: "06",
+    icon: Shield,
+    title: "Self-Healing Loops",
+    desc: "Quality drops are detected automatically. The engine diagnoses root causes and triggers alternative generation strategies without human intervention.",
+    tag: "AUTONOMOUS",
+    color: "#34d399",
+  },
+  {
+    icon: BarChart3,
+    title: "Quality Ratchet",
+    desc: "Minimum quality thresholds rise progressively as performance improves. The engine never regresses — it only gets better.",
+    tag: "ADAPTIVE",
+    color: "#f59e0b",
+  },
+  {
+    icon: Swords,
+    title: "Ad-versarial Mode",
+    desc: "Pit AI-generated ads against real competitor ads from the Meta Ad Library. Iterate until yours wins on every dimension.",
+    tag: "COMPETITIVE",
+    color: "#f87171",
+  },
+  {
+    icon: Flame,
     title: "Creative Spark",
-    body: "Unconstrained generation mode produces wild, out-of-the-box ideas presented as high-contrast inspiration cards.",
+    desc: "Unconstrained LLM mode produces wild, out-of-the-box ideas. No guardrails. Pure creative firepower presented as inspirational cards.",
+    tag: "UNFILTERED",
+    color: "#fb923c",
   },
 ];
 
 const STATS = [
-  { value: "9", label: "AI Pipeline Stages" },
-  { value: "5", label: "Quality Dimensions" },
-  { value: "100x", label: "Optimization Target" },
-  { value: "v3", label: "Engine Version" },
+  { value: "9", label: "Pipeline Stages", suffix: "×" },
+  { value: "5", label: "Quality Dimensions", suffix: "" },
+  { value: "100", label: "Optimization Target", suffix: "×" },
+  { value: "v3", label: "Engine Version", suffix: "" },
+];
+
+const TERMINAL_LINES = [
+  { ts: "00:01", type: "sys",  msg: "Initializing autonomous generation pipeline..." },
+  { ts: "00:03", type: "ai",   msg: "Generating ad copy for target audience segment..." },
+  { ts: "00:07", type: "eval", msg: "LLM-as-judge scoring 5 quality dimensions..." },
+  { ts: "00:09", type: "pass", msg: "Score 8.7/10 — threshold met. Approving." },
+  { ts: "00:11", type: "sys",  msg: "Ratchet updated: new minimum threshold 8.8" },
+  { ts: "00:14", type: "ai",   msg: "Iteration 2 — applying creative variation..." },
 ];
 
 export default function Home() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const [terminalLine, setTerminalLine] = useState(0);
+  const [scoreVal, setScoreVal] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setTerminalLine(l => (l + 1) % TERMINAL_LINES.length);
+    }, 1800);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    let v = 0;
+    const t = setInterval(() => {
+      v += 0.12;
+      if (v >= 8.7) { clearInterval(t); setScoreVal(8.7); return; }
+      setScoreVal(parseFloat(v.toFixed(1)));
+    }, 30);
+    return () => clearInterval(t);
+  }, []);
 
   return (
-    <div className="relative min-h-screen bg-black overflow-hidden">
-      {/* ── NAV ── */}
-      <nav className="relative z-20 flex items-center justify-between px-8 py-5 border-b border-white/5">
+    <div className="min-h-screen relative" style={{ background: "#020b18" }}>
+      {/* Space background */}
+      <div className="space-bg">
+        <div className="space-bg-image" />
+        <div className="space-bg-overlay" />
+        <div className="space-bg-scanlines" />
+        <div className="space-bg-glow-top" />
+        <div className="space-bg-glow-bottom" />
+      </div>
+
+      {/* Nav */}
+      <nav
+        className="relative z-20 flex items-center justify-between px-6 py-4"
+        style={{ borderBottom: "1px solid rgba(34,211,238,0.08)", background: "rgba(2,11,24,0.7)", backdropFilter: "blur(16px)" }}
+      >
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 border border-[#c8a84b] flex items-center justify-center">
-            <div className="w-3 h-3 bg-[#c8a84b]" />
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.2), rgba(34,211,238,0.05))", border: "1px solid rgba(34,211,238,0.3)", boxShadow: "0 0 16px rgba(34,211,238,0.15)" }}
+          >
+            <Brain size={16} style={{ color: "#22d3ee" }} />
           </div>
-          <span className="font-mono text-xs font-bold tracking-[0.18em] uppercase text-white">
-            AdEngine
-          </span>
-          <span className="font-mono text-[9px] tracking-widest text-[#383838] ml-1">v3</span>
+          <div>
+            <span className="font-display font-bold text-sm tracking-tight" style={{ color: "#f8fafc" }}>AdEngine</span>
+            <span className="font-mono ml-2" style={{ fontSize: "0.58rem", color: "rgba(34,211,238,0.5)", letterSpacing: "0.12em" }}>v3</span>
+          </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-8">
-          {["System", "Features", "Intelligence"].map(item => (
-            <span key={item} className="font-mono text-[10px] tracking-[0.14em] uppercase text-[#555] hover:text-[#c8a84b] cursor-pointer transition-colors">
+        <div className="hidden md:flex items-center gap-6">
+          {["System", "Features", "Intelligence", "Architecture"].map(item => (
+            <span key={item} className="font-mono cursor-pointer transition-colors" style={{ fontSize: "0.68rem", color: "rgba(148,163,184,0.6)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
               {item}
             </span>
           ))}
         </div>
 
         <div className="flex items-center gap-3">
-          {!loading && (
-            isAuthenticated ? (
-              <Link href="/dashboard">
-                <button className="btn-ops btn-ops-primary">
-                  Enter System <ArrowRight className="w-3 h-3" />
-                </button>
-              </Link>
-            ) : (
-              <a href={getLoginUrl()}>
-                <button className="btn-ops btn-ops-primary">
-                  Request Access <ArrowRight className="w-3 h-3" />
-                </button>
-              </a>
-            )
-          )}
-        </div>
-      </nav>
-
-      {/* ── HERO ── */}
-      <section className="relative z-10 px-8 pt-24 pb-20 max-w-6xl mx-auto">
-        {/* Status bar */}
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex items-center gap-4 mb-12"
-        >
-          <div className="status-live">SYSTEM ONLINE</div>
-          <div className="w-px h-3 bg-[#222]" />
-          <span className="font-mono text-[9px] tracking-widest text-[#383838] uppercase">
-            Autonomous Content Generation Engine
-          </span>
-        </motion.div>
-
-        {/* Main headline */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="mb-8"
-        >
-          <h1 className="text-[clamp(3rem,8vw,7rem)] font-black leading-[0.92] tracking-[-0.03em] text-white">
-            We Engineer
-            <br />
-            <span style={{ color: "#c8a84b" }}>Ad Intelligence.</span>
-          </h1>
-        </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-[#666] text-lg max-w-xl leading-relaxed mb-12 font-light"
-        >
-          An autonomous pipeline that generates, evaluates, self-heals, and
-          progressively improves ad copy — without human intervention.
-          Built for Facebook and Instagram. Powered by LLM-as-judge.
-        </motion.p>
-
-        {/* CTA row */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="flex items-center gap-4 flex-wrap"
-        >
+          <span className="status-live hidden sm:flex">System Online</span>
           {isAuthenticated ? (
             <Link href="/dashboard">
-              <button className="btn-ops btn-ops-primary text-sm px-6 py-3">
-                Launch Engine <ArrowRight className="w-4 h-4" />
+              <button className="btn-primary flex items-center gap-2">
+                <Cpu size={13} />
+                Enter System
               </button>
             </Link>
           ) : (
             <a href={getLoginUrl()}>
-              <button className="btn-ops btn-ops-primary text-sm px-6 py-3">
-                Request Access <ArrowRight className="w-4 h-4" />
+              <button className="btn-primary flex items-center gap-2">
+                <Zap size={13} />
+                Request Access
               </button>
             </a>
           )}
-          <button className="btn-ops btn-ops-ghost text-sm px-6 py-3">
-            View Architecture
-          </button>
-        </motion.div>
+        </div>
+      </nav>
 
-        {/* Stats row */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-px mt-20 border border-[#111]"
-        >
-          {STATS.map((s, i) => (
-            <div key={i} className="px-6 py-5 bg-[#080808] border-r border-[#111] last:border-r-0">
-              <div className="font-mono text-3xl font-black text-white mb-1">{s.value}</div>
-              <div className="section-label">{s.label}</div>
+      {/* Hero */}
+      <section className="relative z-10 px-6 pt-20 pb-16 max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left: Copy */}
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <div className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full" style={{ background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.18)" }}>
+              <span className="font-mono" style={{ fontSize: "0.62rem", color: "#22d3ee", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                Autonomous Content Generation Engine
+              </span>
             </div>
-          ))}
-        </motion.div>
+
+            <h1 className="display-xl mb-6" style={{ color: "#f8fafc" }}>
+              We Engineer<br />
+              <span style={{ color: "#22d3ee", textShadow: "0 0 40px rgba(34,211,238,0.3)" }}>Ad Intelligence.</span>
+            </h1>
+
+            <p className="text-base mb-8 leading-relaxed" style={{ color: "rgba(148,163,184,0.8)", maxWidth: "480px" }}>
+              An autonomous pipeline that generates, evaluates, self-heals, and progressively improves ad copy — without human intervention. Built for Facebook and Instagram. Powered by LLM-as-judge.
+            </p>
+
+            <div className="flex flex-wrap gap-3 mb-10">
+              {isAuthenticated ? (
+                <Link href="/dashboard">
+                  <button className="btn-primary flex items-center gap-2 text-sm px-6 py-3">
+                    Launch Engine
+                    <ArrowRight size={15} />
+                  </button>
+                </Link>
+              ) : (
+                <a href={getLoginUrl()}>
+                  <button className="btn-primary flex items-center gap-2 text-sm px-6 py-3">
+                    Launch Engine
+                    <ArrowRight size={15} />
+                  </button>
+                </a>
+              )}
+              <button className="btn-secondary flex items-center gap-2 text-sm px-6 py-3">
+                View Architecture
+                <ChevronRight size={14} />
+              </button>
+            </div>
+
+            {/* Trust signals */}
+            <div className="flex flex-wrap gap-4">
+              {["LLM-as-Judge Scoring", "Self-Healing Loops", "Quality Ratchet System"].map(item => (
+                <div key={item} className="flex items-center gap-2">
+                  <CheckCircle2 size={13} style={{ color: "#34d399" }} />
+                  <span className="font-mono" style={{ fontSize: "0.65rem", color: "rgba(148,163,184,0.7)", letterSpacing: "0.04em" }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right: Live terminal mockup */}
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="relative"
+          >
+            <div
+              className="rounded-xl overflow-hidden"
+              style={{
+                background: "rgba(5,18,35,0.85)",
+                border: "1px solid rgba(34,211,238,0.2)",
+                backdropFilter: "blur(24px)",
+                boxShadow: "0 0 60px rgba(34,211,238,0.08), 0 24px 64px rgba(0,0,0,0.5)",
+              }}
+            >
+              {/* Window chrome */}
+              <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(34,211,238,0.1)", background: "rgba(2,11,24,0.6)" }}>
+                <div className="w-3 h-3 rounded-full" style={{ background: "#f87171" }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: "#f59e0b" }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: "#34d399" }} />
+                <span className="font-mono ml-3" style={{ fontSize: "0.62rem", color: "rgba(34,211,238,0.5)", letterSpacing: "0.1em" }}>GENERATION PIPELINE — LIVE</span>
+                <div className="ml-auto">
+                  <span className="status-live">Active</span>
+                </div>
+              </div>
+
+              {/* Score ring + ad copy */}
+              <div className="p-5">
+                <div className="flex items-start gap-4 mb-5">
+                  {/* Score ring */}
+                  <div className="relative flex-shrink-0">
+                    <svg width="72" height="72" viewBox="0 0 72 72">
+                      <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(34,211,238,0.08)" strokeWidth="4" />
+                      <circle
+                        cx="36" cy="36" r="28"
+                        fill="none"
+                        stroke="url(#scoreGrad)"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeDasharray={`${(scoreVal / 10) * 175.9} 175.9`}
+                        transform="rotate(-90 36 36)"
+                        style={{ transition: "stroke-dasharray 0.3s ease" }}
+                      />
+                      <defs>
+                        <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#0891b2" />
+                          <stop offset="100%" stopColor="#22d3ee" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="font-mono font-bold" style={{ color: "#22d3ee", fontSize: "1rem" }}>{scoreVal.toFixed(1)}</span>
+                      <span className="font-mono" style={{ fontSize: "0.5rem", color: "rgba(34,211,238,0.5)", letterSpacing: "0.08em" }}>SCORE</span>
+                    </div>
+                  </div>
+
+                  {/* Ad copy preview */}
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="rounded-lg p-3 mb-2"
+                      style={{ background: "rgba(34,211,238,0.04)", border: "1px solid rgba(34,211,238,0.1)" }}
+                    >
+                      <p className="text-sm leading-relaxed" style={{ color: "#e2e8f0" }}>
+                        "Stop wasting money on ads that don't convert. Our AI-powered system generates, tests, and optimizes your campaigns automatically."
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="tag-ops tag-green">APPROVED</span>
+                      <span className="font-mono" style={{ fontSize: "0.58rem", color: "rgba(148,163,184,0.5)" }}>Iteration 2 of 3 · Standard Mode</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dimension bars */}
+                <div className="space-y-2 mb-5">
+                  {[
+                    { label: "CLARITY",    val: 88, color: "#22d3ee" },
+                    { label: "VALUE PROP", val: 92, color: "#a78bfa" },
+                    { label: "CTA",        val: 95, color: "#34d399" },
+                    { label: "BRAND VOICE",val: 84, color: "#f59e0b" },
+                    { label: "EMOTIONAL",  val: 79, color: "#f87171" },
+                  ].map(d => (
+                    <div key={d.label} className="flex items-center gap-3">
+                      <span className="font-mono w-20 flex-shrink-0" style={{ fontSize: "0.58rem", color: "rgba(148,163,184,0.5)", letterSpacing: "0.06em" }}>{d.label}</span>
+                      <div className="flex-1 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.05)" }}>
+                        <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${d.val}%`, background: d.color, boxShadow: `0 0 6px ${d.color}60` }} />
+                      </div>
+                      <span className="font-mono w-6 text-right flex-shrink-0" style={{ fontSize: "0.6rem", color: d.color }}>{(d.val / 10).toFixed(1)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Terminal log */}
+                <div className="rounded-lg overflow-hidden" style={{ background: "rgba(2,11,24,0.8)", border: "1px solid rgba(34,211,238,0.08)" }}>
+                  <div className="px-3 py-2" style={{ borderBottom: "1px solid rgba(34,211,238,0.06)" }}>
+                    <span className="font-mono" style={{ fontSize: "0.58rem", color: "rgba(34,211,238,0.4)", letterSpacing: "0.1em" }}>PIPELINE LOG</span>
+                  </div>
+                  <div className="p-3 space-y-1">
+                    {TERMINAL_LINES.slice(0, terminalLine + 1).map((line, i) => (
+                      <div key={i} className="log-entry">
+                        <span className="log-ts">{line.ts}</span>
+                        <span className={`log-type log-type-${line.type}`}>{line.type.toUpperCase()}</span>
+                        <span className="log-msg">{line.msg}</span>
+                      </div>
+                    ))}
+                    <div className="log-entry">
+                      <span className="log-ts">--:--</span>
+                      <span className="log-type log-type-sys">SYS</span>
+                      <span className="log-msg">
+                        <span className="cursor-blink" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Floating glow */}
+            <div
+              className="absolute -inset-4 rounded-2xl pointer-events-none"
+              style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(34,211,238,0.04) 0%, transparent 70%)", zIndex: -1 }}
+            />
+          </motion.div>
+        </div>
       </section>
 
-      {/* ── FEATURES GRID ── */}
-      <section className="relative z-10 px-8 py-20 max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-12">
-          <div className="section-label">System Capabilities</div>
-          <div className="flex-1 h-px bg-[#111]" />
-          <div className="font-mono text-[9px] text-[#383838]">06 MODULES</div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#111]">
-          {FEATURES.map((f, i) => (
+      {/* Stats bar */}
+      <section className="relative z-10 px-6 pb-12 max-w-7xl mx-auto">
+        <div
+          className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-xl overflow-hidden"
+          style={{ border: "1px solid rgba(34,211,238,0.12)", background: "rgba(34,211,238,0.08)" }}
+        >
+          {STATS.map((s, i) => (
             <motion.div
-              key={f.code}
+              key={s.label}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: i * 0.07 }}
-              className="bracket bg-[#060606] p-8 group hover:bg-[#0a0a0a] transition-colors cursor-pointer"
+              transition={{ delay: 0.4 + i * 0.1 }}
+              className="flex flex-col items-center justify-center py-6 px-4"
+              style={{ background: "rgba(2,11,24,0.85)", backdropFilter: "blur(16px)" }}
             >
-              <div className="flex items-start justify-between mb-6">
-                <div className="w-9 h-9 border border-[#1a1a1a] flex items-center justify-center group-hover:border-[#c8a84b]/30 transition-colors">
-                  <f.icon className="w-4 h-4 text-[#555] group-hover:text-[#c8a84b] transition-colors" />
-                </div>
-                <span className="font-mono text-[10px] text-[#2a2a2a] group-hover:text-[#c8a84b]/40 transition-colors">{f.code}</span>
+              <div className="font-display font-bold mb-1" style={{ fontSize: "2rem", color: "#f8fafc", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                {s.value}<span style={{ color: "#22d3ee" }}>{s.suffix}</span>
               </div>
-              <h3 className="font-bold text-white text-base mb-3 tracking-tight">{f.title}</h3>
-              <p className="text-[#555] text-sm leading-relaxed">{f.body}</p>
-              <div className="mt-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="font-mono text-[9px] text-[#c8a84b] tracking-widest uppercase">Explore</span>
-                <ChevronRight className="w-3 h-3 text-[#c8a84b]" />
+              <div className="font-mono text-center" style={{ fontSize: "0.6rem", color: "rgba(100,116,139,0.8)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                {s.label}
               </div>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* ── PIPELINE DIAGRAM ── */}
-      <section className="relative z-10 px-8 py-20 max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-12">
-          <div className="section-label">Autonomous Pipeline</div>
-          <div className="flex-1 h-px bg-[#111]" />
+      {/* Features grid */}
+      <section className="relative z-10 px-6 pb-20 max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full" style={{ background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.15)" }}>
+            <span className="font-mono" style={{ fontSize: "0.62rem", color: "#22d3ee", letterSpacing: "0.12em", textTransform: "uppercase" }}>System Capabilities</span>
+          </div>
+          <h2 className="display-md mb-4" style={{ color: "#f8fafc" }}>
+            Everything the engine can do
+          </h2>
+          <p style={{ color: "rgba(148,163,184,0.7)", maxWidth: "480px", margin: "0 auto" }}>
+            Nine interconnected systems working in concert to produce, evaluate, and continuously improve ad copy without human intervention.
+          </p>
         </div>
 
-        <div className="bracket border border-[#111] p-8 bg-[#060606]">
-          <div className="flex flex-wrap items-center gap-0">
-            {[
-              { label: "INPUT", sub: "Brand Brief", color: "#c8a84b" },
-              { label: "GENERATE", sub: "LLM Write", color: "#a78bfa" },
-              { label: "EVALUATE", sub: "LLM Judge", color: "#60a5fa" },
-              { label: "SELF-HEAL", sub: "Root Cause", color: "#f87171" },
-              { label: "RATCHET", sub: "Raise Bar", color: "#4ade80" },
-              { label: "APPROVE", sub: "Ship It", color: "#c8a84b" },
-            ].map((step, i, arr) => (
-              <div key={step.label} className="flex items-center">
-                <div className="flex flex-col items-center py-4 px-5">
-                  <div
-                    className="font-mono text-[10px] font-bold tracking-[0.12em] mb-1"
-                    style={{ color: step.color }}
-                  >
-                    {step.label}
-                  </div>
-                  <div className="font-mono text-[9px] text-[#383838]">{step.sub}</div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {FEATURES.map((f, i) => (
+            <motion.div
+              key={f.title}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 + i * 0.08 }}
+              className="ops-card p-5 group cursor-pointer"
+            >
+              <div className="flex items-start gap-4">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-110"
+                  style={{ background: `${f.color}12`, border: `1px solid ${f.color}25` }}
+                >
+                  <f.icon size={18} style={{ color: f.color }} />
                 </div>
-                {i < arr.length - 1 && (
-                  <div className="flex items-center gap-1 px-1">
-                    <div className="w-6 h-px bg-[#222]" />
-                    <div className="w-1 h-1 bg-[#333]" style={{ clipPath: "polygon(0 50%, 100% 0, 100% 100%)" }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <h3 className="font-display font-semibold text-sm" style={{ color: "#f8fafc" }}>{f.title}</h3>
+                    <span className="tag-ops" style={{ color: f.color, border: `1px solid ${f.color}25`, background: `${f.color}08`, fontSize: "0.55rem" }}>{f.tag}</span>
                   </div>
-                )}
+                  <p className="text-xs leading-relaxed" style={{ color: "rgba(148,163,184,0.7)" }}>{f.desc}</p>
+                </div>
               </div>
-            ))}
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="relative z-10 px-6 pb-20 max-w-3xl mx-auto text-center">
+        <div
+          className="rounded-2xl p-10"
+          style={{
+            background: "rgba(5,18,35,0.8)",
+            border: "1px solid rgba(34,211,238,0.18)",
+            backdropFilter: "blur(24px)",
+            boxShadow: "0 0 60px rgba(34,211,238,0.06)",
+          }}
+        >
+          <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-full" style={{ background: "rgba(34,211,238,0.07)", border: "1px solid rgba(34,211,238,0.15)" }}>
+            <span className="status-live">Ready to Deploy</span>
           </div>
-          <div className="mt-6 pt-6 border-t border-[#111] flex items-center gap-3">
-            <div className="status-live">PIPELINE ACTIVE</div>
-            <span className="font-mono text-[9px] text-[#383838]">
-              All stages operational. Self-healing enabled. Quality ratchet at baseline 7.0.
+          <h2 className="display-md mb-4" style={{ color: "#f8fafc" }}>
+            Ready to engineer<br />
+            <span style={{ color: "#22d3ee" }}>your first campaign?</span>
+          </h2>
+          <p className="mb-8" style={{ color: "rgba(148,163,184,0.7)" }}>
+            Enter the system and launch your first autonomous ad generation pipeline in under 60 seconds.
+          </p>
+          {isAuthenticated ? (
+            <Link href="/dashboard">
+              <button className="btn-primary flex items-center gap-2 mx-auto text-sm px-8 py-3">
+                Enter the System
+                <ArrowRight size={15} />
+              </button>
+            </Link>
+          ) : (
+            <a href={getLoginUrl()}>
+              <button className="btn-primary flex items-center gap-2 mx-auto text-sm px-8 py-3">
+                Enter the System
+                <ArrowRight size={15} />
+              </button>
+            </a>
+          )}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer
+        className="relative z-10 px-6 py-6"
+        style={{ borderTop: "1px solid rgba(34,211,238,0.07)", background: "rgba(2,11,24,0.7)" }}
+      >
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Brain size={14} style={{ color: "#22d3ee" }} />
+            <span className="font-mono" style={{ fontSize: "0.65rem", color: "rgba(100,116,139,0.7)", letterSpacing: "0.08em" }}>
+              ADENGINE v3 · AUTONOMOUS CONTENT GENERATION SYSTEM
             </span>
           </div>
-        </div>
-      </section>
-
-      {/* ── BOTTOM CTA ── */}
-      <section className="relative z-10 px-8 py-24 max-w-6xl mx-auto text-center">
-        <div className="section-label mb-6 text-center">Ready to Deploy</div>
-        <h2 className="text-[clamp(2rem,5vw,4.5rem)] font-black leading-tight tracking-tight text-white mb-6">
-          Your ads, engineered.
-        </h2>
-        <p className="text-[#555] text-base max-w-md mx-auto mb-10">
-          Build a campaign. Watch the engine work. Approve what passes the bar.
-        </p>
-        {isAuthenticated ? (
-          <Link href="/campaigns/new">
-            <button className="btn-ops btn-ops-primary text-sm px-8 py-4">
-              Create First Campaign <ArrowRight className="w-4 h-4" />
-            </button>
-          </Link>
-        ) : (
-          <a href={getLoginUrl()}>
-            <button className="btn-ops btn-ops-primary text-sm px-8 py-4">
-              Request Access <ArrowRight className="w-4 h-4" />
-            </button>
-          </a>
-        )}
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer className="relative z-10 border-t border-[#0f0f0f] px-8 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border border-[#c8a84b]/30 flex items-center justify-center">
-            <div className="w-2 h-2 bg-[#c8a84b]/50" />
+          <div className="flex items-center gap-2">
+            <span className="status-live" style={{ fontSize: "0.6rem" }}>All Systems Operational</span>
           </div>
-          <span className="font-mono text-[9px] text-[#2a2a2a] tracking-widest uppercase">AdEngine v3</span>
-        </div>
-        <div className="font-mono text-[9px] text-[#2a2a2a] tracking-widest">
-          AUTONOMOUS CONTENT GENERATION SYSTEM
         </div>
       </footer>
     </div>

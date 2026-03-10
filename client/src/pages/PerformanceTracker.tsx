@@ -92,14 +92,14 @@ export default function PerformanceTracker() {
         </motion.div>
 
         {/* KPI Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[#0f0f0f]">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { icon: Target, label: "Total Ads", value: analytics?.totalAds || 0, color: "#c8a84b" },
             { icon: Award, label: "Approval Rate", value: analytics?.totalAds ? Math.round((analytics.approvedAds / analytics.totalAds) * 100) + "%" : "0%", color: "#4ade80" },
             { icon: DollarSign, label: "Cost / Approved", value: "$" + (analytics?.costPerApprovedAd || 0).toFixed(4), color: "#a78bfa" },
             { icon: TrendingUp, label: "Quality Threshold", value: (campaign?.currentQualityThreshold || 7.0).toFixed(1) + "/10", color: "#60a5fa" },
           ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="bg-[#060606] px-5 py-4">
+            <div key={label} className="bg-[rgba(8,24,48,0.6)] px-5 py-4">
               <div className="flex items-center gap-2 mb-2">
                 <Icon className="w-3 h-3" style={{ color }} />
                 <div className="section-label">{label}</div>
@@ -111,7 +111,7 @@ export default function PerformanceTracker() {
 
         {/* Quality Trend */}
         {qualityTrend.length > 0 && (
-          <div className="border border-[#1a1a1a] bg-[#060606] p-5">
+          <div className="border border-[#1a1a1a] bg-[rgba(8,24,48,0.6)] p-5">
             <div className="flex items-center gap-2 mb-4">
               <Activity className="w-3 h-3 text-[#c8a84b]" />
               <div className="section-label">Quality Trend & Ratchet</div>
@@ -154,11 +154,11 @@ export default function PerformanceTracker() {
         )}
 
         {/* Cost vs Quality + Dimension Radar */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#0f0f0f]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
           {/* Cost vs Quality */}
           {costQualityData.length > 0 && (
-            <div className="bg-[#060606] p-5">
+            <div className="bg-[rgba(8,24,48,0.6)] p-5">
               <div className="flex items-center gap-2 mb-4">
                 <DollarSign className="w-3 h-3 text-[#a78bfa]" />
                 <div className="section-label">Performance-per-Token</div>
@@ -178,7 +178,7 @@ export default function PerformanceTracker() {
 
           {/* Dimension Radar */}
           {avgScores && (
-            <div className="bg-[#060606] p-5">
+            <div className="bg-[rgba(8,24,48,0.6)] p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Target className="w-3 h-3 text-[#60a5fa]" />
                 <div className="section-label">Avg Quality Profile</div>
@@ -213,7 +213,7 @@ export default function PerformanceTracker() {
         </div>
 
         {/* Emotional Resonance Visualizer */}
-        <div className="border border-[#1a1a1a] bg-[#060606] p-5">
+        <div className="border border-[#1a1a1a] bg-[rgba(8,24,48,0.6)] p-5">
           <div className="flex items-center gap-2 mb-4">
             <Heart className="w-3 h-3 text-[#f97316]" />
             <div className="section-label">Emotional Resonance Visualizer</div>
@@ -232,8 +232,8 @@ export default function PerformanceTracker() {
 
               {selectedAdId && emotionalArc.length > 0 ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[#0f0f0f]">
-                    <div className="bg-black p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-[rgba(2,11,24,0.8)] p-4">
                       <div className="font-mono text-[8px] text-[#383838] mb-3 uppercase tracking-widest">Intensity Arc</div>
                       <ResponsiveContainer width="100%" height={140}>
                         <AreaChart data={emotionalArc}>
@@ -251,7 +251,7 @@ export default function PerformanceTracker() {
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="bg-black p-4">
+                    <div className="bg-[rgba(2,11,24,0.8)] p-4">
                       <div className="font-mono text-[8px] text-[#383838] mb-3 uppercase tracking-widest">Valence (-1 to +1)</div>
                       <ResponsiveContainer width="100%" height={140}>
                         <BarChart data={emotionalArc}>
@@ -266,7 +266,7 @@ export default function PerformanceTracker() {
                   </div>
                   <div className="space-y-px">
                     {emotionalArc.map((seg: any, i: number) => (
-                      <div key={i} className="flex items-start gap-3 p-3 bg-black border-b border-[#0f0f0f]">
+                      <div key={i} className="flex items-start gap-3 p-3 bg-[rgba(2,11,24,0.8)] border-b border-[#0f0f0f]">
                         <div className="flex-shrink-0 w-5 h-5 border border-[#f97316]/30 flex items-center justify-center font-mono text-[8px] text-[#f97316]">{i + 1}</div>
                         <div className="flex-1 min-w-0">
                           <p className="font-mono text-[9px] text-[#555] italic leading-relaxed">"{seg.text}"</p>
@@ -299,14 +299,14 @@ export default function PerformanceTracker() {
 
         {/* Self-healing log */}
         {iterationData.length > 0 && (
-          <div className="border border-[#1a1a1a] bg-[#060606] p-5">
+          <div className="border border-[#1a1a1a] bg-[rgba(8,24,48,0.6)] p-5">
             <div className="flex items-center gap-2 mb-4">
               <RefreshCw className="w-3 h-3 text-[#4ade80]" />
               <div className="section-label">Self-Healing Loop History</div>
             </div>
             <div className="space-y-px">
               {iterationData.map((log: any, i: number) => (
-                <div key={i} className="flex items-center gap-4 p-3 bg-black border-b border-[#0f0f0f] font-mono text-[9px]">
+                <div key={i} className="flex items-center gap-4 p-3 bg-[rgba(2,11,24,0.8)] border-b border-[#0f0f0f] font-mono text-[9px]">
                   <div className="text-[#383838] w-12">Iter {log.iter}</div>
                   <div className="flex-1 text-[#383838] truncate">{log.strategy}</div>
                   <div className="flex items-center gap-2 flex-shrink-0">

@@ -72,7 +72,7 @@ function AdCard({ ad, evaluation, isExpanded, onToggle }: { ad: any; evaluation:
 
   return (
     <motion.div layout className={`border transition-all overflow-hidden ${
-      ad.isPublishable ? "border-[#4ade80]/20 bg-[#4ade80]/02" : "border-[#1a1a1a] bg-[#060606]"
+      ad.isPublishable ? "border-[#4ade80]/20 bg-[#4ade80]/02" : "border-[#1a1a1a] bg-[rgba(8,24,48,0.6)]"
     }`}>
       <div className="p-4">
         <div className="flex items-start justify-between gap-4">
@@ -97,7 +97,7 @@ function AdCard({ ad, evaluation, isExpanded, onToggle }: { ad: any; evaluation:
                 )}
               </div>
               {/* Ad preview */}
-              <div className="border border-[#111] p-3 bg-black">
+              <div className="ops-card p-3">
                 <p className="text-sm text-[#ccc] leading-relaxed mb-2">{ad.primaryText}</p>
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-sm text-white">{ad.headline}</span>
@@ -338,14 +338,14 @@ export default function CampaignDetail() {
               </Link>
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-px bg-[#0f0f0f]">
+          <div className="grid grid-cols-4 gap-3">
             {[
               { label: "Goal", value: campaign.campaignGoal },
               { label: "Tone", value: campaign.tone },
               { label: "Threshold", value: campaign.currentQualityThreshold.toFixed(1) + "/10" },
               { label: "Total Ads", value: campaign.totalAdsGenerated },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-[#060606] px-4 py-3">
+              <div key={label} className="bg-[rgba(8,24,48,0.6)] px-4 py-3">
                 <div className="section-label mb-1">{label}</div>
                 <div className="font-mono text-xs font-bold text-white capitalize">{value}</div>
               </div>
@@ -354,14 +354,14 @@ export default function CampaignDetail() {
         </motion.div>
 
         {/* KPI Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-[#0f0f0f] border border-[#0f0f0f]">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 border border-[rgba(34,211,238,0.08)]">
           {[
             { icon: Target, label: "Total Ads", value: analytics?.totalAds || 0, color: "#c8a84b" },
             { icon: CheckCircle, label: "Approved", value: analytics?.approvedAds || 0, color: "#4ade80" },
             { icon: Award, label: "Threshold", value: `${campaign.currentQualityThreshold.toFixed(1)}/10`, color: "#60a5fa" },
             { icon: DollarSign, label: "Total Cost", value: `$${(analytics?.totalCost || 0).toFixed(4)}`, color: "#a78bfa" },
           ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="bg-[#060606] px-5 py-4">
+            <div key={label} className="bg-[rgba(8,24,48,0.6)] px-5 py-4">
               <div className="flex items-center gap-2 mb-2">
                 <Icon className="w-3 h-3" style={{ color }} />
                 <div className="section-label">{label}</div>
@@ -452,7 +452,7 @@ export default function CampaignDetail() {
         </div>
 
         {/* Generation Panel */}
-        <div className="border border-[#111] bg-[#060606]">
+        <div className="border border-[#111] bg-[rgba(8,24,48,0.6)]">
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#0f0f0f]">
             <div>
               <div className="section-label mb-1">Generation Engine</div>
@@ -521,7 +521,7 @@ export default function CampaignDetail() {
 
         {/* Quality Trend */}
         {qualityTrend.length > 1 && (
-          <div className="border border-[#111] bg-[#060606] p-5">
+          <div className="border border-[#111] bg-[rgba(8,24,48,0.6)] p-5">
             <div className="section-label mb-4">Quality Trend</div>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={qualityTrend}>
@@ -551,7 +551,7 @@ export default function CampaignDetail() {
 
         {/* Avg Scores */}
         {avgScores && (
-          <div className="border border-[#111] bg-[#060606] p-5">
+          <div className="border border-[#111] bg-[rgba(8,24,48,0.6)] p-5">
             <div className="section-label mb-4">Average Quality Profile</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ResponsiveContainer width="100%" height={200}>

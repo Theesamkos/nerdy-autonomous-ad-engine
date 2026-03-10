@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Zap, Swords, Sparkles, BarChart3,
-  LogOut, LogIn, ChevronRight, Menu, Plus
+  LogOut, LogIn, ChevronRight, Menu, Plus, Brain, Cpu
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -16,10 +16,11 @@ interface AppLayoutProps {
 }
 
 const NAV_ITEMS = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", code: "01" },
-  { href: "/campaigns/new", icon: Plus, label: "New Campaign", code: "02" },
-  { href: "/adversarial", icon: Swords, label: "Ad-versarial", code: "03" },
-  { href: "/creative-spark", icon: Sparkles, label: "Creative Spark", code: "04" },
+  { href: "/dashboard",      icon: LayoutDashboard, label: "Dashboard",      sub: "Mission Control", code: "01" },
+  { href: "/campaigns/new",  icon: Plus,            label: "New Campaign",   sub: "Launch Pipeline", code: "02" },
+  { href: "/adversarial",    icon: Swords,          label: "Ad-versarial",   sub: "Competitor Mode", code: "03" },
+  { href: "/creative-spark", icon: Sparkles,        label: "Creative Spark", sub: "Idea Generator",  code: "04" },
+  { href: "/performance",    icon: BarChart3,        label: "Performance",    sub: "Analytics",       code: "05" },
 ];
 
 export default function AppLayout({ children, campaignId, campaignName }: AppLayoutProps) {
@@ -31,44 +32,60 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-[#0f0f0f]">
+      <div className="px-5 py-5" style={{ borderBottom: "1px solid rgba(34,211,238,0.08)" }}>
         <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
           <div className="flex items-center gap-3 cursor-pointer group">
-            <div className="w-7 h-7 border border-[#c8a84b]/40 flex items-center justify-center group-hover:border-[#c8a84b] transition-colors">
-              <div className="w-3 h-3 bg-[#c8a84b]/70 group-hover:bg-[#c8a84b] transition-colors" />
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200"
+              style={{
+                background: "linear-gradient(135deg, rgba(34,211,238,0.18), rgba(34,211,238,0.04))",
+                border: "1px solid rgba(34,211,238,0.28)",
+                boxShadow: "0 0 16px rgba(34,211,238,0.12)",
+              }}
+            >
+              <Brain size={16} style={{ color: "#22d3ee" }} />
             </div>
             <div>
-              <div className="font-mono text-[11px] font-bold tracking-[0.16em] uppercase text-white">AdEngine</div>
-              <div className="font-mono text-[8px] text-[#2a2a2a] tracking-widest">v3 SYSTEM</div>
+              <div className="font-display font-bold text-sm tracking-tight" style={{ color: "#f8fafc", lineHeight: 1.2 }}>AdEngine</div>
+              <div className="font-mono" style={{ color: "rgba(34,211,238,0.5)", fontSize: "0.58rem", letterSpacing: "0.12em" }}>v3 · AUTONOMOUS</div>
             </div>
           </div>
         </Link>
       </div>
 
       {/* Status */}
-      <div className="px-5 py-3 border-b border-[#0a0a0a]">
-        <div className="status-live">PIPELINE ACTIVE</div>
+      <div className="px-5 py-3" style={{ borderBottom: "1px solid rgba(34,211,238,0.05)" }}>
+        <div className="flex items-center justify-between">
+          <span className="status-live">Engine Online</span>
+          <span className="font-mono" style={{ fontSize: "0.58rem", color: "rgba(34,211,238,0.35)", letterSpacing: "0.1em" }}>SYS:OK</span>
+        </div>
       </div>
 
       {/* Main Nav */}
       <nav className="px-3 py-4 space-y-0.5">
-        <div className="section-label px-2 mb-3">Navigation</div>
+        <div className="px-2 mb-3" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(34,211,238,0.3)" }}>Navigation</div>
         {NAV_ITEMS.map(item => {
           const active = location === item.href || (item.href !== "/dashboard" && location.startsWith(item.href));
           return (
             <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
-              <div className={`
-                flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-all group
-                ${active
-                  ? "bg-[#c8a84b]/08 border-l-2 border-[#c8a84b]"
-                  : "border-l-2 border-transparent hover:border-[#222] hover:bg-[#0a0a0a]"
-                }
-              `}>
-                <item.icon className={`w-3.5 h-3.5 flex-shrink-0 ${active ? "text-[#c8a84b]" : "text-[#444] group-hover:text-[#666]"}`} />
-                <span className={`font-mono text-[10px] tracking-[0.08em] uppercase flex-1 ${active ? "text-[#c8a84b]" : "text-[#555] group-hover:text-[#888]"}`}>
-                  {item.label}
-                </span>
-                <span className={`font-mono text-[8px] ${active ? "text-[#c8a84b]/50" : "text-[#2a2a2a]"}`}>{item.code}</span>
+              <div
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150"
+                style={{
+                  background: active ? "rgba(34,211,238,0.07)" : "transparent",
+                  border: active ? "1px solid rgba(34,211,238,0.16)" : "1px solid transparent",
+                  boxShadow: active ? "inset 2px 0 0 rgba(34,211,238,0.55)" : "none",
+                }}
+              >
+                <item.icon size={14} style={{ color: active ? "#22d3ee" : "rgba(100,116,139,0.7)", flexShrink: 0 }} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-mono truncate" style={{ color: active ? "#e2e8f0" : "rgba(100,116,139,0.8)", fontSize: "0.68rem", letterSpacing: "0.04em", fontWeight: active ? 600 : 400 }}>
+                    {item.label}
+                  </div>
+                  <div className="font-mono truncate" style={{ fontSize: "0.56rem", color: active ? "rgba(34,211,238,0.45)" : "rgba(71,85,105,0.7)", letterSpacing: "0.06em" }}>
+                    {item.sub}
+                  </div>
+                </div>
+                {active && <ChevronRight size={11} style={{ color: "rgba(34,211,238,0.4)", flexShrink: 0 }} />}
               </div>
             </Link>
           );
@@ -77,27 +94,30 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
 
       {/* Campaign Tools */}
       {campaignId && (
-        <div className="px-3 py-4 border-t border-[#0a0a0a]">
-          <div className="section-label px-2 mb-2">Campaign Tools</div>
+        <div className="px-3 py-3" style={{ borderTop: "1px solid rgba(34,211,238,0.05)" }}>
+          <div className="px-2 mb-2" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.56rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(34,211,238,0.3)" }}>Campaign Tools</div>
           {campaignName && (
-            <div className="px-2 mb-3">
-              <div className="font-mono text-[9px] text-[#c8a84b]/60 truncate">{campaignName}</div>
+            <div className="px-2 mb-2">
+              <div className="font-mono truncate" style={{ fontSize: "0.62rem", color: "rgba(34,211,238,0.5)" }}>{campaignName}</div>
             </div>
           )}
           <div className="space-y-0.5">
             {[
-              { href: `/campaigns/${campaignId}`, icon: Zap, label: "Generator" },
+              { href: `/campaigns/${campaignId}`,             icon: Zap,       label: "Generator" },
               { href: `/campaigns/${campaignId}/performance`, icon: BarChart3, label: "Performance" },
             ].map(item => {
               const active = location === item.href;
               return (
                 <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
-                  <div className={`
-                    flex items-center gap-2 px-3 py-2 cursor-pointer transition-all group
-                    ${active ? "bg-[#c8a84b]/06 border-l border-[#c8a84b]/30" : "hover:bg-[#0a0a0a]"}
-                  `}>
-                    <item.icon className={`w-3 h-3 flex-shrink-0 ${active ? "text-[#c8a84b]" : "text-[#444] group-hover:text-[#666]"}`} />
-                    <span className={`font-mono text-[9px] uppercase tracking-wider ${active ? "text-[#c8a84b]" : "text-[#444] group-hover:text-[#666]"}`}>
+                  <div
+                    className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-all"
+                    style={{
+                      background: active ? "rgba(34,211,238,0.06)" : "transparent",
+                      border: active ? "1px solid rgba(34,211,238,0.12)" : "1px solid transparent",
+                    }}
+                  >
+                    <item.icon size={12} style={{ color: active ? "#22d3ee" : "rgba(100,116,139,0.5)", flexShrink: 0 }} />
+                    <span className="font-mono" style={{ fontSize: "0.62rem", color: active ? "#e2e8f0" : "rgba(100,116,139,0.6)", letterSpacing: "0.06em" }}>
                       {item.label}
                     </span>
                   </div>
@@ -110,22 +130,22 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
 
       {/* Recent Campaigns */}
       {campaigns && campaigns.length > 0 && (
-        <div className="px-3 py-4 border-t border-[#0a0a0a] flex-1 overflow-y-auto">
-          <div className="section-label px-2 mb-3">Recent Campaigns</div>
+        <div className="px-3 py-3 flex-1 overflow-y-auto" style={{ borderTop: "1px solid rgba(34,211,238,0.05)" }}>
+          <div className="px-2 mb-2" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.56rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(34,211,238,0.3)" }}>Recent</div>
           <div className="space-y-0.5">
-            {campaigns.slice(0, 6).map(c => {
+            {campaigns.slice(0, 5).map(c => {
               const active = campaignId === c.id;
               return (
                 <Link key={c.id} href={`/campaigns/${c.id}`} onClick={() => setMobileOpen(false)}>
-                  <div className={`
-                    flex items-center gap-2 px-3 py-2 cursor-pointer transition-all group
-                    ${active ? "bg-[#c8a84b]/06" : "hover:bg-[#0a0a0a]"}
-                  `}>
-                    <div className={`w-1.5 h-1.5 flex-shrink-0 ${active ? "bg-[#c8a84b]" : "bg-[#222] group-hover:bg-[#333]"}`} />
-                    <span className={`font-mono text-[9px] truncate flex-1 ${active ? "text-[#c8a84b]" : "text-[#444] group-hover:text-[#666]"}`}>
+                  <div
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-all"
+                    style={{ background: active ? "rgba(34,211,238,0.05)" : "transparent" }}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: active ? "#22d3ee" : "rgba(71,85,105,0.5)" }} />
+                    <span className="font-mono truncate flex-1" style={{ fontSize: "0.62rem", color: active ? "#e2e8f0" : "rgba(100,116,139,0.6)" }}>
                       {c.name}
                     </span>
-                    {active && <ChevronRight className="w-3 h-3 text-[#c8a84b]/50 flex-shrink-0" />}
+                    {active && <ChevronRight size={10} style={{ color: "rgba(34,211,238,0.35)", flexShrink: 0 }} />}
                   </div>
                 </Link>
               );
@@ -134,35 +154,46 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
         </div>
       )}
 
-      {/* Spacer */}
       <div className="flex-1" />
 
       {/* User */}
-      <div className="px-4 py-4 border-t border-[#0f0f0f]">
+      <div className="px-3 pb-4 pt-3" style={{ borderTop: "1px solid rgba(34,211,238,0.06)" }}>
         {isAuthenticated && user ? (
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 bg-[#c8a84b]/10 border border-[#c8a84b]/20 flex items-center justify-center flex-shrink-0">
-              <span className="font-mono text-[10px] font-bold text-[#c8a84b]">
-                {(user.name || "U").charAt(0).toUpperCase()}
-              </span>
+          <div
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg"
+            style={{ background: "rgba(34,211,238,0.04)", border: "1px solid rgba(34,211,238,0.08)" }}
+          >
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 font-display font-bold text-xs"
+              style={{ background: "linear-gradient(135deg, #22d3ee, #0891b2)", color: "#020b18" }}
+            >
+              {(user.name || "U").charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-mono text-[10px] text-[#888] truncate">{user.name || "Operator"}</div>
-              <div className="font-mono text-[8px] text-[#2a2a2a] truncate">{user.email || ""}</div>
+              <div className="font-mono truncate" style={{ color: "#e2e8f0", fontSize: "0.68rem", fontWeight: 500 }}>
+                {user.name || "Operator"}
+              </div>
+              <div className="font-mono" style={{ fontSize: "0.56rem", color: "rgba(34,211,238,0.45)", letterSpacing: "0.08em" }}>
+                CLEARANCE: FULL
+              </div>
             </div>
             <button
               onClick={() => logout()}
-              className="w-6 h-6 flex items-center justify-center hover:bg-[#111] transition-colors flex-shrink-0"
+              className="p-1.5 rounded transition-colors"
+              style={{ color: "rgba(100,116,139,0.5)" }}
               title="Logout"
             >
-              <LogOut className="w-3 h-3 text-[#333] hover:text-[#c8a84b]" />
+              <LogOut size={13} />
             </button>
           </div>
         ) : (
           <a href={getLoginUrl()}>
-            <div className="flex items-center gap-2 px-3 py-2 border border-dashed border-[#c8a84b]/20 hover:border-[#c8a84b]/40 transition-colors cursor-pointer">
-              <LogIn className="w-3 h-3 text-[#c8a84b]/50" />
-              <span className="font-mono text-[9px] text-[#c8a84b]/50 uppercase tracking-wider">Sign In</span>
+            <div
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all"
+              style={{ border: "1px dashed rgba(34,211,238,0.2)" }}
+            >
+              <LogIn size={13} style={{ color: "rgba(34,211,238,0.5)" }} />
+              <span className="font-mono" style={{ fontSize: "0.62rem", color: "rgba(34,211,238,0.5)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Sign In</span>
             </div>
           </a>
         )}
@@ -171,9 +202,29 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
   );
 
   return (
-    <div className="flex h-screen bg-black overflow-hidden">
+    <div className="flex min-h-screen" style={{ background: "#020b18" }}>
+      {/* Global space background — fixed behind everything */}
+      <div className="space-bg">
+        <div className="space-bg-image" />
+        <div className="space-bg-overlay" />
+        <div className="space-bg-scanlines" />
+        <div className="space-bg-glow-top" />
+        <div className="space-bg-glow-bottom" />
+      </div>
+
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-52 flex-shrink-0 bg-[#030303] border-r border-[#0f0f0f] overflow-y-auto">
+      <aside
+        className="hidden lg:flex flex-col h-screen sticky top-0 overflow-y-auto"
+        style={{
+          width: "220px",
+          minWidth: "220px",
+          background: "rgba(2,11,24,0.92)",
+          backdropFilter: "blur(24px)",
+          borderRight: "1px solid rgba(34,211,238,0.09)",
+          flexShrink: 0,
+          zIndex: 20,
+        }}
+      >
         <SidebarContent />
       </aside>
 
@@ -185,15 +236,22 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 z-40 lg:hidden"
+              className="fixed inset-0 z-40 lg:hidden"
+              style={{ background: "rgba(2,11,24,0.75)", backdropFilter: "blur(4px)" }}
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
-              initial={{ x: -208 }}
+              initial={{ x: -220 }}
               animate={{ x: 0 }}
-              exit={{ x: -208 }}
+              exit={{ x: -220 }}
               transition={{ type: "tween", duration: 0.2 }}
-              className="fixed left-0 top-0 bottom-0 w-52 bg-[#030303] border-r border-[#0f0f0f] z-50 lg:hidden overflow-y-auto"
+              className="fixed left-0 top-0 bottom-0 z-50 lg:hidden overflow-y-auto"
+              style={{
+                width: "220px",
+                background: "rgba(2,11,24,0.97)",
+                backdropFilter: "blur(24px)",
+                borderRight: "1px solid rgba(34,211,238,0.12)",
+              }}
             >
               <SidebarContent />
             </motion.aside>
@@ -202,27 +260,29 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         {/* Mobile Header */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#0f0f0f] bg-[#030303]">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="w-8 h-8 flex items-center justify-center hover:bg-[#111] transition-colors"
-          >
-            <Menu className="w-4 h-4 text-[#555]" />
+        <header
+          className="lg:hidden flex items-center gap-3 px-4 py-3"
+          style={{
+            background: "rgba(2,11,24,0.92)",
+            borderBottom: "1px solid rgba(34,211,238,0.08)",
+            backdropFilter: "blur(16px)",
+          }}
+        >
+          <button onClick={() => setMobileOpen(true)} style={{ color: "rgba(34,211,238,0.6)" }}>
+            <Menu size={20} />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 border border-[#c8a84b]/30 flex items-center justify-center">
-              <div className="w-2 h-2 bg-[#c8a84b]/60" />
-            </div>
-            <span className="font-mono text-[10px] font-bold tracking-widest uppercase text-white">
-              {campaignName || "AdEngine"}
-            </span>
+            <Brain size={16} style={{ color: "#22d3ee" }} />
+            <span className="font-display font-bold text-sm" style={{ color: "#f8fafc" }}>AdEngine</span>
           </div>
-          <div className="w-8" />
+          <div className="ml-auto">
+            <span className="status-live">Online</span>
+          </div>
         </header>
 
-        {/* Page Content */}
+        {/* Page content */}
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>
