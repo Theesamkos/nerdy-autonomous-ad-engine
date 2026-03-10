@@ -11,6 +11,7 @@ import CampaignDetail from "./pages/CampaignDetail";
 import AdversarialMode from "./pages/AdversarialMode";
 import CreativeSpark from "./pages/CreativeSpark";
 import PerformanceTracker from "./pages/PerformanceTracker";
+import SharePage from "./pages/SharePage";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/campaigns/:id/adversarial" component={AdversarialMode} />
       <Route path="/campaigns/:id/spark" component={CreativeSpark} />
       <Route path="/campaigns/:id/performance" component={PerformanceTracker} />
+      <Route path="/share/:token" component={SharePage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

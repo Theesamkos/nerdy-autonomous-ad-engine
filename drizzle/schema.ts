@@ -167,3 +167,16 @@ export const creativeSparkIdeas = mysqlTable("creative_spark_ideas", {
 });
 
 export type CreativeSparkIdea = typeof creativeSparkIdeas.$inferSelect;
+
+// ─── Campaign Share Links ─────────────────────────────────────────────────────
+export const campaignShareLinks = mysqlTable("campaign_share_links", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull(),
+  userId: int("userId").notNull(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt"),
+});
+
+export type CampaignShareLink = typeof campaignShareLinks.$inferSelect;
+export type InsertCampaignShareLink = typeof campaignShareLinks.$inferInsert;

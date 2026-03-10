@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS campaign_share_links (\n  id int AUTO_INCREMENT PRIMARY KEY,\n  campaignId int NOT NULL,\n  userId int NOT NULL,\n  token varchar(64) NOT NULL UNIQUE,\n  createdAt timestamp NOT NULL DEFAULT (now()),\n  expiresAt timestamp NULL\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user cRqaaCAnwvHpXvv.a355cd60a74b --database 5Zhvxiu6fz2msfFd9Aepcy --execute CREATE TABLE IF NOT EXISTS campaign_share_links (\n  id int AUTO_INCREMENT PRIMARY KEY,\n  campaignId int NOT NULL,\n  userId int NOT NULL,\n  token varchar(64) NOT NULL UNIQUE,\n  createdAt timestamp NOT NULL DEFAULT (now()),\n  expiresAt timestamp NULL\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 512
+}

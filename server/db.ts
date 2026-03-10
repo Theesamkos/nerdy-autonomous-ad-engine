@@ -8,6 +8,7 @@ import {
   iterationLogs,
   adversarialSessions,
   creativeSparkIdeas,
+  campaignShareLinks, InsertCampaignShareLink,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -217,4 +218,42 @@ export async function toggleSaveCreativeSparkIdea(ideaId: number, isSaved: boole
   const db = await getDb();
   if (!db) return;
   await db.update(creativeSparkIdeas).set({ isSaved }).where(eq(creativeSparkIdeas.id, ideaId));
+}
+
+// ─── Campaign Share Links ─────────────────────────────────────────────────────
+export async function createShareLink(data: InsertCampaignShareLink): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(campaignShareLinks).values(data);
+  return data.token;
+}
+
+export async function getShareLinkByToken(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(campaignShareLinks).where(eq(campaignShareLinks.token, token)).limit(1);
+  return result[0];
+}
+
+export async function getShareLinkByCampaign(campaignId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(campaignShareLinks)
+    .where(and(eq(campaignShareLinks.campaignId, campaignId), eq(campaignShareLinks.userId, userId)))
+    .orderBy(desc(campaignShareLinks.createdAt)).limit(1);
+  return result[0];
+}
+
+export async function getShareLinkData(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const link = await getShareLinkByToken(token);
+  if (!link) return undefined;
+  const campaign = await getCampaignById(link.campaignId);
+  if (!campaign) return undefined;
+  const allAds = await getAdsByCampaign(link.campaignId);
+  const approvedAds = allAds.filter(a => a.status === 'approved');
+  const bestAd = approvedAds.sort((a, b) => (b.qualityScore ?? 0) - (a.qualityScore ?? 0))[0];
+  const bestEval = bestAd ? await getEvaluationByAdId(bestAd.id) : undefined;
+  return { campaign, approvedAds, bestAd, bestEval };
 }

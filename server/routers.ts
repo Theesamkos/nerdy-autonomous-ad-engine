@@ -12,6 +12,7 @@ import {
   createIterationLog, getIterationLogsByCampaign,
   createAdversarialSession, getAdversarialSessionsByCampaign, updateAdversarialSession,
   createCreativeSparkIdeas, getCreativeSparkIdeasByCampaign, toggleSaveCreativeSparkIdea,
+  createShareLink, getShareLinkByCampaign, getShareLinkData,
 } from "./db";
 
 // ─── Cost estimation helpers ──────────────────────────────────────────────────
@@ -644,6 +645,33 @@ Return ONLY valid JSON.`;
       return { success: true };
     }),
   }),
-});
 
+  // ─── Share Links ──────────────────────────────────────────────────────────────
+  share: router({
+    createShareLink: protectedProcedure.input(z.object({
+      campaignId: z.number(),
+      origin: z.string(),
+    })).mutation(async ({ input, ctx }) => {
+      const campaign = await getCampaignById(input.campaignId);
+      if (!campaign || campaign.userId !== ctx.user.id) {
+        throw new Error("Campaign not found or access denied");
+      }
+      const existing = await getShareLinkByCampaign(input.campaignId, ctx.user.id);
+      if (existing) {
+        return { url: input.origin + "/share/" + existing.token };
+      }
+      const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      await createShareLink({ campaignId: input.campaignId, userId: ctx.user.id, token });
+      return { url: input.origin + "/share/" + token };
+    }),
+
+    getSharedCampaign: publicProcedure.input(z.object({
+      token: z.string(),
+    })).query(async ({ input }) => {
+      const data = await getShareLinkData(input.token);
+      if (!data) throw new Error("Share link not found or expired");
+      return data;
+    }),
+  }),
+});
 export type AppRouter = typeof appRouter;
