@@ -248,7 +248,7 @@ export default function CampaignBuilder() {
           {/* Step 3: Voice */}
           {step === 3 && (
             <motion.div key="step3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
-              className="space-y-6">
+              className="ops-card p-8 space-y-6">
 
               <div>
                 <label className="ops-label mb-3">Brand Tone</label>

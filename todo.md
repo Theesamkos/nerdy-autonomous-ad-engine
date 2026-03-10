@@ -83,3 +83,14 @@
 - [x] Export to PDF on PerformanceTracker (formatted report) — Cursor prompt ready
 - [x] Final TypeScript check: 0 errors + 17/17 tests passing
 - [x] Checkpoint + delivery
+
+## Phase 10: Home Page Tesla-Style Redesign
+
+- [x] Audit Home page — identify clutter, hierarchy issues, spacing problems
+- [x] Rebuild hero — asymmetric 2-col layout, single clean subtext, breathing room
+- [x] Rebuild terminal mockup — focused score ring + ad copy + dimension bars + log
+- [x] Rebuild stats bar — Tesla instrument cluster style, no card borders
+- [x] Rebuild features grid — 3-col, icon+tag row, hook line in accent color
+- [x] Remove redundant bottom CTA section
+- [x] TypeScript: 0 errors
+- [ ] Checkpoint + delivery
