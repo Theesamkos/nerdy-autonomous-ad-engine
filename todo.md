@@ -94,3 +94,11 @@
 - [x] Remove redundant bottom CTA section
 - [x] TypeScript: 0 errors
 - [ ] Checkpoint + delivery
+
+## Phase 11: Home Page Spacing Pass
+
+- [x] Increase section vertical padding — hero, stats, features, footer
+- [x] Increase internal card padding and gap between feature cards
+- [x] Add more breathing room between headline, subtext, CTAs, and trust signals
+- [x] Hero: full-viewport-height with golden ratio vertical centering
+- [x] Checkpoint + delivery

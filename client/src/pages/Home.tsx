@@ -167,8 +167,9 @@ export default function Home() {
       </nav>
 
       {/* ── Hero ── */}
-      <section className="relative z-10 px-8 pt-20 pb-16 max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-[1fr_480px] gap-16 items-center">
+      <section className="relative z-10" style={{ minHeight: "calc(100vh - 64px)", display: "flex", alignItems: "center", paddingTop: "5vh" }}>
+        <div className="w-full px-8 py-12 max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-[1fr_500px] gap-16 items-center">
 
           {/* Left: Copy */}
           <motion.div
@@ -178,7 +179,7 @@ export default function Home() {
           >
             {/* Label */}
             <div
-              className="inline-flex items-center gap-2 mb-7 px-3 py-1.5 rounded-full"
+              className="inline-flex items-center gap-2 mb-8 px-3 py-1.5 rounded-full"
               style={{ background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.15)" }}
             >
               <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#22d3ee", boxShadow: "0 0 5px #22d3ee" }} />
@@ -188,18 +189,18 @@ export default function Home() {
             </div>
 
             {/* Headline */}
-            <h1 className="display-xl mb-6 leading-[1.05]" style={{ color: "#f8fafc", letterSpacing: "-0.03em" }}>
+            <h1 className="mb-8" style={{ color: "#f8fafc", letterSpacing: "-0.03em", fontFamily: "'Space Grotesk', system-ui, sans-serif", fontWeight: 800, fontSize: "clamp(2.8rem, 6.5vw, 5.5rem)", lineHeight: 1.0 }}>
               We Engineer<br />
               <span style={{ color: "#22d3ee" }}>Ad Intelligence.</span>
             </h1>
 
             {/* Subtext — one clean paragraph, nothing more */}
-            <p className="text-base leading-relaxed mb-8" style={{ color: "rgba(148,163,184,0.75)", maxWidth: "440px" }}>
+            <p className="text-base leading-relaxed mb-10" style={{ color: "rgba(148,163,184,0.75)", maxWidth: "440px" }}>
               An autonomous pipeline that generates, evaluates, self-heals, and progressively improves ad copy — without human intervention.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-3 mb-8">
+            <div className="flex flex-wrap items-center gap-3 mb-10">
               {isAuthenticated ? (
                 <Link href="/dashboard">
                   <button className="btn-primary flex items-center gap-2 px-6 py-3 text-sm">
@@ -239,6 +240,7 @@ export default function Home() {
             <div
               className="rounded-2xl overflow-hidden"
               style={{
+                maxHeight: "calc(100vh - 160px)",
                 background: "rgba(4,14,30,0.9)",
                 border: "1px solid rgba(34,211,238,0.18)",
                 boxShadow: "0 0 80px rgba(34,211,238,0.06), 0 32px 80px rgba(0,0,0,0.6)",
@@ -347,10 +349,11 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
+        </div>
       </section>
 
       {/* ── Stats bar — Tesla instrument cluster style ── */}
-      <section className="relative z-10 px-8 pb-20 max-w-7xl mx-auto">
+      <section className="relative z-10 px-8 pb-28 max-w-7xl mx-auto">
         <div
           className="flex flex-col sm:flex-row items-center justify-between gap-0 rounded-xl overflow-hidden"
           style={{ border: "1px solid rgba(34,211,238,0.1)", background: "rgba(4,14,30,0.6)", backdropFilter: "blur(20px)" }}
@@ -361,7 +364,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 + i * 0.08 }}
-              className="flex-1 flex flex-col items-center justify-center py-7 px-6"
+              className="flex-1 flex flex-col items-center justify-center py-10 px-8"
               style={{
                 borderRight: i < STATS.length - 1 ? "1px solid rgba(34,211,238,0.07)" : "none",
                 borderBottom: "none",
@@ -379,14 +382,14 @@ export default function Home() {
       </section>
 
       {/* ── Features ── */}
-      <section className="relative z-10 px-8 pb-24 max-w-7xl mx-auto">
+      <section className="relative z-10 px-8 pb-32 max-w-7xl mx-auto">
 
         {/* Section header — minimal */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="mb-14"
+          className="mb-16"
         >
           <div
             className="inline-flex items-center gap-2 mb-5 px-3 py-1.5 rounded-full"
@@ -405,17 +408,17 @@ export default function Home() {
         </motion.div>
 
         {/* 2-column feature grid — more space per card */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES.map((f, i) => (
             <motion.div
               key={f.title}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.55 + i * 0.07 }}
-              className="ops-card p-6 group cursor-pointer"
+              className="ops-card p-7 group cursor-pointer"
             >
               {/* Icon + tag row */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-5">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-105"
                   style={{ background: `${f.color}10`, border: `1px solid ${f.color}22` }}
@@ -431,10 +434,10 @@ export default function Home() {
               </div>
 
               {/* Title */}
-              <h3 className="font-display font-semibold text-sm mb-1.5" style={{ color: "#f8fafc" }}>{f.title}</h3>
+              <h3 className="font-display font-semibold text-sm mb-2" style={{ color: "#f8fafc" }}>{f.title}</h3>
 
               {/* Hook — the one-liner that sells it */}
-              <p className="text-xs font-medium mb-2.5" style={{ color: f.color, opacity: 0.85 }}>{f.hook}</p>
+              <p className="text-xs font-medium mb-3" style={{ color: f.color, opacity: 0.85 }}>{f.hook}</p>
 
               {/* Description — supporting detail */}
               <p className="text-xs leading-relaxed" style={{ color: "rgba(148,163,184,0.6)" }}>{f.desc}</p>
