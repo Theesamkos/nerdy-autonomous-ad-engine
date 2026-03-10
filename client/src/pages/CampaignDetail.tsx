@@ -1,10 +1,9 @@
 import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Zap, Brain, CheckCircle2, XCircle, Swords, Sparkles,
+import { Zap, Brain, CheckCircle2, XCircle, Swords, Sparkles,
   BarChart3, ChevronDown, ChevronUp, Target, DollarSign, Award,
-  SlidersHorizontal, Save, ArrowLeft, Copy, Check, Activity
+  SlidersHorizontal, Save, ArrowLeft, Copy, Check, Activity, Smartphone
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "wouter";
@@ -13,6 +12,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine
 } from "recharts";
+import AdPreviewMockup from "@/components/AdPreviewMockup";
 
 const DIM_COLORS: Record<string, string> = {
   clarity: "#60a5fa",
@@ -53,9 +53,10 @@ function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
   );
 }
 
-function AdCard({ ad, evaluation, isExpanded, onToggle, onCopy, copied }: {
+function AdCard({ ad, evaluation, isExpanded, onToggle, onCopy, copied, showPreview, onTogglePreview }: {
   ad: any; evaluation: any; isExpanded: boolean; onToggle: () => void;
   onCopy: () => void; copied: boolean;
+  showPreview: boolean; onTogglePreview: () => void;
 }) {
   const radarData = evaluation ? [
     { dim: "Clarity",    score: evaluation.scoreClarity },
@@ -123,6 +124,11 @@ function AdCard({ ad, evaluation, isExpanded, onToggle, onCopy, copied }: {
                 {copied ? <Check size={11} /> : <Copy size={11} />}
                 {copied ? "Copied" : "Copy"}
               </button>
+              <button onClick={onTogglePreview} className="flex items-center gap-1.5 font-mono text-[10px] transition-colors"
+                style={{ color: showPreview ? "#22d3ee" : "rgba(100,116,139,0.5)" }}>
+                <Smartphone size={11} />
+                {showPreview ? "Hide Preview" : "Ad Preview"}
+              </button>
               <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.35)" }}>
                 {ad.promptTokens + ad.completionTokens} tokens · ${ad.estimatedCostUsd.toFixed(6)}
               </span>
@@ -139,6 +145,26 @@ function AdCard({ ad, evaluation, isExpanded, onToggle, onCopy, copied }: {
           </div>
         </div>
       </div>
+
+      {/* Phone frame preview */}
+      <AnimatePresence>
+        {showPreview && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}
+            className="overflow-hidden" style={{ borderTop: "1px solid rgba(34,211,238,0.07)" }}>
+            <div className="p-6 flex flex-col items-center">
+              <div className="section-label mb-4 self-start">Ad Preview</div>
+              <AdPreviewMockup
+                primaryText={ad.primaryText}
+                headline={ad.headline}
+                description={ad.description}
+                ctaButton={ad.ctaButton}
+                imagePrompt={ad.imagePrompt}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Expanded evaluation */}
       <AnimatePresence>
@@ -204,6 +230,7 @@ function AdCard({ ad, evaluation, isExpanded, onToggle, onCopy, copied }: {
 function AdCardWrapper({ ad, isExpanded, onToggle }: { ad: any; isExpanded: boolean; onToggle: () => void }) {
   const { data } = trpc.ads.get.useQuery({ id: ad.id }, { enabled: isExpanded });
   const [copied, setCopied] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const onCopy = useCallback(() => {
     const text = [ad.headline, "", ad.primaryText, ad.description, "", ad.ctaButton].filter(Boolean).join("\n");
     navigator.clipboard.writeText(text).then(() => {
@@ -212,7 +239,8 @@ function AdCardWrapper({ ad, isExpanded, onToggle }: { ad: any; isExpanded: bool
       setTimeout(() => setCopied(false), 2000);
     });
   }, [ad]);
-  return <AdCard ad={ad} evaluation={data?.evaluation || null} isExpanded={isExpanded} onToggle={onToggle} onCopy={onCopy} copied={copied} />;
+  return <AdCard ad={ad} evaluation={data?.evaluation || null} isExpanded={isExpanded} onToggle={onToggle}
+    onCopy={onCopy} copied={copied} showPreview={showPreview} onTogglePreview={() => setShowPreview(p => !p)} />;
 }
 
 const LOG_STEPS = [

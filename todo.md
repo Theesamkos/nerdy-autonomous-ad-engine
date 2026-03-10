@@ -70,6 +70,16 @@
 - [x] Rebuild AdversarialMode — cleaner two-panel layout
 - [x] Rebuild CreativeSpark — cleaner card grid
 - [x] Rebuild PerformanceTracker — cleaner chart layout
-- [ ] Add Facebook/Instagram phone frame mockup to CampaignDetail (deferred)
+- [x] Add Facebook/Instagram phone frame mockup to CampaignDetail
 - [x] Final TypeScript check: 0 errors + 17/17 tests passing
 - [x] GitHub push + checkpoint
+
+## Phase 9: Three High-Impact Features
+
+- [x] Facebook/Instagram phone frame ad preview mockup in CampaignDetail
+- [x] Bulk generation mode: generate 5 ads in parallel, surface top scorer — Cursor prompt ready
+- [x] Backend: bulkGenerate tRPC procedure (parallel pipeline) — Cursor prompt ready
+- [x] Export to CSV on PerformanceTracker (approved ads + scores + cost) — Cursor prompt ready
+- [x] Export to PDF on PerformanceTracker (formatted report) — Cursor prompt ready
+- [x] Final TypeScript check: 0 errors + 17/17 tests passing
+- [x] Checkpoint + delivery
