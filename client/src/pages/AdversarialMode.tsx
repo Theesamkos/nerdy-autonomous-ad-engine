@@ -1,7 +1,7 @@
 import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
-import { Swords, Plus, ChevronDown, ChevronUp, ArrowLeft, Trophy, Shield } from "lucide-react";
+import { Swords, Plus, ChevronDown, ChevronUp, ArrowLeft, Trophy, Shield, Target } from "lucide-react";
 import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { toast } from "sonner";
@@ -22,7 +22,7 @@ export default function AdversarialMode() {
       setIsBattling(false);
       setShowNewForm(false);
       setForm({ competitorAdText: "", competitorBrand: "", rounds: 2 });
-      toast.success("Battle complete. Our: " + result.ourBestScore.toFixed(1) + " vs Theirs: " + result.competitorScore.toFixed(1));
+      toast.success(`Battle complete. Ours: ${result.ourBestScore.toFixed(1)} vs Theirs: ${result.competitorScore.toFixed(1)}`);
       refetch();
     },
     onError: (err) => { setIsBattling(false); toast.error(err.message); },
@@ -33,86 +33,101 @@ export default function AdversarialMode() {
 
   return (
     <AppLayout campaignId={campaignId} campaignName={campaign?.name}>
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+
+        {/* Header */}
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-start gap-4 mb-4">
             <Link href={"/campaigns/" + campaignId}>
-              <button className="btn-ops btn-ops-ghost px-3 py-2 text-xs">
-                <ArrowLeft className="w-3 h-3" />
-              </button>
+              <button className="btn-secondary p-2.5 flex-shrink-0"><ArrowLeft size={14} /></button>
             </Link>
             <div>
-              <div className="section-label mb-1">Ad-versarial Mode</div>
-              <h1 className="text-2xl font-black text-white tracking-tight">Competitive Intelligence</h1>
+              <div className="section-label mb-1.5">Ad-versarial Mode</div>
+              <h1 className="font-display font-bold text-2xl tracking-tight" style={{ color: "#f8fafc", letterSpacing: "-0.02em" }}>
+                Competitive Intelligence
+              </h1>
+              <p className="font-mono text-[10px] mt-1.5 max-w-xl" style={{ color: "rgba(100,116,139,0.5)" }}>
+                Pit your AI-generated ads against real competitor ads. The engine analyzes both, scores across 5 dimensions, and iteratively improves until yours wins.
+              </p>
             </div>
           </div>
-          <p className="font-mono text-[10px] text-[#383838] max-w-xl">
-            Pit your AI-generated ads against real competitor ads. The engine analyzes both, scores them across 5 dimensions, and iteratively improves your ad until it wins.
-          </p>
         </motion.div>
 
-        <div className="grid grid-cols-3 gap-3">
+        {/* Stats */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}
+          className="grid grid-cols-3 gap-4">
           {[
-            { icon: Swords, label: "Total Battles", value: sessions?.length || 0, color: "#c8a84b" },
-            { icon: Trophy, label: "Win Rate", value: winRate + "%", color: "#4ade80" },
-            { icon: Shield, label: "Campaign", value: (campaign?.name || "---").slice(0, 16), color: "#60a5fa" },
+            { icon: Swords,  label: "Total Battles", value: sessions?.length || 0,                      color: "#f87171" },
+            { icon: Trophy,  label: "Win Rate",       value: winRate + "%",                              color: "#34d399" },
+            { icon: Target,  label: "Campaign",       value: (campaign?.name || "---").slice(0, 16),    color: "#22d3ee" },
           ].map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="bg-[rgba(8,24,48,0.6)] px-5 py-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Icon className="w-3 h-3" style={{ color }} />
-                <div className="section-label">{label}</div>
+            <div key={label} className="ops-card p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon size={13} style={{ color }} />
+                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>{label}</span>
               </div>
-              <div className="font-mono text-xl font-black text-white">{value}</div>
+              <div className="font-display font-bold text-2xl" style={{ color: "#f8fafc", letterSpacing: "-0.03em" }}>{value}</div>
             </div>
           ))}
-        </div>
+        </motion.div>
 
-        <div>
-          <button onClick={() => setShowNewForm(!showNewForm)} className="btn-ops btn-ops-primary w-full justify-center">
-            <Plus className="w-3 h-3" /> New Battle
+        {/* New Battle */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <button onClick={() => setShowNewForm(!showNewForm)}
+            className="btn-primary w-full flex items-center justify-center gap-2">
+            <Plus size={14} /> New Battle
           </button>
           <AnimatePresence>
             {showNewForm && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="border border-[#1a1a1a] border-t-0 p-5 bg-[rgba(8,24,48,0.6)] space-y-4">
+                className="overflow-hidden">
+                <div className="ops-card rounded-t-none p-6 space-y-5"
+                  style={{ borderTop: "none", borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
                   <div className="section-label">Competitor Intelligence</div>
                   <div>
-                    <label className="block font-mono text-[9px] tracking-widest uppercase text-[#555] mb-2">Competitor Brand</label>
+                    <label className="ops-label">Competitor Brand</label>
                     <input type="text" placeholder="e.g. Princeton Review, Khan Academy"
                       value={form.competitorBrand} onChange={e => setForm(f => ({ ...f, competitorBrand: e.target.value }))}
-                      className="ops-input w-full" />
+                      className="ops-input" />
                   </div>
                   <div>
-                    <label className="block font-mono text-[9px] tracking-widest uppercase text-[#555] mb-2">Competitor Ad Copy</label>
+                    <label className="ops-label">Competitor Ad Copy</label>
                     <textarea placeholder="Paste the full competitor ad text here..."
                       value={form.competitorAdText} onChange={e => setForm(f => ({ ...f, competitorAdText: e.target.value }))}
-                      className="ops-input w-full min-h-[120px] resize-none" />
+                      className="ops-input min-h-[120px] resize-none" />
                   </div>
                   <div>
-                    <label className="block font-mono text-[9px] tracking-widest uppercase text-[#555] mb-2">Battle Rounds</label>
+                    <label className="ops-label mb-3">Battle Rounds</label>
                     <div className="flex gap-2">
                       {[1, 2, 3].map(n => (
                         <button key={n} onClick={() => setForm(f => ({ ...f, rounds: n }))}
-                          className={"flex-1 py-2 font-mono text-[10px] uppercase tracking-wider border transition-all " + (form.rounds === n ? "border-[#c8a84b]/40 text-[#c8a84b] bg-[#c8a84b]/08" : "border-[#1a1a1a] text-[#555] hover:border-[#333]")}>
+                          className="flex-1 py-2.5 font-mono text-[11px] uppercase tracking-wider rounded-lg transition-all"
+                          style={{
+                            background: form.rounds === n ? "rgba(34,211,238,0.08)" : "rgba(8,24,48,0.5)",
+                            border: `1px solid ${form.rounds === n ? "rgba(34,211,238,0.25)" : "rgba(34,211,238,0.06)"}`,
+                            color: form.rounds === n ? "#22d3ee" : "rgba(100,116,139,0.5)",
+                          }}>
                           {n} {n === 1 ? "Round" : "Rounds"}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <button onClick={() => setShowNewForm(false)} className="btn-ops btn-ops-ghost flex-1 justify-center">Cancel</button>
+                    <button onClick={() => setShowNewForm(false)} className="btn-secondary flex-1 flex items-center justify-center">
+                      Cancel
+                    </button>
                     <button
-                      onClick={() => { setIsBattling(true); runBattle.mutate({ campaignId, competitorAdText: form.competitorAdText, competitorSource: form.competitorBrand, rounds: form.rounds }); }}
+                      onClick={() => {
+                        setIsBattling(true);
+                        runBattle.mutate({ campaignId, competitorAdText: form.competitorAdText, competitorSource: form.competitorBrand, rounds: form.rounds });
+                      }}
                       disabled={!form.competitorAdText || !form.competitorBrand || isBattling}
-                      className="btn-ops btn-ops-primary flex-1 justify-center disabled:opacity-30"
-                    >
+                      className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-30">
                       {isBattling
-                        ? <><div className="w-2.5 h-2.5 border border-[#c8a84b]/30 border-t-[#c8a84b] rounded-full animate-spin" /> Running...</>
-                        : <><Swords className="w-3 h-3" /> Run Battle</>
+                        ? <><div className="w-3 h-3 rounded-full border border-t-transparent animate-spin"
+                            style={{ borderColor: "rgba(34,211,238,0.3)", borderTopColor: "#22d3ee" }} /> Running...</>
+                        : <><Swords size={13} /> Run Battle</>
                       }
                     </button>
                   </div>
@@ -120,37 +135,46 @@ export default function AdversarialMode() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
 
+        {/* Battle History */}
         {sessions && sessions.length > 0 ? (
-          <div className="space-y-px">
+          <div className="space-y-3">
             {sessions.map((session, i) => {
               const isExpanded = expandedId === session.id;
               const winning = session.winStatus === "winning";
               return (
                 <motion.div key={session.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className={"border overflow-hidden " + (winning ? "border-[#c8a84b]/20" : "border-[#1a1a1a]")}>
-                  <div className="p-4 flex items-center justify-between gap-4">
+                  className="ops-card overflow-hidden"
+                  style={{ borderColor: winning ? "rgba(52,211,153,0.2)" : undefined }}>
+                  <div className="p-5 flex items-center justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className={"w-1 min-h-[32px] flex-shrink-0 " + (winning ? "bg-[#c8a84b]" : "bg-[#1a1a1a]")} />
+                      <div className="w-1 min-h-[32px] rounded-full flex-shrink-0"
+                        style={{ background: winning ? "#34d399" : "rgba(34,211,238,0.1)" }} />
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <span className="font-mono text-[10px] font-bold text-white">{session.competitorSource || "Competitor"}</span>
-                          <span className={"font-mono text-[8px] px-2 py-0.5 uppercase tracking-wider border " + (session.winStatus === "winning" ? "text-[#c8a84b] border-[#c8a84b]/20" : session.winStatus === "losing" ? "text-[#f87171] border-[#f87171]/20" : "text-[#555] border-[#1a1a1a]")}>
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                          <span className="font-display font-semibold text-sm" style={{ color: "#e2e8f0" }}>
+                            {session.competitorSource || "Competitor"}
+                          </span>
+                          <span className={`tag-ops ${session.winStatus === "winning" ? "tag-green" : session.winStatus === "losing" ? "tag-red" : "tag-dim"}`}>
                             {session.winStatus}
                           </span>
                         </div>
-                        <p className="font-mono text-[9px] text-[#383838] truncate">{(session.competitorAdText || "").slice(0, 80)}...</p>
+                        <p className="font-mono text-[10px] truncate" style={{ color: "rgba(100,116,139,0.45)" }}>
+                          {(session.competitorAdText || "").slice(0, 80)}...
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 flex-shrink-0">
                       <div className="text-right">
-                        <div className="font-mono text-[8px] text-[#555] mb-0.5">Rounds</div>
-                        <div className="font-mono text-sm font-black text-white">{session.roundsCompleted}</div>
+                        <div className="font-mono text-[9px] mb-0.5" style={{ color: "rgba(100,116,139,0.4)" }}>Rounds</div>
+                        <div className="font-mono font-bold text-sm" style={{ color: "#f8fafc" }}>{session.roundsCompleted}</div>
                       </div>
-                      <button onClick={() => setExpandedId(isExpanded ? null : session.id)} className="text-[#333] hover:text-[#c8a84b] transition-colors">
-                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      <button onClick={() => setExpandedId(isExpanded ? null : session.id)}
+                        className="p-1.5 rounded-lg transition-colors"
+                        style={{ color: "rgba(100,116,139,0.4)", background: "rgba(34,211,238,0.04)" }}>
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
                     </div>
                   </div>
@@ -158,18 +182,21 @@ export default function AdversarialMode() {
                     {isExpanded && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
-                        className="border-t border-[#0f0f0f] overflow-hidden">
+                        className="overflow-hidden" style={{ borderTop: "1px solid rgba(34,211,238,0.07)" }}>
                         <div className="p-5 space-y-4">
                           <div>
                             <div className="section-label mb-3">Competitor Ad</div>
-                            <div className="border border-[#1a1a1a] p-3 bg-[rgba(2,11,24,0.8)]">
-                              <p className="font-mono text-[10px] text-[#555] leading-relaxed">{session.competitorAdText}</p>
+                            <div className="rounded-lg p-4"
+                              style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
+                              <p className="font-mono text-[10px] leading-relaxed" style={{ color: "rgba(148,163,184,0.6)" }}>
+                                {session.competitorAdText}
+                              </p>
                             </div>
                           </div>
                           {session.bestOurAdId && (
                             <div>
                               <div className="section-label mb-2">Best Ad ID</div>
-                              <div className="font-mono text-[10px] text-[#c8a84b]">Ad #{session.bestOurAdId}</div>
+                              <span className="tag-ops tag-teal">Ad #{session.bestOurAdId}</span>
                             </div>
                           )}
                         </div>
@@ -181,10 +208,12 @@ export default function AdversarialMode() {
             })}
           </div>
         ) : (
-          <div className="bracket border border-dashed border-[#1a1a1a] p-12 text-center">
-            <Swords className="w-6 h-6 text-[#2a2a2a] mx-auto mb-4" />
+          <div className="ops-card bracket py-16 text-center">
+            <Swords size={24} style={{ color: "rgba(34,211,238,0.2)", margin: "0 auto 1rem" }} />
             <div className="section-label mb-2 text-center">No Battles Yet</div>
-            <p className="font-mono text-[10px] text-[#383838]">Create a new battle above to pit your AI-generated ads against a competitor.</p>
+            <p className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+              Create a new battle above to pit your AI-generated ads against a competitor.
+            </p>
           </div>
         )}
       </div>
