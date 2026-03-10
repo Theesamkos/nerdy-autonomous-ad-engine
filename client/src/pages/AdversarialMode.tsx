@@ -1,275 +1,190 @@
 import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { Swords, Trophy, TrendingDown, Minus, Zap, ChevronDown, ChevronUp } from "lucide-react";
+import { Swords, Plus, ChevronDown, ChevronUp, ArrowLeft, Trophy, Shield } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import { toast } from "sonner";
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 
 export default function AdversarialMode() {
   const { id } = useParams<{ id: string }>();
   const campaignId = parseInt(id || "0");
-  const [competitorText, setCompetitorText] = useState("");
-  const [competitorSource, setCompetitorSource] = useState("");
-  const [rounds, setRounds] = useState(2);
-  const [result, setResult] = useState<any>(null);
-  const [showOurAd, setShowOurAd] = useState(false);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [form, setForm] = useState({ competitorAdText: "", competitorBrand: "", rounds: 2 });
   const [isBattling, setIsBattling] = useState(false);
-  const [battleLog, setBattleLog] = useState<string[]>([]);
 
-  const { data: campaign } = trpc.campaigns.get.useQuery({ id: campaignId }, { enabled: !!campaignId });
   const { data: sessions, refetch } = trpc.adversarial.getSessions.useQuery({ campaignId }, { enabled: !!campaignId });
+  const { data: campaign } = trpc.campaigns.get.useQuery({ id: campaignId }, { enabled: !!campaignId });
 
-  const battleMutation = trpc.adversarial.runBattle.useMutation({
-    onSuccess: (data) => {
+  const runBattle = trpc.adversarial.runBattle.useMutation({
+    onSuccess: (result) => {
       setIsBattling(false);
-      setBattleLog([]);
-      setResult(data);
+      setShowNewForm(false);
+      setForm({ competitorAdText: "", competitorBrand: "", rounds: 2 });
+      toast.success("Battle complete. Our: " + result.ourBestScore.toFixed(1) + " vs Theirs: " + result.competitorScore.toFixed(1));
       refetch();
-      const icon = data.winStatus === "winning" ? "🏆" : data.winStatus === "losing" ? "😤" : "🤝";
-      toast.success(`${icon} Battle complete! ${data.winStatus === "winning" ? "We won!" : data.winStatus === "losing" ? "Competitor wins this round." : "It's a tie!"}`);
     },
-    onError: (err) => {
-      setIsBattling(false);
-      setBattleLog([]);
-      toast.error(err.message);
-    },
+    onError: (err) => { setIsBattling(false); toast.error(err.message); },
   });
 
-  const handleBattle = () => {
-    if (!competitorText.trim()) return;
-    setIsBattling(true);
-    setBattleLog([
-      "⚔️ Analyzing competitor ad...",
-      "🧠 Identifying weaknesses...",
-      "✍️ Crafting superior counter-ads...",
-    ]);
-    setTimeout(() => setBattleLog(prev => [...prev, "📊 Evaluating both sides..."]), 3000);
-    setTimeout(() => setBattleLog(prev => [...prev, "🏆 Determining winner..."]), 6000);
-    battleMutation.mutate({ campaignId, competitorAdText: competitorText, competitorSource, rounds });
-  };
-
-  const WIN_CONFIG = {
-    winning: { icon: Trophy, color: "text-green-400", bg: "bg-green-500/10 border-green-500/30", label: "WE WIN" },
-    losing: { icon: TrendingDown, color: "text-red-400", bg: "bg-red-500/10 border-red-500/30", label: "COMPETITOR WINS" },
-    tied: { icon: Minus, color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/30", label: "TIE" },
-    pending: { icon: Swords, color: "text-muted-foreground", bg: "bg-muted/30 border-border", label: "PENDING" },
-  };
+  const wins = sessions ? sessions.filter(s => s.winStatus === "winning").length : 0;
+  const winRate = sessions && sessions.length > 0 ? Math.round(wins / sessions.length * 100) : 0;
 
   return (
     <AppLayout campaignId={campaignId} campaignName={campaign?.name}>
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-pink-500/20 border border-pink-500/30 flex items-center justify-center glow-pink">
-            <Swords className="w-5 h-5 text-pink-400" />
-          </div>
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Ad-versarial Mode</h1>
-            <p className="text-sm text-muted-foreground">Pit your AI ads against real competitor ads from Meta Ad Library</p>
-          </div>
-        </div>
-
-        {/* Input */}
-        <div className="p-5 rounded-xl bg-card border border-border/50 space-y-4">
-          <h2 className="font-display font-semibold text-foreground">Enter Competitor Ad</h2>
-
-          <div className="space-y-2">
-            <Label className="text-foreground font-medium">Competitor Ad Copy</Label>
-            <Textarea
-              placeholder="Paste the competitor's ad text here. Copy it directly from Meta Ad Library or any other source..."
-              value={competitorText}
-              onChange={e => setCompetitorText(e.target.value)}
-              className="bg-input border-border text-foreground placeholder:text-muted-foreground min-h-[120px]"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-foreground font-medium">Source <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input
-                placeholder="e.g. Princeton Review, Khan Academy..."
-                value={competitorSource}
-                onChange={e => setCompetitorSource(e.target.value)}
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-              />
+      <div className="p-6 max-w-4xl mx-auto space-y-6">
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-center gap-3 mb-4">
+            <Link href={"/campaigns/" + campaignId}>
+              <button className="btn-ops btn-ops-ghost px-3 py-2 text-xs">
+                <ArrowLeft className="w-3 h-3" />
+              </button>
+            </Link>
+            <div>
+              <div className="section-label mb-1">Ad-versarial Mode</div>
+              <h1 className="text-2xl font-black text-white tracking-tight">Competitive Intelligence</h1>
             </div>
-            <div className="space-y-2">
-              <Label className="text-foreground font-medium">Battle Rounds</Label>
-              <div className="flex gap-2">
-                {[1, 2, 3].map(n => (
-                  <button
-                    key={n}
-                    onClick={() => setRounds(n)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                      rounds === n ? "bg-pink-500/20 text-pink-400 border border-pink-500/30" : "bg-muted text-muted-foreground hover:bg-accent"
-                    }`}
-                  >
-                    {n} {n === 1 ? "round" : "rounds"}
-                  </button>
-                ))}
+          </div>
+          <p className="font-mono text-[10px] text-[#383838] max-w-xl">
+            Pit your AI-generated ads against real competitor ads. The engine analyzes both, scores them across 5 dimensions, and iteratively improves your ad until it wins.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-3 gap-px bg-[#0f0f0f]">
+          {[
+            { icon: Swords, label: "Total Battles", value: sessions?.length || 0, color: "#c8a84b" },
+            { icon: Trophy, label: "Win Rate", value: winRate + "%", color: "#4ade80" },
+            { icon: Shield, label: "Campaign", value: (campaign?.name || "---").slice(0, 16), color: "#60a5fa" },
+          ].map(({ icon: Icon, label, value, color }) => (
+            <div key={label} className="bg-[#060606] px-5 py-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className="w-3 h-3" style={{ color }} />
+                <div className="section-label">{label}</div>
               </div>
+              <div className="font-mono text-xl font-black text-white">{value}</div>
             </div>
-          </div>
-
-          {isBattling ? (
-            <div className="space-y-2 p-4 rounded-lg bg-background/50 border border-border/30">
-              {battleLog.map((log, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-2 text-sm text-muted-foreground font-mono"
-                >
-                  {i === battleLog.length - 1 ? (
-                    <div className="w-3 h-3 border-2 border-pink-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                  ) : (
-                    <span className="text-green-400 flex-shrink-0">✓</span>
-                  )}
-                  {log}
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <Button
-              onClick={handleBattle}
-              disabled={!competitorText.trim()}
-              className="w-full gap-2 bg-pink-600 hover:bg-pink-700 text-white glow-pink"
-            >
-              <Swords className="w-4 h-4" />
-              Start Battle
-            </Button>
-          )}
+          ))}
         </div>
 
-        {/* Result */}
-        <AnimatePresence>
-          {result && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
-            >
-              {/* Winner banner */}
-              {(() => {
-                const cfg = WIN_CONFIG[result.winStatus as keyof typeof WIN_CONFIG];
-                const Icon = cfg.icon;
-                return (
-                  <div className={`p-5 rounded-xl border ${cfg.bg} flex items-center justify-between`}>
-                    <div className="flex items-center gap-3">
-                      <Icon className={`w-8 h-8 ${cfg.color}`} />
-                      <div>
-                        <div className={`font-display text-2xl font-bold ${cfg.color}`}>{cfg.label}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Our best: <span className={`font-bold ${cfg.color}`}>{result.ourBestScore.toFixed(1)}</span>
-                          {" vs "}
-                          Competitor: <span className="font-bold text-muted-foreground">{result.competitorScore.toFixed(1)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`font-display text-4xl font-bold ${cfg.color}`}>
-                        {(result.ourBestScore - result.competitorScore).toFixed(1) > "0" ? "+" : ""}{(result.ourBestScore - result.competitorScore).toFixed(1)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">score delta</div>
+        <div>
+          <button onClick={() => setShowNewForm(!showNewForm)} className="btn-ops btn-ops-primary w-full justify-center">
+            <Plus className="w-3 h-3" /> New Battle
+          </button>
+          <AnimatePresence>
+            {showNewForm && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="border border-[#1a1a1a] border-t-0 p-5 bg-[#060606] space-y-4">
+                  <div className="section-label">Competitor Intelligence</div>
+                  <div>
+                    <label className="block font-mono text-[9px] tracking-widest uppercase text-[#555] mb-2">Competitor Brand</label>
+                    <input type="text" placeholder="e.g. Princeton Review, Khan Academy"
+                      value={form.competitorBrand} onChange={e => setForm(f => ({ ...f, competitorBrand: e.target.value }))}
+                      className="ops-input w-full" />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[9px] tracking-widest uppercase text-[#555] mb-2">Competitor Ad Copy</label>
+                    <textarea placeholder="Paste the full competitor ad text here..."
+                      value={form.competitorAdText} onChange={e => setForm(f => ({ ...f, competitorAdText: e.target.value }))}
+                      className="ops-input w-full min-h-[120px] resize-none" />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[9px] tracking-widest uppercase text-[#555] mb-2">Battle Rounds</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3].map(n => (
+                        <button key={n} onClick={() => setForm(f => ({ ...f, rounds: n }))}
+                          className={"flex-1 py-2 font-mono text-[10px] uppercase tracking-wider border transition-all " + (form.rounds === n ? "border-[#c8a84b]/40 text-[#c8a84b] bg-[#c8a84b]/08" : "border-[#1a1a1a] text-[#555] hover:border-[#333]")}>
+                          {n} {n === 1 ? "Round" : "Rounds"}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                );
-              })()}
-
-              {/* Side by side */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Our best ad */}
-                {result.bestAd && (
-                  <div className="p-4 rounded-xl bg-card border border-green-500/20">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-xs font-semibold text-green-400 uppercase tracking-wider">Our Best Ad</div>
-                      <div className="font-display font-bold text-green-400">{result.ourBestScore.toFixed(1)}</div>
-                    </div>
-                    <div className="p-3 rounded-lg bg-background/50 border border-border/30">
-                      <p className="text-sm text-foreground leading-relaxed">{result.bestAd.primaryText}</p>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="font-semibold text-sm">{result.bestAd.headline}</span>
-                        <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400">{result.bestAd.ctaButton}</span>
-                      </div>
-                    </div>
-                    {result.bestEval && (
-                      <ResponsiveContainer width="100%" height={140} className="mt-3">
-                        <RadarChart data={[
-                          { dim: "Clarity", score: result.bestEval.scoreClarity },
-                          { dim: "Value Prop", score: result.bestEval.scoreValueProp },
-                          { dim: "CTA", score: result.bestEval.scoreCta },
-                          { dim: "Brand Voice", score: result.bestEval.scoreBrandVoice },
-                          { dim: "Emotional", score: result.bestEval.scoreEmotionalResonance },
-                        ]}>
-                          <PolarGrid stroke="oklch(0.2 0.015 260)" />
-                          <PolarAngleAxis dataKey="dim" tick={{ fill: "oklch(0.55 0.01 260)", fontSize: 10 }} />
-                          <Radar dataKey="score" stroke="oklch(0.72 0.2 145)" fill="oklch(0.72 0.2 145)" fillOpacity={0.2} />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    )}
+                  <div className="flex gap-3">
+                    <button onClick={() => setShowNewForm(false)} className="btn-ops btn-ops-ghost flex-1 justify-center">Cancel</button>
+                    <button
+                      onClick={() => { setIsBattling(true); runBattle.mutate({ campaignId, competitorAdText: form.competitorAdText, competitorSource: form.competitorBrand, rounds: form.rounds }); }}
+                      disabled={!form.competitorAdText || !form.competitorBrand || isBattling}
+                      className="btn-ops btn-ops-primary flex-1 justify-center disabled:opacity-30"
+                    >
+                      {isBattling
+                        ? <><div className="w-2.5 h-2.5 border border-[#c8a84b]/30 border-t-[#c8a84b] rounded-full animate-spin" /> Running...</>
+                        : <><Swords className="w-3 h-3" /> Run Battle</>
+                      }
+                    </button>
                   </div>
-                )}
-
-                {/* Competitor ad */}
-                <div className="p-4 rounded-xl bg-card border border-red-500/20">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-xs font-semibold text-red-400 uppercase tracking-wider">
-                      Competitor {result.competitorSource ? `(${result.competitorSource})` : ""}
-                    </div>
-                    <div className="font-display font-bold text-red-400">{result.competitorScore.toFixed(1)}</div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-background/50 border border-border/30">
-                    <p className="text-sm text-foreground leading-relaxed">{competitorText}</p>
-                  </div>
-                  {result.competitorEval && (
-                    <ResponsiveContainer width="100%" height={140} className="mt-3">
-                      <RadarChart data={[
-                        { dim: "Clarity", score: result.competitorEval.scoreClarity },
-                        { dim: "Value Prop", score: result.competitorEval.scoreValueProp },
-                        { dim: "CTA", score: result.competitorEval.scoreCta },
-                        { dim: "Brand Voice", score: result.competitorEval.scoreBrandVoice },
-                        { dim: "Emotional", score: result.competitorEval.scoreEmotionalResonance },
-                      ]}>
-                        <PolarGrid stroke="oklch(0.2 0.015 260)" />
-                        <PolarAngleAxis dataKey="dim" tick={{ fill: "oklch(0.55 0.01 260)", fontSize: 10 }} />
-                        <Radar dataKey="score" stroke="oklch(0.55 0.22 25)" fill="oklch(0.55 0.22 25)" fillOpacity={0.2} />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  )}
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-        {/* Past sessions */}
-        {sessions && sessions.length > 0 && (
-          <div>
-            <h2 className="font-display font-semibold text-foreground mb-3">Battle History</h2>
-            <div className="space-y-2">
-              {sessions.map(session => {
-                const cfg = WIN_CONFIG[session.winStatus];
-                const Icon = cfg.icon;
-                return (
-                  <div key={session.id} className={`p-3 rounded-xl border ${cfg.bg} flex items-center justify-between`}>
-                    <div className="flex items-center gap-3">
-                      <Icon className={`w-4 h-4 ${cfg.color}`} />
-                      <div>
-                        <div className="text-sm text-foreground truncate max-w-xs">{session.competitorAdText.slice(0, 60)}...</div>
-                        {session.competitorSource && <div className="text-xs text-muted-foreground">{session.competitorSource}</div>}
+        {sessions && sessions.length > 0 ? (
+          <div className="space-y-px">
+            {sessions.map((session, i) => {
+              const isExpanded = expandedId === session.id;
+              const winning = session.winStatus === "winning";
+              return (
+                <motion.div key={session.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className={"border overflow-hidden " + (winning ? "border-[#c8a84b]/20" : "border-[#1a1a1a]")}>
+                  <div className="p-4 flex items-center justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className={"w-1 min-h-[32px] flex-shrink-0 " + (winning ? "bg-[#c8a84b]" : "bg-[#1a1a1a]")} />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-mono text-[10px] font-bold text-white">{session.competitorSource || "Competitor"}</span>
+                          <span className={"font-mono text-[8px] px-2 py-0.5 uppercase tracking-wider border " + (session.winStatus === "winning" ? "text-[#c8a84b] border-[#c8a84b]/20" : session.winStatus === "losing" ? "text-[#f87171] border-[#f87171]/20" : "text-[#555] border-[#1a1a1a]")}>
+                            {session.winStatus}
+                          </span>
+                        </div>
+                        <p className="font-mono text-[9px] text-[#383838] truncate">{(session.competitorAdText || "").slice(0, 80)}...</p>
                       </div>
                     </div>
-                    <div className={`text-xs font-bold ${cfg.color}`}>{cfg.label}</div>
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      <div className="text-right">
+                        <div className="font-mono text-[8px] text-[#555] mb-0.5">Rounds</div>
+                        <div className="font-mono text-sm font-black text-white">{session.roundsCompleted}</div>
+                      </div>
+                      <button onClick={() => setExpandedId(isExpanded ? null : session.id)} className="text-[#333] hover:text-[#c8a84b] transition-colors">
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
+                        className="border-t border-[#0f0f0f] overflow-hidden">
+                        <div className="p-5 space-y-4">
+                          <div>
+                            <div className="section-label mb-3">Competitor Ad</div>
+                            <div className="border border-[#1a1a1a] p-3 bg-black">
+                              <p className="font-mono text-[10px] text-[#555] leading-relaxed">{session.competitorAdText}</p>
+                            </div>
+                          </div>
+                          {session.bestOurAdId && (
+                            <div>
+                              <div className="section-label mb-2">Best Ad ID</div>
+                              <div className="font-mono text-[10px] text-[#c8a84b]">Ad #{session.bestOurAdId}</div>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bracket border border-dashed border-[#1a1a1a] p-12 text-center">
+            <Swords className="w-6 h-6 text-[#2a2a2a] mx-auto mb-4" />
+            <div className="section-label mb-2 text-center">No Battles Yet</div>
+            <p className="font-mono text-[10px] text-[#383838]">Create a new battle above to pit your AI-generated ads against a competitor.</p>
           </div>
         )}
       </div>

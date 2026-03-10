@@ -1,327 +1,296 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { motion } from "framer-motion";
-import {
-  Zap, Brain, TrendingUp, Swords, Sparkles, BarChart3,
-  ArrowRight, Bot, Shield, Target, Cpu, ChevronRight
-} from "lucide-react";
+import { ArrowRight, Cpu, Shield, Zap, BarChart3, Brain, Target, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
 
 const FEATURES = [
   {
-    icon: Zap,
-    color: "oklch(0.65 0.22 260)",
-    glowClass: "glow-blue",
-    title: "Real-Time Generation",
-    desc: "Watch AI craft high-converting Facebook & Instagram ads token by token with live streaming output.",
-  },
-  {
-    icon: Brain,
-    color: "oklch(0.6 0.25 295)",
-    glowClass: "glow-purple",
-    title: "5-Dimension Evaluation",
-    desc: "LLM-as-judge scores every ad on Clarity, Value Prop, CTA, Brand Voice & Emotional Resonance.",
+    icon: Cpu,
+    code: "01",
+    title: "Autonomous Generation",
+    body: "LLM-powered pipeline writes, evaluates, and self-heals ad copy without human intervention. Streaming output visible in real time.",
   },
   {
     icon: Shield,
-    color: "oklch(0.72 0.2 145)",
-    glowClass: "glow-green",
+    code: "02",
+    title: "5-Dimension Evaluation",
+    body: "Every ad is scored on Clarity, Value Proposition, CTA, Brand Voice, and Emotional Resonance by a second LLM acting as judge.",
+  },
+  {
+    icon: Zap,
+    code: "03",
     title: "Self-Healing Loops",
-    desc: "Detects quality drops, diagnoses root causes, and auto-triggers targeted improvement strategies.",
+    body: "Quality drops are detected, root causes diagnosed, and alternative generation strategies triggered automatically.",
   },
   {
-    icon: TrendingUp,
-    color: "oklch(0.72 0.2 55)",
-    glowClass: "",
+    icon: BarChart3,
+    code: "04",
     title: "Quality Ratchet",
-    desc: "Progressively raises the minimum quality bar as the engine learns what works for your brand.",
+    body: "Minimum quality thresholds rise progressively as the engine improves. The bar never drops once it has been raised.",
   },
   {
-    icon: Swords,
-    color: "oklch(0.65 0.25 340)",
-    glowClass: "glow-pink",
+    icon: Brain,
+    code: "05",
     title: "Ad-versarial Mode",
-    desc: "Pit your AI-generated ads against real competitor ads from Meta Ad Library. Win every battle.",
+    body: "Pit AI-generated ads against real competitor creatives from the Meta Ad Library. Iterate until you win.",
   },
   {
-    icon: Sparkles,
-    color: "oklch(0.75 0.18 200)",
-    glowClass: "glow-cyan",
+    icon: Target,
+    code: "06",
     title: "Creative Spark",
-    desc: "Unconstrained LLM mode generates wild, out-of-the-box ideas presented as inspirational cards.",
+    body: "Unconstrained generation mode produces wild, out-of-the-box ideas presented as high-contrast inspiration cards.",
   },
 ];
 
 const STATS = [
-  { value: "9", label: "AI Features" },
+  { value: "9", label: "AI Pipeline Stages" },
   { value: "5", label: "Quality Dimensions" },
-  { value: "3x", label: "Faster Iteration" },
-  { value: "∞", label: "Creative Potential" },
+  { value: "100x", label: "Optimization Target" },
+  { value: "v3", label: "Engine Version" },
 ];
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* Ambient background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
-        <div className="absolute top-[20%] right-[-15%] w-[500px] h-[500px] rounded-full bg-purple-500/5 blur-[120px]" />
-        <div className="absolute bottom-[-10%] left-[30%] w-[400px] h-[400px] rounded-full bg-cyan-500/5 blur-[100px]" />
-      </div>
-
-      {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-border/30 backdrop-blur-sm bg-background/50">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center glow-blue">
-            <Bot className="w-4 h-4 text-primary" />
-          </div>
-          <div>
-            <span className="font-display font-bold text-sm text-foreground">AdEngine</span>
-            <span className="text-muted-foreground text-sm"> by Nerdy × AI</span>
-          </div>
-        </div>
+    <div className="relative min-h-screen bg-black overflow-hidden">
+      {/* ── NAV ── */}
+      <nav className="relative z-20 flex items-center justify-between px-8 py-5 border-b border-white/5">
         <div className="flex items-center gap-3">
-          {isAuthenticated ? (
-            <Link href="/dashboard">
-              <Button size="sm" className="gap-2 glow-blue">
-                <LayoutDashboard className="w-4 h-4" />
-                Open Dashboard
-              </Button>
-            </Link>
-          ) : (
-            <a href={getLoginUrl()}>
-              <Button size="sm" className="gap-2 glow-blue">
-                Get Started <ArrowRight className="w-4 h-4" />
-              </Button>
-            </a>
+          <div className="w-7 h-7 border border-[#c8a84b] flex items-center justify-center">
+            <div className="w-3 h-3 bg-[#c8a84b]" />
+          </div>
+          <span className="font-mono text-xs font-bold tracking-[0.18em] uppercase text-white">
+            AdEngine
+          </span>
+          <span className="font-mono text-[9px] tracking-widest text-[#383838] ml-1">v3</span>
+        </div>
+
+        <div className="hidden md:flex items-center gap-8">
+          {["System", "Features", "Intelligence"].map(item => (
+            <span key={item} className="font-mono text-[10px] tracking-[0.14em] uppercase text-[#555] hover:text-[#c8a84b] cursor-pointer transition-colors">
+              {item}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          {!loading && (
+            isAuthenticated ? (
+              <Link href="/dashboard">
+                <button className="btn-ops btn-ops-primary">
+                  Enter System <ArrowRight className="w-3 h-3" />
+                </button>
+              </Link>
+            ) : (
+              <a href={getLoginUrl()}>
+                <button className="btn-ops btn-ops-primary">
+                  Request Access <ArrowRight className="w-3 h-3" />
+                </button>
+              </a>
+            )
           )}
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative z-10 max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
+      {/* ── HERO ── */}
+      <section className="relative z-10 px-8 pt-24 pb-20 max-w-6xl mx-auto">
+        {/* Status bar */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center gap-4 mb-12"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-medium mb-6">
-            <Cpu className="w-3.5 h-3.5" />
-            Autonomous Ad Copy Generation · v3.0
-          </div>
-
-          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight mb-6">
-            <span className="text-foreground">The AI that writes</span>
-            <br />
-            <span className="gradient-text">ads that actually convert.</span>
-          </h1>
-
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            A self-improving, self-healing ad copy engine built for Varsity Tutors. Generate, evaluate, iterate, and win — all powered by autonomous AI with real-time quality intelligence.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            {isAuthenticated ? (
-              <>
-                <Link href="/dashboard">
-                  <Button size="lg" className="gap-2 px-8 glow-blue font-semibold">
-                    Open Dashboard <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Link href="/campaigns/new">
-                  <Button size="lg" variant="outline" className="gap-2 px-8">
-                    <Zap className="w-4 h-4" />
-                    New Campaign
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <a href={getLoginUrl()}>
-                  <Button size="lg" className="gap-2 px-8 glow-blue font-semibold">
-                    Start Generating <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </a>
-                <Button size="lg" variant="outline" className="gap-2 px-8" onClick={() => {}}>
-                  <Sparkles className="w-4 h-4" />
-                  See Demo
-                </Button>
-              </>
-            )}
-          </div>
+          <div className="status-live">SYSTEM ONLINE</div>
+          <div className="w-px h-3 bg-[#222]" />
+          <span className="font-mono text-[9px] tracking-widest text-[#383838] uppercase">
+            Autonomous Content Generation Engine
+          </span>
         </motion.div>
 
-        {/* Stats */}
+        {/* Main headline */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="grid grid-cols-4 gap-6 mt-16 max-w-2xl mx-auto"
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mb-8"
         >
-          {STATS.map(({ value, label }) => (
-            <div key={label} className="text-center">
-              <div className="font-display text-3xl font-bold gradient-text">{value}</div>
-              <div className="text-xs text-muted-foreground mt-1">{label}</div>
+          <h1 className="text-[clamp(3rem,8vw,7rem)] font-black leading-[0.92] tracking-[-0.03em] text-white">
+            We Engineer
+            <br />
+            <span style={{ color: "#c8a84b" }}>Ad Intelligence.</span>
+          </h1>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-[#666] text-lg max-w-xl leading-relaxed mb-12 font-light"
+        >
+          An autonomous pipeline that generates, evaluates, self-heals, and
+          progressively improves ad copy — without human intervention.
+          Built for Facebook and Instagram. Powered by LLM-as-judge.
+        </motion.p>
+
+        {/* CTA row */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="flex items-center gap-4 flex-wrap"
+        >
+          {isAuthenticated ? (
+            <Link href="/dashboard">
+              <button className="btn-ops btn-ops-primary text-sm px-6 py-3">
+                Launch Engine <ArrowRight className="w-4 h-4" />
+              </button>
+            </Link>
+          ) : (
+            <a href={getLoginUrl()}>
+              <button className="btn-ops btn-ops-primary text-sm px-6 py-3">
+                Request Access <ArrowRight className="w-4 h-4" />
+              </button>
+            </a>
+          )}
+          <button className="btn-ops btn-ops-ghost text-sm px-6 py-3">
+            View Architecture
+          </button>
+        </motion.div>
+
+        {/* Stats row */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-px mt-20 border border-[#111]"
+        >
+          {STATS.map((s, i) => (
+            <div key={i} className="px-6 py-5 bg-[#080808] border-r border-[#111] last:border-r-0">
+              <div className="font-mono text-3xl font-black text-white mb-1">{s.value}</div>
+              <div className="section-label">{s.label}</div>
             </div>
           ))}
         </motion.div>
       </section>
 
-      {/* Live Preview Mockup */}
-      <section className="relative z-10 max-w-5xl mx-auto px-6 pb-16">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.4 }}
-          className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-2xl"
-          style={{ boxShadow: "0 0 80px oklch(0.65 0.22 260 / 0.1), 0 25px 50px rgba(0,0,0,0.5)" }}
-        >
-          {/* Terminal-style header */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-muted/30">
-            <div className="w-3 h-3 rounded-full bg-red-500/70" />
-            <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
-            <div className="w-3 h-3 rounded-full bg-green-500/70" />
-            <div className="flex-1 mx-4">
-              <div className="bg-background/50 rounded px-3 py-1 text-xs text-muted-foreground font-mono text-center">
-                adengine.nerdy.ai · Autonomous Generation Pipeline
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-500 pulse-dot" />
-              <span className="text-xs text-green-400 font-mono">LIVE</span>
-            </div>
-          </div>
+      {/* ── FEATURES GRID ── */}
+      <section className="relative z-10 px-8 py-20 max-w-6xl mx-auto">
+        <div className="flex items-center gap-4 mb-12">
+          <div className="section-label">System Capabilities</div>
+          <div className="flex-1 h-px bg-[#111]" />
+          <div className="font-mono text-[9px] text-[#383838]">06 MODULES</div>
+        </div>
 
-          {/* Mock UI */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-            {/* Left: Generation */}
-            <div className="p-6 border-r border-border/30">
-              <div className="text-xs font-mono text-muted-foreground mb-3 flex items-center gap-2">
-                <Zap className="w-3.5 h-3.5 text-primary" />
-                GENERATING · Iteration 2/3
-              </div>
-              <div className="space-y-3">
-                <div className="h-4 shimmer rounded w-full" />
-                <div className="h-4 shimmer rounded w-5/6" />
-                <div className="h-4 shimmer rounded w-4/5" />
-                <div className="h-3 shimmer rounded w-1/2 mt-4" />
-                <div className="h-3 shimmer rounded w-2/3" />
-              </div>
-              <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
-                <div className="text-xs text-primary font-mono">
-                  ▸ Unlock your child's potential with expert 1-on-1 SAT tutoring...
-                  <span className="typing-cursor" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-[#111]">
+          {FEATURES.map((f, i) => (
+            <motion.div
+              key={f.code}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.07 }}
+              className="bracket bg-[#060606] p-8 group hover:bg-[#0a0a0a] transition-colors cursor-pointer"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="w-9 h-9 border border-[#1a1a1a] flex items-center justify-center group-hover:border-[#c8a84b]/30 transition-colors">
+                  <f.icon className="w-4 h-4 text-[#555] group-hover:text-[#c8a84b] transition-colors" />
                 </div>
+                <span className="font-mono text-[10px] text-[#2a2a2a] group-hover:text-[#c8a84b]/40 transition-colors">{f.code}</span>
               </div>
-            </div>
-
-            {/* Right: Scores */}
-            <div className="p-6">
-              <div className="text-xs font-mono text-muted-foreground mb-3 flex items-center gap-2">
-                <Brain className="w-3.5 h-3.5 text-purple-400" />
-                EVALUATING · 5 Dimensions
+              <h3 className="font-bold text-white text-base mb-3 tracking-tight">{f.title}</h3>
+              <p className="text-[#555] text-sm leading-relaxed">{f.body}</p>
+              <div className="mt-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="font-mono text-[9px] text-[#c8a84b] tracking-widest uppercase">Explore</span>
+                <ChevronRight className="w-3 h-3 text-[#c8a84b]" />
               </div>
-              <div className="space-y-2.5">
-                {[
-                  { label: "Clarity", score: 8.4, color: "oklch(0.65 0.22 260)" },
-                  { label: "Value Prop", score: 9.1, color: "oklch(0.72 0.2 145)" },
-                  { label: "CTA", score: 7.8, color: "oklch(0.72 0.2 55)" },
-                  { label: "Brand Voice", score: 8.6, color: "oklch(0.6 0.25 295)" },
-                  { label: "Emotional", score: 9.3, color: "oklch(0.65 0.25 340)" },
-                ].map(({ label, score, color }) => (
-                  <div key={label} className="flex items-center gap-3">
-                    <div className="w-20 text-xs text-muted-foreground">{label}</div>
-                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${score * 10}%` }}
-                        transition={{ duration: 1, delay: 0.5 + Math.random() * 0.5 }}
-                        className="h-full rounded-full"
-                        style={{ background: color }}
-                      />
-                    </div>
-                    <div className="w-8 text-xs font-mono text-right" style={{ color }}>{score}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                <span className="text-xs text-green-400 font-medium">Weighted Score</span>
-                <span className="text-lg font-display font-bold text-green-400">8.64</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="relative z-10 max-w-5xl mx-auto px-6 pb-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-        >
-          <div className="text-center mb-12">
-            <h2 className="font-display text-3xl font-bold text-foreground mb-3">
-              Every feature you need to dominate Meta ads
-            </h2>
-            <p className="text-muted-foreground">9 AI-powered capabilities working in concert</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {FEATURES.map(({ icon: Icon, color, glowClass, title, desc }, i) => (
-              <motion.div
-                key={title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.6 + i * 0.07 }}
-                className="p-5 rounded-xl bg-card border border-border/50 hover:border-border transition-all duration-200 group"
-              >
-                <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 transition-all duration-200 group-hover:${glowClass}`}
-                  style={{ background: `${color}20`, border: `1px solid ${color}40` }}
-                >
-                  <Icon className="w-5 h-5" style={{ color }} />
-                </div>
-                <h3 className="font-display font-semibold text-foreground mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-      {/* CTA */}
-      <section className="relative z-10 max-w-3xl mx-auto px-6 pb-20 text-center">
-        <div className="p-10 rounded-2xl bg-card border border-border/50 gradient-border">
-          <h2 className="font-display text-3xl font-bold text-foreground mb-4">
-            Ready to build ads that win?
-          </h2>
-          <p className="text-muted-foreground mb-8">
-            Create your first campaign and watch the autonomous engine go to work.
-          </p>
-          {isAuthenticated ? (
-            <Link href="/campaigns/new">
-              <Button size="lg" className="gap-2 px-10 glow-blue font-semibold">
-                Launch First Campaign <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          ) : (
-            <a href={getLoginUrl()}>
-              <Button size="lg" className="gap-2 px-10 glow-blue font-semibold">
-                Get Started Free <ArrowRight className="w-4 h-4" />
-              </Button>
-            </a>
-          )}
+            </motion.div>
+          ))}
         </div>
       </section>
+
+      {/* ── PIPELINE DIAGRAM ── */}
+      <section className="relative z-10 px-8 py-20 max-w-6xl mx-auto">
+        <div className="flex items-center gap-4 mb-12">
+          <div className="section-label">Autonomous Pipeline</div>
+          <div className="flex-1 h-px bg-[#111]" />
+        </div>
+
+        <div className="bracket border border-[#111] p-8 bg-[#060606]">
+          <div className="flex flex-wrap items-center gap-0">
+            {[
+              { label: "INPUT", sub: "Brand Brief", color: "#c8a84b" },
+              { label: "GENERATE", sub: "LLM Write", color: "#a78bfa" },
+              { label: "EVALUATE", sub: "LLM Judge", color: "#60a5fa" },
+              { label: "SELF-HEAL", sub: "Root Cause", color: "#f87171" },
+              { label: "RATCHET", sub: "Raise Bar", color: "#4ade80" },
+              { label: "APPROVE", sub: "Ship It", color: "#c8a84b" },
+            ].map((step, i, arr) => (
+              <div key={step.label} className="flex items-center">
+                <div className="flex flex-col items-center py-4 px-5">
+                  <div
+                    className="font-mono text-[10px] font-bold tracking-[0.12em] mb-1"
+                    style={{ color: step.color }}
+                  >
+                    {step.label}
+                  </div>
+                  <div className="font-mono text-[9px] text-[#383838]">{step.sub}</div>
+                </div>
+                {i < arr.length - 1 && (
+                  <div className="flex items-center gap-1 px-1">
+                    <div className="w-6 h-px bg-[#222]" />
+                    <div className="w-1 h-1 bg-[#333]" style={{ clipPath: "polygon(0 50%, 100% 0, 100% 100%)" }} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 pt-6 border-t border-[#111] flex items-center gap-3">
+            <div className="status-live">PIPELINE ACTIVE</div>
+            <span className="font-mono text-[9px] text-[#383838]">
+              All stages operational. Self-healing enabled. Quality ratchet at baseline 7.0.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── BOTTOM CTA ── */}
+      <section className="relative z-10 px-8 py-24 max-w-6xl mx-auto text-center">
+        <div className="section-label mb-6 text-center">Ready to Deploy</div>
+        <h2 className="text-[clamp(2rem,5vw,4.5rem)] font-black leading-tight tracking-tight text-white mb-6">
+          Your ads, engineered.
+        </h2>
+        <p className="text-[#555] text-base max-w-md mx-auto mb-10">
+          Build a campaign. Watch the engine work. Approve what passes the bar.
+        </p>
+        {isAuthenticated ? (
+          <Link href="/campaigns/new">
+            <button className="btn-ops btn-ops-primary text-sm px-8 py-4">
+              Create First Campaign <ArrowRight className="w-4 h-4" />
+            </button>
+          </Link>
+        ) : (
+          <a href={getLoginUrl()}>
+            <button className="btn-ops btn-ops-primary text-sm px-8 py-4">
+              Request Access <ArrowRight className="w-4 h-4" />
+            </button>
+          </a>
+        )}
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="relative z-10 border-t border-[#0f0f0f] px-8 py-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 border border-[#c8a84b]/30 flex items-center justify-center">
+            <div className="w-2 h-2 bg-[#c8a84b]/50" />
+          </div>
+          <span className="font-mono text-[9px] text-[#2a2a2a] tracking-widest uppercase">AdEngine v3</span>
+        </div>
+        <div className="font-mono text-[9px] text-[#2a2a2a] tracking-widest">
+          AUTONOMOUS CONTENT GENERATION SYSTEM
+        </div>
+      </footer>
     </div>
   );
-}
-
-// Missing import fix
-function LayoutDashboard(props: any) {
-  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
 }
