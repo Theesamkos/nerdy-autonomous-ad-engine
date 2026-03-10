@@ -110,3 +110,13 @@
 - [x] CSV/PDF Export on PerformanceTracker
 - [x] TypeScript: 0 errors + 17/17 tests passing
 - [x] Checkpoint + delivery
+
+## Phase 14: Context-Aware Sidebar Navigation
+
+- [x] Fix 404 on /adversarial — route is campaign-scoped (/campaigns/:id/adversarial)
+- [x] Rebuild AppLayout sidebar: context-aware (top-level nav vs campaign sub-nav)
+- [x] Campaign sub-nav: Overview, Adversarial Mode, Creative Spark, Performance Tracker
+- [x] Active campaign name shown in sidebar header when in campaign context
+- [x] Back to Dashboard breadcrumb when in campaign context
+- [x] TypeScript: 0 errors + tests passing
+- [x] Checkpoint + delivery

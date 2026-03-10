@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Zap, Swords, Sparkles, BarChart3,
-  LogOut, LogIn, ChevronRight, Menu, Plus, Brain, Cpu
+  LogOut, LogIn, ChevronRight, ChevronLeft, Menu, Plus, Brain, ArrowLeft
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -15,12 +15,10 @@ interface AppLayoutProps {
   campaignName?: string;
 }
 
-const NAV_ITEMS = [
-  { href: "/dashboard",      icon: LayoutDashboard, label: "Dashboard",      sub: "Mission Control", code: "01" },
-  { href: "/campaigns/new",  icon: Plus,            label: "New Campaign",   sub: "Launch Pipeline", code: "02" },
-  { href: "/adversarial",    icon: Swords,          label: "Ad-versarial",   sub: "Competitor Mode", code: "03" },
-  { href: "/creative-spark", icon: Sparkles,        label: "Creative Spark", sub: "Idea Generator",  code: "04" },
-  { href: "/performance",    icon: BarChart3,        label: "Performance",    sub: "Analytics",       code: "05" },
+// Top-level navigation — always available
+const TOP_NAV = [
+  { href: "/dashboard",     icon: LayoutDashboard, label: "Dashboard",     sub: "Mission Control" },
+  { href: "/campaigns/new", icon: Plus,            label: "New Campaign",  sub: "Launch Pipeline" },
 ];
 
 export default function AppLayout({ children, campaignId, campaignName }: AppLayoutProps) {
@@ -28,6 +26,19 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { data: campaigns } = trpc.campaigns.list.useQuery(undefined, { enabled: isAuthenticated });
+
+  // Determine if we're inside a campaign context
+  const inCampaign = !!campaignId;
+
+  // Campaign-scoped sub-nav — only shown when inside a campaign
+  const CAMPAIGN_NAV = campaignId
+    ? [
+        { href: `/campaigns/${campaignId}`,               icon: Zap,      label: "Generator",      sub: "Ad Pipeline" },
+        { href: `/campaigns/${campaignId}/adversarial`,   icon: Swords,   label: "Ad-versarial",   sub: "Competitor Mode" },
+        { href: `/campaigns/${campaignId}/spark`,         icon: Sparkles, label: "Creative Spark", sub: "Idea Generator" },
+        { href: `/campaigns/${campaignId}/performance`,   icon: BarChart3, label: "Performance",   sub: "Analytics" },
+      ]
+    : [];
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -61,100 +72,134 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
         </div>
       </div>
 
-      {/* Main Nav */}
-      <nav className="px-3 py-4 space-y-0.5">
-        <div className="px-2 mb-3" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(34,211,238,0.3)" }}>Navigation</div>
-        {NAV_ITEMS.map(item => {
-          const active = location === item.href || (item.href !== "/dashboard" && location.startsWith(item.href));
-          return (
-            <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
+      {/* ── CAMPAIGN CONTEXT NAV ── */}
+      {inCampaign ? (
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          {/* Back to Dashboard */}
+          <div className="px-3 pt-4 pb-2">
+            <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
               <div
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150"
-                style={{
-                  background: active ? "rgba(34,211,238,0.07)" : "transparent",
-                  border: active ? "1px solid rgba(34,211,238,0.16)" : "1px solid transparent",
-                  boxShadow: active ? "inset 2px 0 0 rgba(34,211,238,0.55)" : "none",
-                }}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 group"
+                style={{ border: "1px solid rgba(34,211,238,0.08)" }}
               >
-                <item.icon size={14} style={{ color: active ? "#22d3ee" : "rgba(100,116,139,0.7)", flexShrink: 0 }} />
-                <div className="flex-1 min-w-0">
-                  <div className="font-mono truncate" style={{ color: active ? "#e2e8f0" : "rgba(100,116,139,0.8)", fontSize: "0.68rem", letterSpacing: "0.04em", fontWeight: active ? 600 : 400 }}>
-                    {item.label}
-                  </div>
-                  <div className="font-mono truncate" style={{ fontSize: "0.56rem", color: active ? "rgba(34,211,238,0.45)" : "rgba(71,85,105,0.7)", letterSpacing: "0.06em" }}>
-                    {item.sub}
-                  </div>
-                </div>
-                {active && <ChevronRight size={11} style={{ color: "rgba(34,211,238,0.4)", flexShrink: 0 }} />}
+                <ArrowLeft size={12} style={{ color: "rgba(34,211,238,0.45)" }} />
+                <span className="font-mono" style={{ fontSize: "0.6rem", color: "rgba(34,211,238,0.45)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                  All Campaigns
+                </span>
               </div>
             </Link>
-          );
-        })}
-      </nav>
+          </div>
 
-      {/* Campaign Tools */}
-      {campaignId && (
-        <div className="px-3 py-3" style={{ borderTop: "1px solid rgba(34,211,238,0.05)" }}>
-          <div className="px-2 mb-2" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.56rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(34,211,238,0.3)" }}>Campaign Tools</div>
+          {/* Active Campaign Name */}
           {campaignName && (
-            <div className="px-2 mb-2">
-              <div className="font-mono truncate" style={{ fontSize: "0.62rem", color: "rgba(34,211,238,0.5)" }}>{campaignName}</div>
+            <div className="px-5 py-3" style={{ borderBottom: "1px solid rgba(34,211,238,0.05)" }}>
+              <div className="font-mono" style={{ fontSize: "0.56rem", color: "rgba(34,211,238,0.35)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: "4px" }}>
+                Active Campaign
+              </div>
+              <div className="font-mono font-semibold truncate" style={{ fontSize: "0.72rem", color: "#e2e8f0" }}>
+                {campaignName}
+              </div>
             </div>
           )}
-          <div className="space-y-0.5">
-            {[
-              { href: `/campaigns/${campaignId}`,             icon: Zap,       label: "Generator" },
-              { href: `/campaigns/${campaignId}/performance`, icon: BarChart3, label: "Performance" },
-            ].map(item => {
+
+          {/* Campaign Sub-Nav */}
+          <nav className="px-3 py-4 space-y-0.5">
+            <div className="px-2 mb-3" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(34,211,238,0.3)" }}>
+              Campaign Tools
+            </div>
+            {CAMPAIGN_NAV.map(item => {
               const active = location === item.href;
               return (
                 <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
                   <div
-                    className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-all"
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150"
                     style={{
-                      background: active ? "rgba(34,211,238,0.06)" : "transparent",
-                      border: active ? "1px solid rgba(34,211,238,0.12)" : "1px solid transparent",
+                      background: active ? "rgba(34,211,238,0.07)" : "transparent",
+                      border: active ? "1px solid rgba(34,211,238,0.16)" : "1px solid transparent",
+                      boxShadow: active ? "inset 2px 0 0 rgba(34,211,238,0.55)" : "none",
                     }}
                   >
-                    <item.icon size={12} style={{ color: active ? "#22d3ee" : "rgba(100,116,139,0.5)", flexShrink: 0 }} />
-                    <span className="font-mono" style={{ fontSize: "0.62rem", color: active ? "#e2e8f0" : "rgba(100,116,139,0.6)", letterSpacing: "0.06em" }}>
-                      {item.label}
-                    </span>
+                    <item.icon size={14} style={{ color: active ? "#22d3ee" : "rgba(100,116,139,0.7)", flexShrink: 0 }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-mono truncate" style={{ color: active ? "#e2e8f0" : "rgba(100,116,139,0.8)", fontSize: "0.68rem", letterSpacing: "0.04em", fontWeight: active ? 600 : 400 }}>
+                        {item.label}
+                      </div>
+                      <div className="font-mono truncate" style={{ fontSize: "0.56rem", color: active ? "rgba(34,211,238,0.45)" : "rgba(71,85,105,0.7)", letterSpacing: "0.06em" }}>
+                        {item.sub}
+                      </div>
+                    </div>
+                    {active && <ChevronRight size={11} style={{ color: "rgba(34,211,238,0.4)", flexShrink: 0 }} />}
                   </div>
                 </Link>
               );
             })}
-          </div>
+          </nav>
         </div>
-      )}
-
-      {/* Recent Campaigns */}
-      {campaigns && campaigns.length > 0 && (
-        <div className="px-3 py-3 flex-1 overflow-y-auto" style={{ borderTop: "1px solid rgba(34,211,238,0.05)" }}>
-          <div className="px-2 mb-2" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.56rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(34,211,238,0.3)" }}>Recent</div>
-          <div className="space-y-0.5">
-            {campaigns.slice(0, 5).map(c => {
-              const active = campaignId === c.id;
+      ) : (
+        /* ── TOP-LEVEL NAV ── */
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          {/* Main Nav */}
+          <nav className="px-3 py-4 space-y-0.5">
+            <div className="px-2 mb-3" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.58rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(34,211,238,0.3)" }}>
+              Navigation
+            </div>
+            {TOP_NAV.map(item => {
+              const active = location === item.href || (item.href !== "/dashboard" && location.startsWith(item.href));
               return (
-                <Link key={c.id} href={`/campaigns/${c.id}`} onClick={() => setMobileOpen(false)}>
+                <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
                   <div
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-all"
-                    style={{ background: active ? "rgba(34,211,238,0.05)" : "transparent" }}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150"
+                    style={{
+                      background: active ? "rgba(34,211,238,0.07)" : "transparent",
+                      border: active ? "1px solid rgba(34,211,238,0.16)" : "1px solid transparent",
+                      boxShadow: active ? "inset 2px 0 0 rgba(34,211,238,0.55)" : "none",
+                    }}
                   >
-                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: active ? "#22d3ee" : "rgba(71,85,105,0.5)" }} />
-                    <span className="font-mono truncate flex-1" style={{ fontSize: "0.62rem", color: active ? "#e2e8f0" : "rgba(100,116,139,0.6)" }}>
-                      {c.name}
-                    </span>
-                    {active && <ChevronRight size={10} style={{ color: "rgba(34,211,238,0.35)", flexShrink: 0 }} />}
+                    <item.icon size={14} style={{ color: active ? "#22d3ee" : "rgba(100,116,139,0.7)", flexShrink: 0 }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-mono truncate" style={{ color: active ? "#e2e8f0" : "rgba(100,116,139,0.8)", fontSize: "0.68rem", letterSpacing: "0.04em", fontWeight: active ? 600 : 400 }}>
+                        {item.label}
+                      </div>
+                      <div className="font-mono truncate" style={{ fontSize: "0.56rem", color: active ? "rgba(34,211,238,0.45)" : "rgba(71,85,105,0.7)", letterSpacing: "0.06em" }}>
+                        {item.sub}
+                      </div>
+                    </div>
+                    {active && <ChevronRight size={11} style={{ color: "rgba(34,211,238,0.4)", flexShrink: 0 }} />}
                   </div>
                 </Link>
               );
             })}
-          </div>
+          </nav>
+
+          {/* Recent Campaigns */}
+          {campaigns && campaigns.length > 0 && (
+            <div className="px-3 py-3" style={{ borderTop: "1px solid rgba(34,211,238,0.05)" }}>
+              <div className="px-2 mb-2" style={{ fontFamily: "JetBrains Mono, monospace", fontSize: "0.56rem", fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(34,211,238,0.3)" }}>
+                Recent Campaigns
+              </div>
+              <div className="space-y-0.5">
+                {campaigns.slice(0, 6).map(c => {
+                  const active = location === `/campaigns/${c.id}`;
+                  return (
+                    <Link key={c.id} href={`/campaigns/${c.id}`} onClick={() => setMobileOpen(false)}>
+                      <div
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-all"
+                        style={{ background: active ? "rgba(34,211,238,0.05)" : "transparent" }}
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: active ? "#22d3ee" : "rgba(71,85,105,0.5)" }} />
+                        <span className="font-mono truncate flex-1" style={{ fontSize: "0.62rem", color: active ? "#e2e8f0" : "rgba(100,116,139,0.6)" }}>
+                          {c.name}
+                        </span>
+                        {active && <ChevronRight size={10} style={{ color: "rgba(34,211,238,0.35)", flexShrink: 0 }} />}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
-
-      <div className="flex-1" />
 
       {/* User */}
       <div className="px-3 pb-4 pt-3" style={{ borderTop: "1px solid rgba(34,211,238,0.06)" }}>
@@ -276,6 +321,12 @@ export default function AppLayout({ children, campaignId, campaignName }: AppLay
           <div className="flex items-center gap-2">
             <Brain size={16} style={{ color: "#22d3ee" }} />
             <span className="font-display font-bold text-sm" style={{ color: "#f8fafc" }}>AdEngine</span>
+            {campaignName && (
+              <>
+                <ChevronRight size={12} style={{ color: "rgba(34,211,238,0.3)" }} />
+                <span className="font-mono text-xs truncate max-w-[120px]" style={{ color: "rgba(34,211,238,0.6)" }}>{campaignName}</span>
+              </>
+            )}
           </div>
           <div className="ml-auto">
             <span className="status-live">Online</span>
