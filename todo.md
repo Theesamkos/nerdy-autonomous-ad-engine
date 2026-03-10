@@ -93,7 +93,7 @@
 - [x] Rebuild features grid — 3-col, icon+tag row, hook line in accent color
 - [x] Remove redundant bottom CTA section
 - [x] TypeScript: 0 errors
-- [ ] Checkpoint + delivery
+- [x] Checkpoint + delivery
 
 ## Phase 11: Home Page Spacing Pass
 
@@ -101,4 +101,12 @@
 - [x] Increase internal card padding and gap between feature cards
 - [x] Add more breathing room between headline, subtext, CTAs, and trust signals
 - [x] Hero: full-viewport-height with golden ratio vertical centering
+- [x] Checkpoint + delivery
+
+## Phase 13: GitHub Push + Next Features
+
+- [x] Push Manus project to GitHub
+- [x] Bulk × 5 Generation Mode — backend bulkGenerate procedure + frontend UI
+- [x] CSV/PDF Export on PerformanceTracker
+- [x] TypeScript: 0 errors + 17/17 tests passing
 - [x] Checkpoint + delivery

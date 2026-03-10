@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Brain, CheckCircle2, XCircle, Swords, Sparkles,
   BarChart3, ChevronDown, ChevronUp, Target, DollarSign, Award,
-  SlidersHorizontal, Save, ArrowLeft, Copy, Check, Activity, Smartphone
+  SlidersHorizontal, Save, ArrowLeft, Copy, Check, Activity, Smartphone, Layers, Trophy
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "wouter";
@@ -293,6 +293,52 @@ export default function CampaignDetail() {
     onError: (err) => toast.error(err.message),
   });
 
+  const [isBulkGenerating, setIsBulkGenerating] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ winnerId: number; winnerScore: number; totalAdsGenerated: number; approvedCount: number } | null>(null);
+
+  const bulkGenerateMutation = trpc.ads.bulkGenerate.useMutation({
+    onSuccess: (result) => {
+      setIsBulkGenerating(false);
+      setIsGenerating(false);
+      setLogStep(0);
+      refetchAds();
+      refetchAnalytics();
+      setBulkResult({
+        winnerId: result.winnerId,
+        winnerScore: result.winnerScore,
+        totalAdsGenerated: result.totalAdsGenerated,
+        approvedCount: result.approvedCount,
+      });
+      toast.success(
+        `Bulk complete — ${result.approvedCount}/${result.totalAdsGenerated} approved. Winner: ${result.winnerScore.toFixed(1)}/10`,
+        { duration: 6000 }
+      );
+      if (result.qualityRatchetApplied) toast.info("Quality threshold raised — the bar just got higher.");
+    },
+    onError: (err) => { setIsBulkGenerating(false); setIsGenerating(false); setLogStep(0); toast.error(err.message); },
+  });
+
+  const handleBulkGenerate = () => {
+    setIsBulkGenerating(true);
+    setIsGenerating(true);
+    setLogStep(0);
+    setBulkResult(null);
+    // Animate log steps over ~12 seconds (5 pipelines × ~2.5s each)
+    const BULK_LOG = [
+      { type: "sys",  msg: "Initializing 5 parallel generation pipelines..." },
+      { type: "ai",   msg: "Pipeline 1/5: Generating standard ad copy..." },
+      { type: "ai",   msg: "Pipeline 2/5: Generating standard variant..." },
+      { type: "ai",   msg: "Pipeline 3/5: Generating standard variant..." },
+      { type: "ai",   msg: "Pipeline 4/5: Generating standard variant..." },
+      { type: "ai",   msg: "Pipeline 5/5: Creative Spark mode — breaking rules..." },
+      { type: "eval", msg: "Evaluating all 5 ads across 5 quality dimensions..." },
+      { type: "eval", msg: "Ranking by weighted score..." },
+      { type: "pass", msg: "Surfacing winner — highest scoring ad wins." },
+    ];
+    BULK_LOG.forEach((_, i) => { setTimeout(() => setLogStep(i + 1), i * 1400); });
+    bulkGenerateMutation.mutate({ campaignId, count: 5 });
+  };
+
   const generateMutation = trpc.ads.generateAndEvaluate.useMutation({
     onSuccess: (result) => {
       setIsGenerating(false);
@@ -469,14 +515,45 @@ export default function CampaignDetail() {
                 )}
               </div>
             ) : (
-              <div className="flex gap-3 flex-wrap">
-                <button onClick={() => handleGenerate("standard")}
-                  className="btn-primary flex-1 min-w-[140px] flex items-center justify-center gap-2">
-                  <Zap size={13} /> Generate Ad
-                </button>
-                <button onClick={() => handleGenerate("creative_spark")}
-                  className="btn-secondary flex-1 min-w-[140px] flex items-center justify-center gap-2">
-                  <Sparkles size={13} /> Creative Mode
+              <div className="space-y-3">
+                {/* Bulk × 5 result banner */}
+                {bulkResult && (
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-lg"
+                    style={{ background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.15)" }}>
+                    <Trophy size={14} style={{ color: "#f59e0b", flexShrink: 0 }} />
+                    <div className="flex-1 min-w-0">
+                      <span className="font-mono text-[10px] font-bold" style={{ color: "#f59e0b" }}>BULK COMPLETE</span>
+                      <span className="font-mono text-[10px] ml-2" style={{ color: "rgba(148,163,184,0.7)" }}>
+                        {bulkResult.approvedCount}/{bulkResult.totalAdsGenerated} approved · Winner: {bulkResult.winnerScore.toFixed(1)}/10
+                      </span>
+                    </div>
+                    <button onClick={() => setBulkResult(null)}
+                      className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.4)" }}>✕</button>
+                  </div>
+                )}
+                {/* Primary action row */}
+                <div className="flex gap-3 flex-wrap">
+                  <button onClick={() => handleGenerate("standard")}
+                    className="btn-primary flex-1 min-w-[120px] flex items-center justify-center gap-2">
+                    <Zap size={13} /> Generate Ad
+                  </button>
+                  <button onClick={() => handleGenerate("creative_spark")}
+                    className="btn-secondary flex-1 min-w-[120px] flex items-center justify-center gap-2">
+                    <Sparkles size={13} /> Creative Mode
+                  </button>
+                </div>
+                {/* Bulk × 5 button */}
+                <button onClick={handleBulkGenerate}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-mono font-bold text-[11px] tracking-widest uppercase transition-all"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(34,211,238,0.08) 100%)",
+                    border: "1px solid rgba(245,158,11,0.25)",
+                    color: "#f59e0b",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.5)")}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.25)")}>
+                  <Layers size={13} />
+                  Bulk × 5 — Race to Best
                 </button>
               </div>
             )}

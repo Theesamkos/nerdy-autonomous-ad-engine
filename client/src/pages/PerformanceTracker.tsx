@@ -1,7 +1,7 @@
 import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { motion } from "framer-motion";
-import { BarChart3, DollarSign, TrendingUp, Zap, Heart, Target, Award, RefreshCw, Activity } from "lucide-react";
+import { BarChart3, DollarSign, TrendingUp, Zap, Heart, Target, Award, RefreshCw, Activity, Download } from "lucide-react";
 import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
@@ -69,6 +69,41 @@ export default function PerformanceTracker() {
   const emotionalArc  = (selectedAdData?.evaluation?.emotionalArcData as any[]) || [];
   const approvedAds   = ads?.filter((a: any) => a.status === "approved") || [];
 
+  const exportCSV = () => {
+    if (!ads || ads.length === 0) { return; }
+    const headers = [
+      "ID", "Status", "Score", "Mode", "Primary Text", "Headline", "Description",
+      "CTA", "Clarity", "Value Prop", "CTA Score", "Brand Voice", "Emotional",
+      "Cost (USD)", "Tokens", "Created At"
+    ];
+    const rows = ads.map((a: any) => [
+      a.id,
+      a.status,
+      a.qualityScore?.toFixed(2) ?? "",
+      a.generationMode,
+      `"${(a.primaryText || "").replace(/"/g, "'")}"`,
+      `"${(a.headline || "").replace(/"/g, "'")}"`,
+      `"${(a.description || "").replace(/"/g, "'")}"`,
+      a.ctaButton,
+      a.evaluation?.scoreClarity?.toFixed(1) ?? "",
+      a.evaluation?.scoreValueProp?.toFixed(1) ?? "",
+      a.evaluation?.scoreCta?.toFixed(1) ?? "",
+      a.evaluation?.scoreBrandVoice?.toFixed(1) ?? "",
+      a.evaluation?.scoreEmotionalResonance?.toFixed(1) ?? "",
+      a.estimatedCostUsd?.toFixed(6) ?? "0",
+      (a.promptTokens || 0) + (a.completionTokens || 0),
+      new Date(a.createdAt).toISOString(),
+    ]);
+    const csv = [headers.join(","), ...rows.map((r: any[]) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${campaign?.name || "campaign"}-ads-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <AppLayout campaignId={campaignId} campaignName={campaign?.name}>
       <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
@@ -79,14 +114,26 @@ export default function PerformanceTracker() {
             <Link href={"/campaigns/" + campaignId}>
               <button className="btn-secondary p-2.5 flex-shrink-0"><ArrowLeft size={14} /></button>
             </Link>
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="section-label mb-1.5">Performance Tracker</div>
-              <h1 className="font-display font-bold text-2xl tracking-tight" style={{ color: "#f8fafc", letterSpacing: "-0.02em" }}>
-                Analytics & Intelligence
-              </h1>
-              <p className="font-mono text-[10px] mt-1.5 max-w-xl" style={{ color: "rgba(100,116,139,0.5)" }}>
-                Full-spectrum performance intelligence. Quality trends, cost efficiency, dimension breakdown, and emotional resonance arc.
-              </p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h1 className="font-display font-bold text-2xl tracking-tight" style={{ color: "#f8fafc", letterSpacing: "-0.02em" }}>
+                    Analytics & Intelligence
+                  </h1>
+                  <p className="font-mono text-[10px] mt-1.5 max-w-xl" style={{ color: "rgba(100,116,139,0.5)" }}>
+                    Full-spectrum performance intelligence. Quality trends, cost efficiency, dimension breakdown, and emotional resonance arc.
+                  </p>
+                </div>
+                <button
+                  onClick={exportCSV}
+                  disabled={!ads || ads.length === 0}
+                  className="btn-secondary flex items-center gap-2 flex-shrink-0 disabled:opacity-30"
+                  title="Export all ads to CSV">
+                  <Download size={13} />
+                  <span className="hidden sm:inline">Export CSV</span>
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>
