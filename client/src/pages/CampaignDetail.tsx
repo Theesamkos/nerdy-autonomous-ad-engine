@@ -3,7 +3,8 @@ import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Brain, CheckCircle2, XCircle, Swords, Sparkles,
   BarChart3, ChevronDown, ChevronUp, Target, DollarSign, Award,
-  SlidersHorizontal, Save, ArrowLeft, Copy, Check, Activity, Smartphone, Layers, Trophy
+  SlidersHorizontal, Save, ArrowLeft, Copy, Check, Activity, Smartphone, Layers, Trophy,
+  Rocket, ExternalLink, ClipboardCheck
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "wouter";
@@ -219,11 +220,116 @@ function AdCard({ ad, evaluation, isExpanded, onToggle, onCopy, copied, showPrev
                   </p>
                 </div>
               )}
+              {ad.status === "approved" && (
+                <ReadyToLaunchPanel ad={ad} />
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+// ─── Meta CTA options ─────────────────────────────────────────────────────────
+const META_CTA_OPTIONS: Record<string, string> = {
+  "Learn More":    "LEARN_MORE",
+  "Sign Up":       "SIGN_UP",
+  "Get Quote":     "GET_QUOTE",
+  "Contact Us":    "CONTACT_US",
+  "Book Now":      "BOOK_NOW",
+  "Shop Now":      "SHOP_NOW",
+  "Download":      "DOWNLOAD",
+  "Subscribe":     "SUBSCRIBE",
+  "Get Offer":     "GET_OFFER",
+  "Apply Now":     "APPLY_NOW",
+};
+
+function ReadyToLaunchPanel({ ad }: { ad: any }) {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyField = (label: string, value: string) => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedField(label);
+      toast.success(`${label} copied to clipboard`);
+      setTimeout(() => setCopiedField(null), 2000);
+    });
+  };
+
+  // Truncate headline to Meta's 27-char limit
+  const headline = (ad.headline || "").substring(0, 27);
+  const headlineWarning = (ad.headline || "").length > 27;
+  const primaryText = ad.primaryText || "";
+  const description = (ad.description || "").substring(0, 30);
+  const ctaButton = ad.ctaButton || "Learn More";
+  const metaCta = META_CTA_OPTIONS[ctaButton] || "LEARN_MORE";
+
+  // Build the Meta Ads Manager deep link
+  const adsManagerUrl = `https://www.facebook.com/adsmanager/manage/campaigns?act=&objective=OUTCOME_AWARENESS`;
+
+  const fields = [
+    { label: "Headline",     value: headline,     limit: 27,  warning: headlineWarning,
+      note: headlineWarning ? `Truncated from ${ad.headline.length} chars` : undefined },
+    { label: "Primary Text", value: primaryText,  limit: 125, warning: primaryText.length > 125,
+      note: primaryText.length > 125 ? `${primaryText.length} chars — Meta recommends ≤125` : undefined },
+    { label: "Description",  value: description,  limit: 30,  warning: (ad.description || "").length > 30,
+      note: (ad.description || "").length > 30 ? `Truncated to 30 chars` : undefined },
+    { label: "CTA Type",     value: metaCta,      limit: null, warning: false, note: `Meta API value for "${ctaButton}"` },
+  ];
+
+  return (
+    <div className="md:col-span-2 rounded-lg overflow-hidden"
+      style={{ background: "rgba(52,211,153,0.04)", border: "1px solid rgba(52,211,153,0.2)" }}>
+      <div className="flex items-center gap-2 px-4 py-3"
+        style={{ borderBottom: "1px solid rgba(52,211,153,0.12)", background: "rgba(52,211,153,0.06)" }}>
+        <Rocket size={12} style={{ color: "#34d399" }} />
+        <span className="font-mono text-[10px] font-bold tracking-widest uppercase" style={{ color: "#34d399" }}>Ready to Launch</span>
+        <span className="font-mono text-[9px] ml-auto" style={{ color: "rgba(52,211,153,0.5)" }}>Formatted for Meta Ads Manager</span>
+      </div>
+      <div className="p-4 space-y-3">
+        {fields.map(({ label, value, warning, note }) => (
+          <div key={label} className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>{label}</span>
+                {warning && <span className="font-mono text-[8px]" style={{ color: "#f59e0b" }}>⚠ {note}</span>}
+                {!warning && note && <span className="font-mono text-[8px]" style={{ color: "rgba(100,116,139,0.4)" }}>{note}</span>}
+              </div>
+              <p className="font-mono text-[11px] leading-relaxed" style={{ color: "rgba(226,232,240,0.8)" }}>{value}</p>
+            </div>
+            <button
+              onClick={() => copyField(label, value)}
+              className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded font-mono text-[9px] transition-all"
+              style={{
+                background: copiedField === label ? "rgba(52,211,153,0.15)" : "rgba(34,211,238,0.06)",
+                border: `1px solid ${copiedField === label ? "rgba(52,211,153,0.3)" : "rgba(34,211,238,0.15)"}`,
+                color: copiedField === label ? "#34d399" : "rgba(100,116,139,0.6)",
+              }}>
+              {copiedField === label ? <ClipboardCheck size={10} /> : <Copy size={10} />}
+              {copiedField === label ? "Copied" : "Copy"}
+            </button>
+          </div>
+        ))}
+        <div className="pt-2" style={{ borderTop: "1px solid rgba(52,211,153,0.1)" }}>
+          <a
+            href={adsManagerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-[10px] font-bold transition-all"
+            style={{
+              background: "rgba(52,211,153,0.1)",
+              border: "1px solid rgba(52,211,153,0.3)",
+              color: "#34d399",
+            }}>
+            <ExternalLink size={11} />
+            Open Meta Ads Manager
+          </a>
+          <p className="font-mono text-[9px] mt-2" style={{ color: "rgba(100,116,139,0.4)" }}>
+            Copy each field above, then paste into your campaign in Ads Manager.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -161,4 +161,30 @@
 - [x] Use campaign.qualityThreshold in generateAndEvaluate self-healing loop (already uses currentQualityThreshold from DB)
 - [x] Update CampaignDetail header to show current threshold
 - [x] TypeScript: 0 errors + tests passing
+- [x] Checkpoint + push to GitHub
+
+## Phase 17: Ready to Launch Export Panel
+
+- [ ] Build ReadyToLaunch component with Meta-formatted fields (headline ≤27 chars, primary text, description, CTA type)
+- [ ] One-click copy button per field with visual confirmation (checkmark flash)
+- [ ] Character count indicators matching Meta's limits (headline 27, description 30, primary text 125 recommended)
+- [ ] "Open in Ads Manager" deep link button (pre-selects campaign objective based on campaignGoal)
+- [ ] "Copy All Fields" master button that copies everything formatted as a block
+- [ ] Show panel only on approved ads (not failed/pending)
+- [ ] Add to CampaignDetail ad card expanded view
+- [ ] TypeScript: 0 errors + tests passing
+- [ ] Checkpoint + push to GitHub
+
+## Phase 18: Full App Functionality Sweep
+
+- [ ] Fix Creative Spark bulk insert DB error (campaignId foreign key / userId issue)
+- [ ] Finish Ready to Launch export panel on approved ad cards
+- [ ] Audit and fix CampaignDetail page (all tabs, all buttons)
+- [ ] Audit and fix Dashboard page
+- [ ] Audit and fix AdversarialMode page
+- [ ] Audit and fix PerformanceTracker page
+- [ ] Audit and fix CompetitorIntel page
+- [ ] Audit and fix SharePage (public view)
+- [ ] Audit and fix Home landing page
+- [ ] TypeScript: 0 errors + tests passing
 - [ ] Checkpoint + push to GitHub
