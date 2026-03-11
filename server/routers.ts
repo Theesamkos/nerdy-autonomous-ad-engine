@@ -235,8 +235,13 @@ export const appRouter = router({
       campaignGoal: z.enum(["awareness", "conversion", "retargeting"]),
       tone: z.enum(["empowering", "urgent", "friendly", "professional", "playful"]),
       brandVoiceNotes: z.string().optional(),
+      initialQualityThreshold: z.number().min(5.0).max(9.0).default(7.0),
     })).mutation(async ({ ctx, input }) => {
-      const id = await createCampaign({ ...input, userId: ctx.user.id });
+      const id = await createCampaign({
+        ...input,
+        userId: ctx.user.id,
+        currentQualityThreshold: input.initialQualityThreshold,
+      });
       return getCampaignById(id);
     }),
 

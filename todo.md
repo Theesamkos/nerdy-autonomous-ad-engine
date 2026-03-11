@@ -150,5 +150,15 @@
 - [ ] Record a 3-5 minute demo walkthrough video
 - [x] Final TypeScript check: 0 errors
 - [x] Final test run: 17/17+ passing
-- [ ] Save final checkpoint + push to GitHub
+- [x] Save final checkpoint + push to GitHub
 - [ ] Verify GitHub repo is public and all files are present
+
+## Phase 16: Configurable Quality Threshold
+
+- [x] Add qualityThreshold field to campaigns table (default 7.0, range 5.0–9.0)
+- [x] Add threshold slider to CampaignBuilder Step 3 (Brand Voice) with tier labels
+- [x] Wire threshold through campaigns.create procedure
+- [x] Use campaign.qualityThreshold in generateAndEvaluate self-healing loop (already uses currentQualityThreshold from DB)
+- [x] Update CampaignDetail header to show current threshold
+- [x] TypeScript: 0 errors + tests passing
+- [ ] Checkpoint + push to GitHub

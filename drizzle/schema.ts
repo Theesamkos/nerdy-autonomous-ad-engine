@@ -43,6 +43,7 @@ export const campaigns = mysqlTable("campaigns", {
   weightBrandVoice: int("weightBrandVoice").default(15).notNull(),
   weightEmotionalResonance: int("weightEmotionalResonance").default(20).notNull(),
   // Quality ratchet
+  initialQualityThreshold: float("initialQualityThreshold").default(7.0).notNull(),
   currentQualityThreshold: float("currentQualityThreshold").default(7.0).notNull(),
   totalAdsGenerated: int("totalAdsGenerated").default(0).notNull(),
   totalTokensUsed: int("totalTokensUsed").default(0).notNull(),
