@@ -3,7 +3,7 @@ import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, Zap, Swords, Sparkles, BarChart3,
+  LayoutDashboard, Zap, Swords, Sparkles, BarChart3, Target,
   LogOut, LogIn, ChevronRight, ChevronLeft, Menu, Plus, Brain, ArrowLeft
 } from "lucide-react";
 import { useState } from "react";
@@ -17,8 +17,9 @@ interface AppLayoutProps {
 
 // Top-level navigation — always available
 const TOP_NAV = [
-  { href: "/dashboard",     icon: LayoutDashboard, label: "Dashboard",     sub: "Mission Control" },
-  { href: "/campaigns/new", icon: Plus,            label: "New Campaign",  sub: "Launch Pipeline" },
+  { href: "/dashboard",         icon: LayoutDashboard, label: "Dashboard",        sub: "Mission Control" },
+  { href: "/campaigns/new",    icon: Plus,            label: "New Campaign",     sub: "Launch Pipeline" },
+  { href: "/competitor-intel", icon: Target,          label: "Competitor Intel", sub: "Meta Ad Library" },
 ];
 
 export default function AppLayout({ children, campaignId, campaignName }: AppLayoutProps) {

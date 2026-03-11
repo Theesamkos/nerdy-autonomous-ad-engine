@@ -120,3 +120,35 @@
 - [x] Back to Dashboard breadcrumb when in campaign context
 - [x] TypeScript: 0 errors + tests passing
 - [x] Checkpoint + delivery
+
+## Phase 15: Thursday Submission Sprint
+
+### BLOCK 1 — Documentation (Highest ROI, do first)
+- [x] Write DECISION_LOG.md — why these 5 dimensions, why the weights, what failed, limitations
+- [x] Write README.md — one-command setup, what it does, how to run, how to demo
+- [x] Write TECHNICAL_WRITEUP.md — 1-2 page architecture overview for submission
+
+### BLOCK 2 — Demo Data (Avoid -5 deduction)
+- [x] Build a seed script that generates 50+ ads across 3 Varsity Tutors audience segments
+- [x] Run the seed script and verify 50+ ads with full evaluation scores in the database
+- [x] Export CSV of all approved ads with scores from PerformanceTracker
+
+### BLOCK 3 — Remaining Cursor Features (How It Works, ELITE badge, Share button)
+- [ ] Run Cursor Prompt 1: "How It Works" section on Home page
+- [ ] Run Cursor Prompt 2: ELITE badge + owner notification on 9.0+ ads
+- [ ] Run Cursor Prompt 3: Share button on CampaignDetail
+- [ ] Pull changes from GitHub, run tests, save checkpoint
+
+### BLOCK 4 — Competitive Intelligence (Bonus +10 points)
+- [x] Research Meta Ad Library API / scraping approach for competitor ads
+- [x] Pull competitor ads: Princeton Review, Khan Academy, Chegg, Kaplan
+- [x] Add competitor reference data to generation prompts
+- [x] Build a "Competitor Intelligence" panel in the UI showing patterns found
+
+### BLOCK 5 — Final Polish & Submission Prep
+- [ ] Pre-populate the live demo with real Varsity Tutors SAT campaign data
+- [ ] Record a 3-5 minute demo walkthrough video
+- [x] Final TypeScript check: 0 errors
+- [x] Final test run: 17/17+ passing
+- [ ] Save final checkpoint + push to GitHub
+- [ ] Verify GitHub repo is public and all files are present

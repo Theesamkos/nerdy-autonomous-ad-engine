@@ -9,6 +9,7 @@ import {
   adversarialSessions,
   creativeSparkIdeas,
   campaignShareLinks, InsertCampaignShareLink,
+  competitorAds, InsertCompetitorAd, CompetitorAd,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -256,4 +257,30 @@ export async function getShareLinkData(token: string) {
   const bestAd = approvedAds.sort((a, b) => (b.qualityScore ?? 0) - (a.qualityScore ?? 0))[0];
   const bestEval = bestAd ? await getEvaluationByAdId(bestAd.id) : undefined;
   return { campaign, approvedAds, bestAd, bestEval };
+}
+
+// ─── Competitor Ads ───────────────────────────────────────────────────────────
+export async function createCompetitorAd(data: InsertCompetitorAd): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(competitorAds).values(data);
+  return (result as any).insertId;
+}
+
+export async function getAllCompetitorAds(): Promise<CompetitorAd[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(competitorAds).orderBy(desc(competitorAds.weightedScore));
+}
+
+export async function getCompetitorAdsByBrand(brand: string): Promise<CompetitorAd[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(competitorAds).where(eq(competitorAds.brand, brand));
+}
+
+export async function deleteCompetitorAd(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(competitorAds).where(eq(competitorAds.id, id));
 }

@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `competitor_ads` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`brand` varchar(128) NOT NULL,\n\t`primaryText` text NOT NULL,\n\t`headline` varchar(256) NOT NULL,\n\t`description` varchar(256),\n\t`ctaButton` varchar(64),\n\t`sourceUrl` varchar(512),\n\t`scoreClarity` float,\n\t`scoreValueProp` float,\n\t`scoreCta` float,\n\t`scoreBrandVoice` float,\n\t`scoreEmotionalResonance` float,\n\t`weightedScore` float,\n\t`hook` text,\n\t`emotionalTrigger` varchar(256),\n\t`weaknesses` text,\n\t`strengths` text,\n\t`analysisNotes` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `competitor_ads_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user cRqaaCAnwvHpXvv.a355cd60a74b --database 5Zhvxiu6fz2msfFd9Aepcy --execute CREATE TABLE IF NOT EXISTS `competitor_ads` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`brand` varchar(128) NOT NULL,\n\t`primaryText` text NOT NULL,\n\t`headline` varchar(256) NOT NULL,\n\t`description` varchar(256),\n\t`ctaButton` varchar(64),\n\t`sourceUrl` varchar(512),\n\t`scoreClarity` float,\n\t`scoreValueProp` float,\n\t`scoreCta` float,\n\t`scoreBrandVoice` float,\n\t`scoreEmotionalResonance` float,\n\t`weightedScore` float,\n\t`hook` text,\n\t`emotionalTrigger` varchar(256),\n\t`weaknesses` text,\n\t`strengths` text,\n\t`analysisNotes` text,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `competitor_ads_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 527
+}

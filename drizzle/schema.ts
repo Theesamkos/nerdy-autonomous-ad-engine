@@ -180,3 +180,29 @@ export const campaignShareLinks = mysqlTable("campaign_share_links", {
 
 export type CampaignShareLink = typeof campaignShareLinks.$inferSelect;
 export type InsertCampaignShareLink = typeof campaignShareLinks.$inferInsert;
+// ─── Competitor Ads (Meta Ad Library Intelligence) ───────────────────────────
+export const competitorAds = mysqlTable("competitor_ads", {
+  id: int("id").autoincrement().primaryKey(),
+  brand: varchar("brand", { length: 128 }).notNull(),          // e.g. "Princeton Review"
+  primaryText: text("primaryText").notNull(),
+  headline: varchar("headline", { length: 256 }).notNull(),
+  description: varchar("description", { length: 256 }),
+  ctaButton: varchar("ctaButton", { length: 64 }),
+  sourceUrl: varchar("sourceUrl", { length: 512 }),            // Meta Ad Library URL
+  // LLM evaluation scores (same 5 dimensions as our ads)
+  scoreClarity: float("scoreClarity"),
+  scoreValueProp: float("scoreValueProp"),
+  scoreCta: float("scoreCta"),
+  scoreBrandVoice: float("scoreBrandVoice"),
+  scoreEmotionalResonance: float("scoreEmotionalResonance"),
+  weightedScore: float("weightedScore"),
+  // Pattern analysis
+  hook: text("hook"),                                          // What stops the scroll
+  emotionalTrigger: varchar("emotionalTrigger", { length: 256 }), // Core emotional appeal
+  weaknesses: text("weaknesses"),                              // Where we can beat them
+  strengths: text("strengths"),                                // What they do well
+  analysisNotes: text("analysisNotes"),                        // Full LLM analysis
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CompetitorAd = typeof competitorAds.$inferSelect;
+export type InsertCompetitorAd = typeof competitorAds.$inferInsert;

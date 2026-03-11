@@ -13,6 +13,7 @@ import {
   createAdversarialSession, getAdversarialSessionsByCampaign, updateAdversarialSession,
   createCreativeSparkIdeas, getCreativeSparkIdeasByCampaign, toggleSaveCreativeSparkIdea,
   createShareLink, getShareLinkByCampaign, getShareLinkData,
+  createCompetitorAd, getAllCompetitorAds, getCompetitorAdsByBrand, deleteCompetitorAd,
 } from "./db";
 
 // ─── Cost estimation helpers ──────────────────────────────────────────────────
@@ -759,6 +760,98 @@ Return ONLY valid JSON.`;
       const data = await getShareLinkData(input.token);
       if (!data) throw new Error("Share link not found or expired");
       return data;
+    }),
+  }),
+  // ─── Competitor Intelligence ──────────────────────────────────────────────────
+  competitorIntel: router({
+    list: publicProcedure.query(async () => {
+      return getAllCompetitorAds();
+    }),
+    analyze: protectedProcedure.input(z.object({
+      brand: z.string().min(1),
+      primaryText: z.string().min(1),
+      headline: z.string().min(1),
+      description: z.string().optional(),
+      ctaButton: z.string().optional(),
+      sourceUrl: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      // Use LLM to analyze the competitor ad with the same 5-dimension framework
+      const systemPrompt = `You are an expert competitive intelligence analyst for digital advertising. You evaluate competitor ads using the same 5-dimension framework used to score Varsity Tutors ads.
+${BRAND_CONTEXT}
+Analyze this competitor ad with brutal honesty. Score each dimension 1-10. Identify what they do well, where they're weak, and how Varsity Tutors can beat them.`;
+      const userPrompt = `Analyze this competitor ad:
+Brand: ${input.brand}
+Primary Text: "${input.primaryText}"
+Headline: "${input.headline}"
+Description: "${input.description || 'N/A'}"
+CTA: "${input.ctaButton || 'N/A'}"
+
+Provide:
+1. Scores for all 5 dimensions (Clarity, Value Prop, CTA, Brand Voice, Emotional Resonance)
+2. What hook/pattern stops the scroll
+3. Core emotional trigger they're using
+4. Their key strengths
+5. Their key weaknesses (where Varsity Tutors can win)
+6. Full analysis notes`;
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "competitor_analysis",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                scoreClarity: { type: "number" },
+                scoreValueProp: { type: "number" },
+                scoreCta: { type: "number" },
+                scoreBrandVoice: { type: "number" },
+                scoreEmotionalResonance: { type: "number" },
+                hook: { type: "string" },
+                emotionalTrigger: { type: "string" },
+                strengths: { type: "string" },
+                weaknesses: { type: "string" },
+                analysisNotes: { type: "string" },
+              },
+              required: ["scoreClarity", "scoreValueProp", "scoreCta", "scoreBrandVoice", "scoreEmotionalResonance", "hook", "emotionalTrigger", "strengths", "weaknesses", "analysisNotes"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+      const rawContent = response.choices[0]?.message?.content;
+      const analysis = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
+      // Calculate weighted score (equal weights for competitor analysis)
+      const weightedScore = (analysis.scoreClarity + analysis.scoreValueProp + analysis.scoreCta + analysis.scoreBrandVoice + analysis.scoreEmotionalResonance) / 5;
+      // Save to DB
+      const id = await createCompetitorAd({
+        brand: input.brand,
+        primaryText: input.primaryText,
+        headline: input.headline,
+        description: input.description,
+        ctaButton: input.ctaButton,
+        sourceUrl: input.sourceUrl,
+        scoreClarity: analysis.scoreClarity,
+        scoreValueProp: analysis.scoreValueProp,
+        scoreCta: analysis.scoreCta,
+        scoreBrandVoice: analysis.scoreBrandVoice,
+        scoreEmotionalResonance: analysis.scoreEmotionalResonance,
+        weightedScore,
+        hook: analysis.hook,
+        emotionalTrigger: analysis.emotionalTrigger,
+        strengths: analysis.strengths,
+        weaknesses: analysis.weaknesses,
+        analysisNotes: analysis.analysisNotes,
+      });
+      return { id, weightedScore, ...analysis };
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+      await deleteCompetitorAd(input.id);
+      return { success: true };
     }),
   }),
 });
