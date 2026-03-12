@@ -360,7 +360,7 @@ export default function CampaignDetail() {
   const [maxIterations, setMaxIterations] = useState(3);
   const [showWeightTuner, setShowWeightTuner] = useState(false);
 
-  const { data: campaign } = trpc.campaigns.get.useQuery({ id: campaignId }, { enabled: !!campaignId });
+  const { data: campaign, refetch: refetchCampaign } = trpc.campaigns.get.useQuery({ id: campaignId }, { enabled: !!campaignId });
   const { data: ads, refetch: refetchAds } = trpc.ads.list.useQuery({ campaignId }, { enabled: !!campaignId });
   const { data: analytics, refetch: refetchAnalytics } = trpc.ads.getCampaignAnalytics.useQuery({ campaignId }, { enabled: !!campaignId });
 
@@ -388,6 +388,18 @@ export default function CampaignDetail() {
 
   const updateWeightsMutation = trpc.campaigns.updateWeights.useMutation({
     onSuccess: () => { toast.success("Dimension weights updated."); setShowWeightTuner(false); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Threshold manual override
+  const [showThresholdEditor, setShowThresholdEditor] = useState(false);
+  const [thresholdInput, setThresholdInput] = useState<string>("");
+  const updateThresholdMutation = trpc.campaigns.updateThreshold.useMutation({
+    onSuccess: (updated) => {
+      toast.success(`Quality threshold set to ${updated?.currentQualityThreshold.toFixed(1)}/10`);
+      setShowThresholdEditor(false);
+      refetchCampaign();
+    },
     onError: (err) => toast.error(err.message),
   });
 
@@ -558,9 +570,71 @@ export default function CampaignDetail() {
           <div className="flex items-center gap-3 flex-wrap">
             <span className="tag-ops tag-teal">{campaign.campaignGoal}</span>
             <span className="tag-ops tag-dim">{campaign.tone}</span>
-            <span className="tag-ops tag-teal">Threshold: {campaign.currentQualityThreshold.toFixed(1)}/10</span>
+            {/* Threshold — click to edit */}
+            <button
+              onClick={() => { setShowThresholdEditor(!showThresholdEditor); setThresholdInput(campaign.currentQualityThreshold.toFixed(1)); }}
+              className="tag-ops tag-teal flex items-center gap-1.5 transition-all"
+              style={{ cursor: "pointer", borderStyle: showThresholdEditor ? "solid" : "dashed" }}
+              title="Click to adjust quality threshold">
+              <Target size={9} />
+              Threshold: {campaign.currentQualityThreshold.toFixed(1)}/10
+              <span className="font-mono text-[8px] opacity-50">✎</span>
+            </button>
             <span className="tag-ops tag-dim">{campaign.totalAdsGenerated} ads generated</span>
           </div>
+
+          {/* Threshold Editor — inline popover */}
+          <AnimatePresence>
+            {showThresholdEditor && (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}
+                className="rounded-xl p-4 mt-2"
+                style={{ background: "rgba(96,165,250,0.06)", border: "1px solid rgba(96,165,250,0.2)" }}>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Target size={12} style={{ color: "#60a5fa" }} />
+                    <span className="font-mono font-bold text-[10px] tracking-widest uppercase" style={{ color: "#60a5fa" }}>Set Quality Threshold</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="range" min="1" max="9.9" step="0.1"
+                      value={thresholdInput || campaign.currentQualityThreshold}
+                      onChange={e => setThresholdInput(e.target.value)}
+                      className="flex-1 accent-blue-400"
+                      style={{ minWidth: 120 }}
+                    />
+                    <span className="font-mono font-bold text-sm w-12 text-center" style={{ color: "#60a5fa" }}>
+                      {parseFloat(thresholdInput || String(campaign.currentQualityThreshold)).toFixed(1)}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const val = parseFloat(thresholdInput);
+                        if (!isNaN(val) && val >= 1 && val <= 9.9) {
+                          updateThresholdMutation.mutate({ campaignId, threshold: val });
+                        } else {
+                          toast.error("Threshold must be between 1.0 and 9.9");
+                        }
+                      }}
+                      disabled={updateThresholdMutation.isPending}
+                      className="btn-primary text-xs px-4 py-1.5 flex items-center gap-1.5">
+                      {updateThresholdMutation.isPending ? (
+                        <><div className="w-3 h-3 rounded-full border border-t-transparent animate-spin" style={{ borderColor: "rgba(255,255,255,0.2)", borderTopColor: "#fff" }} /> Saving...</>
+                      ) : (
+                        <><Save size={11} /> Apply</>
+                      )}
+                    </button>
+                    <button onClick={() => setShowThresholdEditor(false)}
+                      className="btn-secondary text-xs px-3 py-1.5">Cancel</button>
+                  </div>
+                </div>
+                <div className="font-mono text-[9px] mt-2" style={{ color: "rgba(100,116,139,0.4)" }}>
+                  Current: {campaign.currentQualityThreshold.toFixed(1)}/10 — Ads scoring below this are rejected and sent to self-healing. Range: 1.0 – 9.9
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* ── KPI Row ── */}

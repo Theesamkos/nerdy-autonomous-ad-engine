@@ -401,8 +401,18 @@ export const appRouter = router({
       const total = weights.weightClarity + weights.weightValueProp + weights.weightCta + weights.weightBrandVoice + weights.weightEmotionalResonance;
       if (total !== 100) throw new Error("Weights must sum to 100");
       await updateCampaignWeights(campaignId, weights);
-      invalidateCampaignCache(campaignId); // Invalidate cache so next generation uses updated weights
+      invalidateCampaignCache(campaignId);
       return getCampaignById(campaignId);
+    }),
+
+    // Manual threshold override — lets users set the quality gate directly
+    updateThreshold: protectedProcedure.input(z.object({
+      campaignId: z.number(),
+      threshold: z.number().min(1).max(9.9),
+    })).mutation(async ({ input }) => {
+      await ratchetQualityThreshold(input.campaignId, input.threshold);
+      invalidateCampaignCache(input.campaignId);
+      return getCampaignById(input.campaignId);
     }),
   }),
 

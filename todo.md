@@ -181,6 +181,13 @@
 - [ ] Add avg latency KPI cards to PerformanceTracker
 - [ ] Update README with latency architecture section
 
+## Phase 22: Threshold Adjustment Fix
+- [x] Diagnose why threshold adjustment is broken — no updateThreshold procedure existed
+- [x] Add backend campaigns.updateThreshold procedure with cache invalidation
+- [x] Add frontend threshold editor: dashed tag → click → inline slider (1.0–9.9) + Apply/Cancel
+- [x] Verify threshold persists and affects generation quality gate
+- [x] TypeScript: 0 errors | Tests: 17/17 passing
+
 ## Phase 21: Smart Prompt Expansion + Batch Variety Engine
 - [ ] Backend: expandPrompt procedure — vague input → 8 distinct creative angles (tone, hook, audience framing, format, emotional trigger)
 - [ ] Backend: variety matrix for batch — 50 ads spread across 8 tones, 6 formats, 5 emotional hooks, 4 audience angles
