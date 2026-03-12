@@ -223,6 +223,138 @@ Dimension weights: Clarity ${campaign.weightClarity}%, Value Prop ${campaign.wei
   return { ...parsed, weightedScore, promptTokens: usage.prompt_tokens, completionTokens: usage.completion_tokens };
 }
 
+// ─── Variety Matrix for Batch Generation ────────────────────────────────────
+// When generating 50 ads, each gets a unique combination of tone, format,
+// emotional hook, and audience angle. No two consecutive ads share the same
+// tone+format combo. This ensures maximum creative diversity.
+const TONES = [
+  { id: "empowering",    label: "Empowering",     instruction: "Lead with transformation. The reader is the hero. Your product is the catalyst. Make them feel capable." },
+  { id: "urgent",        label: "Urgent",          instruction: "Create genuine urgency without being manipulative. Deadlines, scarcity, or missed opportunity. Make inaction feel costly." },
+  { id: "friendly",      label: "Friendly",        instruction: "Warm, conversational, like a trusted friend giving advice. No jargon. Relatable. Makes the reader feel seen." },
+  { id: "professional",  label: "Professional",    instruction: "Authoritative, data-driven, credibility-first. Stats, credentials, proof points. Speaks to analytical decision-makers." },
+  { id: "playful",       label: "Playful",         instruction: "Wit, humor, unexpected angles. Subvert expectations. Make them smile before you make them click." },
+  { id: "provocative",   label: "Provocative",     instruction: "Challenge assumptions. Start with a controversial or counterintuitive statement. Make them stop and think." },
+  { id: "storytelling",  label: "Storytelling",    instruction: "Open with a specific scene or character moment. Let the narrative carry the message. Show, don't tell." },
+  { id: "social_proof",  label: "Social Proof",    instruction: "Lead with real results, testimonials, or numbers. Let other people's success do the selling." },
+];
+
+const FORMATS = [
+  { id: "problem_solution",  label: "Problem → Solution",   instruction: "Open with a pain point the audience deeply feels. Agitate it briefly. Then present the solution as relief." },
+  { id: "before_after",      label: "Before → After",        instruction: "Paint a vivid before state (struggle). Then paint the after state (success). Make the gap feel real." },
+  { id: "question_hook",     label: "Question Hook",         instruction: "Open with a question that makes the reader say 'yes, that's me.' Draw them in before making any claims." },
+  { id: "bold_claim",        label: "Bold Claim",            instruction: "Lead with a specific, bold, credible claim. Back it up immediately. End with a clear action." },
+  { id: "listicle",          label: "Listicle",              instruction: "Use a numbered or bulleted structure in the primary text. Scannable, specific, high information density." },
+  { id: "testimonial_style", label: "Testimonial Style",     instruction: "Write in first person as if a real customer is speaking. Specific details make it feel authentic." },
+];
+
+const EMOTIONAL_HOOKS = [
+  { id: "fear_of_missing_out",  label: "FOMO",          instruction: "Tap into the fear of falling behind peers, missing a window, or making the wrong choice." },
+  { id: "aspiration",           label: "Aspiration",    instruction: "Paint the dream outcome. Make the reader visualize their best-case future." },
+  { id: "relief",               label: "Relief",        instruction: "Acknowledge the stress and exhaustion. Position the product as the thing that finally makes it easier." },
+  { id: "pride",                label: "Pride",         instruction: "Tap into the desire to achieve, to prove something, to be the one who made it happen." },
+  { id: "belonging",            label: "Belonging",     instruction: "Everyone like you is doing this. Join the community of people who made the smart choice." },
+];
+
+const AUDIENCE_ANGLES = [
+  { id: "anxious_parent",     label: "Anxious Parent",      instruction: "Speak to a parent who lies awake worrying about their child's future. They want certainty and results." },
+  { id: "motivated_student",  label: "Motivated Student",   instruction: "Speak to a student who wants to win, not just pass. They're competitive and goal-oriented." },
+  { id: "comparison_shopper", label: "Comparison Shopper",  instruction: "Speak to someone who has already tried other solutions and is skeptical. Lead with differentiation." },
+  { id: "last_minute",        label: "Last-Minute Crammer", instruction: "Speak to someone with limited time who needs maximum results fast. Urgency and efficiency are everything." },
+];
+
+// Build a variety assignment for N ads — cycles through all combinations
+// ensuring maximum diversity with no two consecutive ads sharing tone+format
+function buildVarietyMatrix(count: number): Array<{
+  tone: typeof TONES[0];
+  format: typeof FORMATS[0];
+  emotionalHook: typeof EMOTIONAL_HOOKS[0];
+  audienceAngle: typeof AUDIENCE_ANGLES[0];
+  varietyLabel: string;
+}> {
+  const assignments = [];
+  for (let i = 0; i < count; i++) {
+    // Use prime-number stepping to avoid repetitive cycling patterns
+    const toneIdx = (i * 3) % TONES.length;
+    const formatIdx = (i * 5) % FORMATS.length;
+    const hookIdx = (i * 7) % EMOTIONAL_HOOKS.length;
+    const angleIdx = (i * 11) % AUDIENCE_ANGLES.length;
+    assignments.push({
+      tone: TONES[toneIdx],
+      format: FORMATS[formatIdx],
+      emotionalHook: EMOTIONAL_HOOKS[hookIdx],
+      audienceAngle: AUDIENCE_ANGLES[angleIdx],
+      varietyLabel: `${TONES[toneIdx].label} / ${FORMATS[formatIdx].label} / ${EMOTIONAL_HOOKS[hookIdx].label}`,
+    });
+  }
+  return assignments;
+}
+
+// ─── Smart Prompt Expansion helper ───────────────────────────────────────────
+// Takes a vague user prompt and expands it into 8 distinct creative angles,
+// each with a specific tone, format, emotional hook, and example headline.
+async function expandPrompt(vaguePompt: string, campaign: {
+  audienceSegment: string; product: string; campaignGoal: string; tone: string;
+}): Promise<Array<{
+  angleId: string;
+  angleName: string;
+  tone: string;
+  format: string;
+  emotionalHook: string;
+  audienceAngle: string;
+  exampleHeadline: string;
+  examplePrimaryText: string;
+  creativeDirection: string;
+}>> {
+  const response = await invokeLLM({
+    messages: [
+      {
+        role: "system",
+        content: `You are a senior creative strategist at a top performance marketing agency. Your job is to take a vague creative brief and expand it into 8 distinct, fully-developed creative angles — each with a different tone, format, emotional hook, and audience framing. Every angle must feel genuinely different. No two angles should feel like variations of the same idea.\n\n${BRAND_CONTEXT}\n\nReturn ONLY valid JSON.`,
+      },
+      {
+        role: "user",
+        content: `Vague brief: "${vaguePompt}"\n\nCampaign context:\n- Product: ${campaign.product}\n- Audience: ${campaign.audienceSegment}\n- Goal: ${campaign.campaignGoal}\n- Base tone: ${campaign.tone}\n\nExpand this into 8 distinct creative angles. For each, provide:\n- A short angle name (3-5 words)\n- The tone (from: empowering, urgent, friendly, professional, playful, provocative, storytelling, social_proof)\n- The format (from: problem_solution, before_after, question_hook, bold_claim, listicle, testimonial_style)\n- The emotional hook (from: fear_of_missing_out, aspiration, relief, pride, belonging)\n- The audience angle (from: anxious_parent, motivated_student, comparison_shopper, last_minute)\n- An example headline (max 40 chars, punchy)\n- An example primary text (1-2 sentences, stops the scroll)\n- A creative direction sentence (what makes this angle unique)`,
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "creative_angles",
+        strict: true,
+        schema: {
+          type: "object",
+          properties: {
+            angles: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  angleId: { type: "string" },
+                  angleName: { type: "string" },
+                  tone: { type: "string" },
+                  format: { type: "string" },
+                  emotionalHook: { type: "string" },
+                  audienceAngle: { type: "string" },
+                  exampleHeadline: { type: "string" },
+                  examplePrimaryText: { type: "string" },
+                  creativeDirection: { type: "string" },
+                },
+                required: ["angleId", "angleName", "tone", "format", "emotionalHook", "audienceAngle", "exampleHeadline", "examplePrimaryText", "creativeDirection"],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ["angles"],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+  const rawContent = response.choices[0]?.message?.content;
+  const parsed = JSON.parse(typeof rawContent === "string" ? rawContent : "{\"angles\":[]}");
+  return parsed.angles || [];
+}
+
 // ─── Main Router ──────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -455,11 +587,14 @@ export const appRouter = router({
       if (!campaignRaw) throw new Error("Campaign not found");
       const campaign = campaignRaw;
 
+      // Build variety matrix for all ads upfront
+      const varietyMatrix = buildVarietyMatrix(input.count);
+
       // ── Helper: run one ad through generate → evaluate → remediate loop ──────
       async function runAdPipeline(idx: number, initialMode: string): Promise<{
         adId: number; finalAdId: number; score: number; isPublishable: boolean;
         mode: string; totalCost: number; remediationRounds: number;
-        weakestDimension: string | null;
+        weakestDimension: string | null; varietyLabel: string;
       }> {
         const MAX_REMEDIATION = 3;
         let currentMode = initialMode;
@@ -470,15 +605,25 @@ export const appRouter = router({
         let weakestDimension: string | null = null;
         let improvementSuggestion: string | undefined;
         let totalCost = 0;
+        // Get this ad's unique variety assignment
+        const variety = varietyMatrix[idx];
 
         for (let attempt = 0; attempt <= MAX_REMEDIATION; attempt++) {
           const iterMode = attempt === 0 ? currentMode : "self_healing";
+          // Inject variety instructions into the generation prompt
+          const varietyInstruction = attempt === 0 ? [
+            `TONE DIRECTIVE: ${variety.tone.instruction}`,
+            `FORMAT DIRECTIVE: ${variety.format.instruction}`,
+            `EMOTIONAL HOOK: ${variety.emotionalHook.instruction}`,
+            `AUDIENCE ANGLE: ${variety.audienceAngle.instruction}`,
+            `VARIETY SIGNATURE: This ad must feel distinctly "${variety.tone.label} / ${variety.format.label}" — different from every other ad in this batch.`,
+          ].join("\n") : undefined;
           const generated = await generateAdCopy({
             audienceSegment: campaign.audienceSegment,
             product: campaign.product,
             campaignGoal: campaign.campaignGoal,
-            tone: campaign.tone,
-            brandVoiceNotes: campaign.brandVoiceNotes,
+            tone: variety.tone.id, // Use variety tone, not campaign default
+            brandVoiceNotes: varietyInstruction || campaign.brandVoiceNotes,
             mode: iterMode,
             targetDimension: weakestDimension || undefined,
             improvementSuggestion,
@@ -555,7 +700,7 @@ export const appRouter = router({
           adId: bestAdId, finalAdId: bestAdId, score: bestScore,
           isPublishable: bestScore >= campaign.currentQualityThreshold,
           mode: initialMode, totalCost, remediationRounds,
-          weakestDimension,
+          weakestDimension, varietyLabel: variety.varietyLabel,
         };
       }
 
@@ -566,7 +711,7 @@ export const appRouter = router({
         const batchEnd = Math.min(batchStart + BATCH_SIZE, input.count);
         const batchPipelines = Array.from({ length: batchEnd - batchStart }, (_, i) => {
           const idx = batchStart + i;
-          // Mix modes: last ad in each batch is creative_spark for variety
+          // Variety matrix handles tone/format diversity — use creative_spark for last ad as bonus
           const mode = idx === input.count - 1 ? "creative_spark" : input.mode;
           return runAdPipeline(idx, mode);
         });
@@ -588,6 +733,14 @@ export const appRouter = router({
         qualityRatchetApplied = true;
       }
 
+      // Build variety distribution summary for the UI
+      const toneDistribution: Record<string, number> = {};
+      const formatDistribution: Record<string, number> = {};
+      varietyMatrix.slice(0, allResults.length).forEach(v => {
+        toneDistribution[v.tone.label] = (toneDistribution[v.tone.label] || 0) + 1;
+        formatDistribution[v.format.label] = (formatDistribution[v.format.label] || 0) + 1;
+      });
+
       return {
         results: allResults,
         winnerId: winner.finalAdId,
@@ -596,8 +749,40 @@ export const appRouter = router({
         approvedCount,
         remediatedCount,
         qualityRatchetApplied,
+        // Variety stats for the UI
+        varietyStats: {
+          uniqueTones: Object.keys(toneDistribution).length,
+          uniqueFormats: Object.keys(formatDistribution).length,
+          toneDistribution,
+          formatDistribution,
+          diversityScore: Math.round((Object.keys(toneDistribution).length / TONES.length + Object.keys(formatDistribution).length / FORMATS.length) / 2 * 100),
+        },
       };
     }),
+    // Smart Prompt Expansion: takes a vague brief and returns 8 distinct creative angles
+    expandPrompt: protectedProcedure.input(z.object({
+      campaignId: z.number(),
+      vaguePrompt: z.string().min(3).max(500),
+    })).mutation(async ({ input }) => {
+      const campaign = await getCampaignCached(input.campaignId);
+      if (!campaign) throw new Error("Campaign not found");
+      const angles = await expandPrompt(input.vaguePrompt, {
+        audienceSegment: campaign.audienceSegment,
+        product: campaign.product,
+        campaignGoal: campaign.campaignGoal,
+        tone: campaign.tone,
+      });
+      return { angles };
+    }),
+
+    // Return the variety matrix constants so the UI can show what's coming
+    getVarietyMatrix: publicProcedure.query(() => ({
+      tones: TONES.map(t => ({ id: t.id, label: t.label })),
+      formats: FORMATS.map(f => ({ id: f.id, label: f.label })),
+      emotionalHooks: EMOTIONAL_HOOKS.map(h => ({ id: h.id, label: h.label })),
+      audienceAngles: AUDIENCE_ANGLES.map(a => ({ id: a.id, label: a.label })),
+    })),
+
     getCampaignAnalytics: protectedProcedure.input(z.object({ campaignId: z.number() })).query(async ({ input }) => {
       const analyticsStart = Date.now();
       const [campaign, allAds, allEvaluations, iterationLogs] = await Promise.all([

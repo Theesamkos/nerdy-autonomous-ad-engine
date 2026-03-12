@@ -180,3 +180,14 @@
 - [ ] Display latency badges on each generated ad card in CampaignDetail
 - [ ] Add avg latency KPI cards to PerformanceTracker
 - [ ] Update README with latency architecture section
+
+## Phase 21: Smart Prompt Expansion + Batch Variety Engine
+- [ ] Backend: expandPrompt procedure — vague input → 8 distinct creative angles (tone, hook, audience framing, format, emotional trigger)
+- [ ] Backend: variety matrix for batch — 50 ads spread across 8 tones, 6 formats, 5 emotional hooks, 4 audience angles
+- [ ] Backend: enforce no two consecutive ads share same tone+format combo
+- [ ] Backend: each angle gets a distinct system prompt modifier injected into generateAdCopy
+- [ ] Frontend: Smart Prompt input panel on CampaignDetail — vague text field + "Expand" button
+- [ ] Frontend: 8 angle cards with tone badge, hook label, format tag, and example headline preview
+- [ ] Frontend: select all or individual angles → generate batch from selected angles
+- [ ] Frontend: batch result grouped by angle/variety type with variety distribution bar
+- [ ] Frontend: variety diversity score shown in batch result summary
