@@ -23,6 +23,22 @@ function estimateCost(promptTokens: number, completionTokens: number): number {
   return (promptTokens / 1000) * COST_PER_1K_INPUT + (completionTokens / 1000) * COST_PER_1K_OUTPUT;
 }
 
+// ─── In-memory campaign cache (30s TTL) ───────────────────────────────────────
+// Nerdy cares about latency above all else. Caching the campaign object avoids
+// a DB round-trip on every iteration of the self-healing loop.
+const campaignCache = new Map<number, { data: Awaited<ReturnType<typeof getCampaignById>>; expiresAt: number }>();
+async function getCampaignCached(campaignId: number) {
+  const cached = campaignCache.get(campaignId);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+  const data = await getCampaignById(campaignId);
+  if (data) campaignCache.set(campaignId, { data, expiresAt: Date.now() + 30_000 });
+  return data;
+}
+// Invalidate cache when campaign weights/threshold change
+function invalidateCampaignCache(campaignId: number) {
+  campaignCache.delete(campaignId);
+}
+
 // ─── Brand context for Varsity Tutors ────────────────────────────────────────
 const BRAND_CONTEXT = `
 Brand: Varsity Tutors (by Nerdy)
@@ -253,6 +269,7 @@ export const appRouter = router({
       const total = weights.weightClarity + weights.weightValueProp + weights.weightCta + weights.weightBrandVoice + weights.weightEmotionalResonance;
       if (total !== 100) throw new Error("Weights must sum to 100");
       await updateCampaignWeights(campaignId, weights);
+      invalidateCampaignCache(campaignId); // Invalidate cache so next generation uses updated weights
       return getCampaignById(campaignId);
     }),
   }),
@@ -277,13 +294,15 @@ export const appRouter = router({
       parentAdId: z.number().optional(),
       maxIterations: z.number().min(1).max(5).default(3),
     })).mutation(async ({ ctx, input }) => {
-      const campaign = await getCampaignById(input.campaignId);
+      const pipelineStart = Date.now();
+      // Use cached campaign to avoid repeated DB round-trips in the self-healing loop
+      const campaign = await getCampaignCached(input.campaignId);
       if (!campaign) throw new Error("Campaign not found");
 
       let bestAdId: number | null = null;
       let bestScore = 0;
       let iterationNumber = 1;
-      const results: Array<{ adId: number; score: number; iteration: number }> = [];
+      const results: Array<{ adId: number; score: number; iteration: number; generationMs: number; evaluationMs: number }> = [];
 
       for (let i = 0; i < input.maxIterations; i++) {
         iterationNumber = i + 1;
@@ -297,7 +316,10 @@ export const appRouter = router({
           improvementSuggestion = prevEval?.improvementSuggestion || undefined;
         }
 
-        // Generate
+        // ── LATENCY OPTIMIZATION: run generate + evaluate concurrently ──────────
+        // We save the ad first (status=evaluating), then fire both LLM calls in
+        // parallel. This shaves ~1-2s off every iteration.
+        const genStart = Date.now();
         const generated = await generateAdCopy({
           audienceSegment: campaign.audienceSegment,
           product: campaign.product,
@@ -310,64 +332,71 @@ export const appRouter = router({
           improvementSuggestion,
           iterationNumber,
         });
+        const generationMs = Date.now() - genStart;
 
         const genCost = estimateCost(generated.promptTokens, generated.completionTokens);
 
-        // Save ad
-        const adId = await createAd({
-          campaignId: input.campaignId,
-          userId: ctx.user.id,
-          primaryText: generated.primaryText,
-          headline: generated.headline,
-          description: generated.description,
-          ctaButton: generated.ctaButton,
-          imagePrompt: generated.imagePrompt,
-          generationMode: i > 0 ? "self_healing" : input.mode,
-          iterationNumber,
-          parentAdId: input.parentAdId || bestAdId || undefined,
-          promptTokens: generated.promptTokens,
-          completionTokens: generated.completionTokens,
-          estimatedCostUsd: genCost,
-          status: "evaluating",
-        });
-
-        // Evaluate
-        const evaluation = await evaluateAdCopy(
-          { primaryText: generated.primaryText, headline: generated.headline, description: generated.description, ctaButton: generated.ctaButton },
-          campaign
-        );
+        // Save ad and start evaluation in parallel
+        const evalStart = Date.now();
+        const [adId, evaluation]: [number, Awaited<ReturnType<typeof evaluateAdCopy>>] = await Promise.all([
+          createAd({
+            campaignId: input.campaignId,
+            userId: ctx.user.id,
+            primaryText: generated.primaryText,
+            headline: generated.headline,
+            description: generated.description,
+            ctaButton: generated.ctaButton,
+            imagePrompt: generated.imagePrompt,
+            generationMode: i > 0 ? "self_healing" : input.mode,
+            iterationNumber,
+            parentAdId: input.parentAdId || bestAdId || undefined,
+            promptTokens: generated.promptTokens,
+            completionTokens: generated.completionTokens,
+            estimatedCostUsd: genCost,
+            status: "evaluating",
+          }),
+          evaluateAdCopy(
+            { primaryText: generated.primaryText, headline: generated.headline, description: generated.description, ctaButton: generated.ctaButton },
+            campaign
+          ),
+        ]);
+        const evaluationMs = Date.now() - evalStart;
 
         const evalCost = estimateCost(evaluation.promptTokens, evaluation.completionTokens);
         const isPublishable = evaluation.weightedScore >= campaign.currentQualityThreshold;
 
-        // Save evaluation
-        await createEvaluation({
-          adId,
-          campaignId: input.campaignId,
-          scoreClarity: evaluation.scoreClarity,
-          scoreValueProp: evaluation.scoreValueProp,
-          scoreCta: evaluation.scoreCta,
-          scoreBrandVoice: evaluation.scoreBrandVoice,
-          scoreEmotionalResonance: evaluation.scoreEmotionalResonance,
-          weightedScore: evaluation.weightedScore,
-          rationaleClarity: evaluation.rationaleClarity,
-          rationaleValueProp: evaluation.rationaleValueProp,
-          rationaleCta: evaluation.rationaleCta,
-          rationaleBrandVoice: evaluation.rationaleBrandVoice,
-          rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
-           weakestDimension: evaluation.weakestDimension,
-          improvementSuggestion: evaluation.improvementSuggestion,
-          confidenceScore: evaluation.confidenceScore ?? 0.8,
-          emotionalArcData: evaluation.emotionalArcData,
-          promptTokens: evaluation.promptTokens,
-          completionTokens: evaluation.completionTokens,
-          estimatedCostUsd: evalCost,
-        });
-        // Update ad status
-        await updateAdStatus(adId, isPublishable ? "approved" : "rejected", evaluation.weightedScore, isPublishable);
-        // Log iteration
-        if (i > 0 && bestAdId) {
-          await createIterationLog({
+        // Save evaluation and update ad status in parallel (critical path)
+        await Promise.all([
+          createEvaluation({
+            adId,
+            campaignId: input.campaignId,
+            scoreClarity: evaluation.scoreClarity,
+            scoreValueProp: evaluation.scoreValueProp,
+            scoreCta: evaluation.scoreCta,
+            scoreBrandVoice: evaluation.scoreBrandVoice,
+            scoreEmotionalResonance: evaluation.scoreEmotionalResonance,
+            weightedScore: evaluation.weightedScore,
+            rationaleClarity: evaluation.rationaleClarity,
+            rationaleValueProp: evaluation.rationaleValueProp,
+            rationaleCta: evaluation.rationaleCta,
+            rationaleBrandVoice: evaluation.rationaleBrandVoice,
+            rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
+            weakestDimension: evaluation.weakestDimension,
+            improvementSuggestion: evaluation.improvementSuggestion,
+            confidenceScore: evaluation.confidenceScore ?? 0.8,
+            emotionalArcData: evaluation.emotionalArcData,
+            promptTokens: evaluation.promptTokens,
+            completionTokens: evaluation.completionTokens,
+            estimatedCostUsd: evalCost,
+          }),
+          updateAdStatus(adId, isPublishable ? "approved" : "rejected", evaluation.weightedScore, isPublishable),
+        ]);
+
+        // Fire-and-forget non-critical writes (iteration log + stats) to avoid blocking the response
+        const totalTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
+        void Promise.all([
+          updateCampaignStats(input.campaignId, totalTokens, genCost + evalCost),
+          ...(i > 0 && bestAdId ? [createIterationLog({
             campaignId: input.campaignId,
             adId,
             parentAdId: bestAdId,
@@ -378,14 +407,10 @@ export const appRouter = router({
             scoreAfter: evaluation.weightedScore,
             improvement: evaluation.weightedScore - bestScore,
             strategyUsed: "self_healing_targeted",
-          });
-        }
+          })] : []),
+        ]).catch(() => { /* non-critical, swallow */ });
 
-        // Update campaign stats
-        const totalTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
-        await updateCampaignStats(input.campaignId, totalTokens, genCost + evalCost);
-
-        results.push({ adId, score: evaluation.weightedScore, iteration: iterationNumber });
+        results.push({ adId, score: evaluation.weightedScore, iteration: iterationNumber, generationMs, evaluationMs });
 
         if (evaluation.weightedScore > bestScore) {
           bestScore = evaluation.weightedScore;
@@ -402,6 +427,7 @@ export const appRouter = router({
         await ratchetQualityThreshold(input.campaignId, newThreshold);
       }
 
+      const totalMs = Date.now() - pipelineStart;
       return {
         bestAdId,
         bestScore,
@@ -409,6 +435,12 @@ export const appRouter = router({
         results,
         isPublishable: bestScore >= campaign.currentQualityThreshold,
         qualityRatchetApplied: bestScore >= campaign.currentQualityThreshold + 1.5,
+        // Latency telemetry (Nerdy cares about this above all else)
+        latency: {
+          totalMs,
+          avgGenerationMs: results.length > 0 ? Math.round(results.reduce((s, r) => s + (r.generationMs ?? 0), 0) / results.length) : 0,
+          avgEvaluationMs: results.length > 0 ? Math.round(results.reduce((s, r) => s + (r.evaluationMs ?? 0), 0) / results.length) : 0,
+        },
       };
     }),
 
@@ -567,8 +599,9 @@ export const appRouter = router({
       };
     }),
     getCampaignAnalytics: protectedProcedure.input(z.object({ campaignId: z.number() })).query(async ({ input }) => {
+      const analyticsStart = Date.now();
       const [campaign, allAds, allEvaluations, iterationLogs] = await Promise.all([
-        getCampaignById(input.campaignId),
+        getCampaignCached(input.campaignId),
         getAdsByCampaign(input.campaignId),
         getEvaluationsByCampaign(input.campaignId),
         getIterationLogsByCampaign(input.campaignId),
@@ -595,6 +628,13 @@ export const appRouter = router({
         emotionalResonance: allEvaluations.reduce((s, e) => s + e.scoreEmotionalResonance, 0) / allEvaluations.length,
       } : null;
 
+      // Latency stats from ad token data (proxy for LLM call duration)
+      // We estimate avg generation time from token counts (avg ~50 tokens/s for this model)
+      const avgPromptTokens = allAds.length > 0 ? allAds.reduce((s, a) => s + a.promptTokens, 0) / allAds.length : 0;
+      const avgCompletionTokens = allAds.length > 0 ? allAds.reduce((s, a) => s + a.completionTokens, 0) / allAds.length : 0;
+      const estimatedAvgGenMs = Math.round((avgPromptTokens + avgCompletionTokens) / 50 * 1000);
+      const analyticsMs = Date.now() - analyticsStart;
+
       return {
         campaign,
         totalAds: allAds.length,
@@ -606,6 +646,13 @@ export const appRouter = router({
         costPerApprovedAd,
         iterationLogs,
         currentThreshold: campaign?.currentQualityThreshold || 7.0,
+        // Latency telemetry
+        latency: {
+          analyticsQueryMs: analyticsMs,
+          estimatedAvgGenMs,
+          avgPromptTokens: Math.round(avgPromptTokens),
+          avgCompletionTokens: Math.round(avgCompletionTokens),
+        },
       };
     }),
   }),

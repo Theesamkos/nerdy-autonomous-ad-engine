@@ -449,13 +449,16 @@ export default function CampaignDetail() {
       setLogStep(0);
       refetchAds();
       refetchAnalytics();
+      const latency = result.latency;
       if (result.isPublishable) {
-        toast.success(`Ad approved. Score: ${result.bestScore.toFixed(1)}/10 in ${result.totalIterations} iteration(s)`);
+        toast.success(
+          `✅ Approved — ${result.bestScore.toFixed(1)}/10 in ${result.totalIterations} iter${result.totalIterations > 1 ? 's' : ''} · ${latency.totalMs}ms total`
+        );
       } else {
-        toast.warning(`Below threshold. Best score: ${result.bestScore.toFixed(1)}/10`);
+        toast.warning(`Below threshold. Best: ${result.bestScore.toFixed(1)}/10 · ${latency.totalMs}ms`);
       }
       if (result.qualityRatchetApplied) {
-        toast.info("Quality threshold raised — the bar just got higher.");
+        toast.info("⚡ Quality threshold raised — the bar just got higher.");
       }
     },
     onError: (err) => { setIsGenerating(false); setLogStep(0); toast.error(err.message); },

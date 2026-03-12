@@ -8,6 +8,7 @@ import {
   float,
   json,
   boolean,
+  index,
 } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
@@ -54,6 +55,9 @@ export const campaigns = mysqlTable("campaigns", {
 
 export type Campaign = typeof campaigns.$inferSelect;
 export type InsertCampaign = typeof campaigns.$inferInsert;
+// Indexes for campaigns
+export const campaignsUserIdx = index("campaigns_userId_idx").on(campaigns.userId);
+export const campaignsStatusIdx = index("campaigns_status_idx").on(campaigns.status);
 
 // ─── Generated Ads ────────────────────────────────────────────────────────────
 export const ads = mysqlTable("ads", {
@@ -84,6 +88,11 @@ export const ads = mysqlTable("ads", {
 
 export type Ad = typeof ads.$inferSelect;
 export type InsertAd = typeof ads.$inferInsert;
+// Indexes for ads — these are the hottest query paths
+export const adsCampaignIdx = index("ads_campaignId_idx").on(ads.campaignId);
+export const adsCampaignStatusIdx = index("ads_campaignId_status_idx").on(ads.campaignId, ads.status);
+export const adsCampaignCreatedIdx = index("ads_campaignId_createdAt_idx").on(ads.campaignId, ads.createdAt);
+export const adsUserIdx = index("ads_userId_idx").on(ads.userId);
 
 // ─── Ad Evaluations ───────────────────────────────────────────────────────────
 export const evaluations = mysqlTable("evaluations", {
@@ -120,6 +129,9 @@ export const evaluations = mysqlTable("evaluations", {
 
 export type Evaluation = typeof evaluations.$inferSelect;
 export type InsertEvaluation = typeof evaluations.$inferInsert;
+// Indexes for evaluations
+export const evaluationsAdIdx = index("evaluations_adId_idx").on(evaluations.adId);
+export const evaluationsCampaignIdx = index("evaluations_campaignId_idx").on(evaluations.campaignId);
 
 // ─── Iteration Log ────────────────────────────────────────────────────────────
 export const iterationLogs = mysqlTable("iteration_logs", {
@@ -138,6 +150,9 @@ export const iterationLogs = mysqlTable("iteration_logs", {
 });
 
 export type IterationLog = typeof iterationLogs.$inferSelect;
+// Indexes for iteration_logs
+export const iterLogCampaignIdx = index("iteration_logs_campaignId_idx").on(iterationLogs.campaignId);
+export const iterLogAdIdx = index("iteration_logs_adId_idx").on(iterationLogs.adId);
 
 // ─── Adversarial Sessions ─────────────────────────────────────────────────────
 export const adversarialSessions = mysqlTable("adversarial_sessions", {
@@ -154,6 +169,8 @@ export const adversarialSessions = mysqlTable("adversarial_sessions", {
 });
 
 export type AdversarialSession = typeof adversarialSessions.$inferSelect;
+// Indexes for adversarial_sessions
+export const adversarialCampaignIdx = index("adversarial_sessions_campaignId_idx").on(adversarialSessions.campaignId);
 
 // ─── Creative Spark Ideas ─────────────────────────────────────────────────────
 export const creativeSparkIdeas = mysqlTable("creative_spark_ideas", {
@@ -169,6 +186,8 @@ export const creativeSparkIdeas = mysqlTable("creative_spark_ideas", {
 });
 
 export type CreativeSparkIdea = typeof creativeSparkIdeas.$inferSelect;
+// Indexes for creative_spark_ideas
+export const sparkCampaignIdx = index("creative_spark_ideas_campaignId_idx").on(creativeSparkIdeas.campaignId);
 
 // ─── Campaign Share Links ─────────────────────────────────────────────────────
 export const campaignShareLinks = mysqlTable("campaign_share_links", {

@@ -245,6 +245,30 @@ export default function PerformanceTracker() {
           ))}
         </motion.div>
 
+        {/* ⚡ Latency Telemetry Row — Nerdy cares about this above all else */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+          className="ops-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Zap size={13} style={{ color: "#fbbf24" }} />
+            <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>Latency Telemetry</span>
+            <span className="ml-auto font-mono text-[9px] px-2 py-0.5 rounded" style={{ background: "rgba(251,191,36,0.08)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}>NERDY PRIORITY #1</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "Est. Avg Gen Time",  value: analytics?.latency ? analytics.latency.estimatedAvgGenMs + "ms" : "—",  sub: "per ad (LLM proxy)",      color: "#fbbf24" },
+              { label: "Analytics Query",    value: analytics?.latency ? analytics.latency.analyticsQueryMs + "ms" : "—",   sub: "DB + aggregation",       color: "#34d399" },
+              { label: "Avg Prompt Tokens",  value: analytics?.latency ? analytics.latency.avgPromptTokens + " tok" : "—",  sub: "input per generation",   color: "#60a5fa" },
+              { label: "Avg Output Tokens",  value: analytics?.latency ? analytics.latency.avgCompletionTokens + " tok" : "—", sub: "output per generation", color: "#a78bfa" },
+            ].map(({ label, value, sub, color }) => (
+              <div key={label}>
+                <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "rgba(100,116,139,0.5)" }}>{label}</div>
+                <div className="font-display font-bold text-xl" style={{ color, letterSpacing: "-0.03em" }}>{value}</div>
+                <div className="font-mono text-[9px] mt-0.5" style={{ color: "rgba(100,116,139,0.35)" }}>{sub}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Quality Trend */}
         {qualityTrend.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}

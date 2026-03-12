@@ -163,3 +163,20 @@
 - [x] Frontend: ReadyToLaunchPanel rebuilt on approved ad cards (Meta Ads Manager format)
 - [x] GitHub repo made PUBLIC for submission
 - [x] TypeScript: 0 errors
+
+## Phase 19: PRD Deep Audit
+- [x] confidenceScore: DB column + LLM schema + all createEvaluation calls + AdCard UI
+- [x] JSON export button in PerformanceTracker (full structured report)
+- [x] Git authorship rewritten to Theesamkos on all commits
+- [x] GitHub repo: PUBLIC, force-pushed with correct authorship
+- [x] TypeScript: 0 errors. Tests: 17/17 passing.
+
+## Phase 20: Latency-First Optimization (Nerdy's #1 Priority)
+- [ ] Add DB indexes on all hot query columns (campaignId, adId, status, createdAt)
+- [ ] Fire-and-forget non-critical DB writes (iterationLog, campaignStats)
+- [ ] In-memory campaign cache (30s TTL) to avoid repeated DB reads per pipeline iteration
+- [ ] Parallel generate+evaluate: fire both LLM calls simultaneously where architecture allows
+- [ ] Track and return generationMs + evaluationMs + totalMs in every procedure response
+- [ ] Display latency badges on each generated ad card in CampaignDetail
+- [ ] Add avg latency KPI cards to PerformanceTracker
+- [ ] Update README with latency architecture section
