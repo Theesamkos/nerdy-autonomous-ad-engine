@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "45d26c2a-5fe1-4ceb-a158-a06a45fc1a75",
+  "id": "469e5269-4420-4fd3-9386-316371cf0be1",
   "prevId": "4b5c2b67-bb33-4b2f-8e58-2bc41397bde9",
   "tables": {
     "ads": {
@@ -429,14 +429,6 @@
           "autoincrement": false,
           "default": 20
         },
-        "initialQualityThreshold": {
-          "name": "initialQualityThreshold",
-          "type": "float",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 7
-        },
         "currentQualityThreshold": {
           "name": "currentQualityThreshold",
           "type": "float",
@@ -856,6 +848,14 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "confidenceScore": {
+          "name": "confidenceScore",
+          "type": "float",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0.8
         },
         "emotionalArcData": {
           "name": "emotionalArcData",

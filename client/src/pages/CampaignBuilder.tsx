@@ -42,7 +42,6 @@ export default function CampaignBuilder() {
     campaignGoal: "conversion" as "awareness" | "conversion" | "retargeting",
     tone: "empowering" as "empowering" | "urgent" | "friendly" | "professional" | "playful",
     brandVoiceNotes: "",
-    initialQualityThreshold: 7.0,
   });
 
   const createCampaign = trpc.campaigns.create.useMutation({
@@ -289,42 +288,6 @@ export default function CampaignBuilder() {
                 />
               </div>
 
-              {/* Quality Threshold Slider */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="ops-label" style={{ marginBottom: 0 }}>Quality Threshold</label>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-sm" style={{ color: "#22d3ee" }}>{form.initialQualityThreshold.toFixed(1)}</span>
-                    <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.4)" }}>/ 10.0</span>
-                    <span className="font-mono text-[10px] px-2 py-0.5 rounded" style={{
-                      background: form.initialQualityThreshold >= 8.5 ? "rgba(239,68,68,0.12)" : form.initialQualityThreshold >= 7.5 ? "rgba(234,179,8,0.12)" : form.initialQualityThreshold >= 6.5 ? "rgba(34,211,238,0.1)" : "rgba(100,116,139,0.1)",
-                      color: form.initialQualityThreshold >= 8.5 ? "#f87171" : form.initialQualityThreshold >= 7.5 ? "#fbbf24" : form.initialQualityThreshold >= 6.5 ? "#22d3ee" : "rgba(148,163,184,0.6)",
-                      border: `1px solid ${form.initialQualityThreshold >= 8.5 ? "rgba(239,68,68,0.2)" : form.initialQualityThreshold >= 7.5 ? "rgba(234,179,8,0.2)" : form.initialQualityThreshold >= 6.5 ? "rgba(34,211,238,0.15)" : "rgba(100,116,139,0.15)"}`,
-                    }}>
-                      {form.initialQualityThreshold >= 8.5 ? "ELITE" : form.initialQualityThreshold >= 7.5 ? "HIGH" : form.initialQualityThreshold >= 6.5 ? "STANDARD" : "VOLUME"}
-                    </span>
-                  </div>
-                </div>
-                <input
-                  type="range" min={5.0} max={9.0} step={0.5}
-                  value={form.initialQualityThreshold}
-                  onChange={e => setForm(f => ({ ...f, initialQualityThreshold: parseFloat(e.target.value) }))}
-                  className="w-full cursor-pointer"
-                  style={{ accentColor: "#22d3ee" }}
-                />
-                <div className="flex justify-between mt-1">
-                  {["5.0","5.5","6.0","6.5","7.0","7.5","8.0","8.5","9.0"].map(v => (
-                    <span key={v} className="font-mono" style={{ fontSize: "0.52rem", color: parseFloat(v) === form.initialQualityThreshold ? "#22d3ee" : "rgba(71,85,105,0.5)" }}>{v}</span>
-                  ))}
-                </div>
-                <p className="font-mono text-[10px] mt-2" style={{ color: "rgba(100,116,139,0.4)" }}>
-                  {form.initialQualityThreshold >= 8.5 ? "Ads must score 8.5+ to be approved. Expect multiple retries — best for high-stakes launches." :
-                   form.initialQualityThreshold >= 7.5 ? "Ads must score 7.5+ to be approved. Good balance of quality and speed." :
-                   form.initialQualityThreshold >= 6.5 ? "Ads must score 6.5+ to be approved. Standard mode — most ads pass on first try." :
-                   "Low bar — almost everything passes. Use for rapid brainstorming and volume."}
-                </p>
-              </div>
-
               {/* Summary */}
               <div className="ops-card bracket p-5">
                 <div className="section-label mb-4">Campaign Summary</div>
@@ -333,7 +296,7 @@ export default function CampaignBuilder() {
                     { label: "Name",      value: form.name },
                     { label: "Goal",      value: form.campaignGoal },
                     { label: "Tone",      value: form.tone },
-                    { label: "Threshold", value: `${form.initialQualityThreshold.toFixed(1)} / 10.0` },
+                    { label: "Threshold", value: "7.0 / 10.0" },
                   ].map(({ label, value }) => (
                     <div key={label}>
                       <div className="section-label mb-1">{label}</div>

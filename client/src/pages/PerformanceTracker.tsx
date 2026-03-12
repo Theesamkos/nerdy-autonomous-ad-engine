@@ -69,6 +69,84 @@ export default function PerformanceTracker() {
   const emotionalArc  = (selectedAdData?.evaluation?.emotionalArcData as any[]) || [];
   const approvedAds   = ads?.filter((a: any) => a.status === "approved") || [];
 
+  const exportJSON = () => {
+    if (!ads || ads.length === 0) { return; }
+    const report = {
+      exportedAt: new Date().toISOString(),
+      campaign: {
+        id: campaign?.id,
+        name: campaign?.name,
+        audienceSegment: campaign?.audienceSegment,
+        product: campaign?.product,
+        campaignGoal: campaign?.campaignGoal,
+        currentQualityThreshold: campaign?.currentQualityThreshold,
+        totalTokensUsed: campaign?.totalTokensUsed,
+        totalCostUsd: campaign?.totalCostUsd,
+      },
+      summary: {
+        totalAds: analytics?.totalAds || 0,
+        approvedAds: analytics?.approvedAds || 0,
+        rejectedAds: analytics?.rejectedAds || 0,
+        approvalRate: analytics?.totalAds ? Math.round(((analytics.approvedAds || 0) / analytics.totalAds) * 100) : 0,
+        averageScore: analytics?.avgScores ? Object.values(analytics.avgScores).reduce((s: number, v) => s + (v as number), 0) / 5 : 0,
+        averageConfidence: ads.reduce((sum: number, a: any) => sum + (a.evaluation?.confidenceScore ?? 0.8), 0) / (ads.length || 1),
+        totalIterationCycles: analytics?.iterationLogs?.length || 0,
+        totalCostUsd: analytics?.totalCost || 0,
+        costPerApprovedAd: analytics?.costPerApprovedAd || 0,
+      },
+      dimensionWeights: {
+        clarity: campaign?.weightClarity,
+        valueProp: campaign?.weightValueProp,
+        cta: campaign?.weightCta,
+        brandVoice: campaign?.weightBrandVoice,
+        emotionalResonance: campaign?.weightEmotionalResonance,
+      },
+      ads: ads.map((a: any) => ({
+        id: a.id,
+        status: a.status,
+        qualityScore: a.qualityScore,
+        generationMode: a.generationMode,
+        copy: {
+          primaryText: a.primaryText,
+          headline: a.headline,
+          description: a.description,
+          ctaButton: a.ctaButton,
+        },
+        evaluation: a.evaluation ? {
+          scoreClarity: a.evaluation.scoreClarity,
+          scoreValueProp: a.evaluation.scoreValueProp,
+          scoreCta: a.evaluation.scoreCta,
+          scoreBrandVoice: a.evaluation.scoreBrandVoice,
+          scoreEmotionalResonance: a.evaluation.scoreEmotionalResonance,
+          weightedScore: a.evaluation.weightedScore,
+          confidenceScore: a.evaluation.confidenceScore ?? 0.8,
+          weakestDimension: a.evaluation.weakestDimension,
+          improvementSuggestion: a.evaluation.improvementSuggestion,
+          rationale: {
+            clarity: a.evaluation.rationaleClarity,
+            valueProp: a.evaluation.rationaleValueProp,
+            cta: a.evaluation.rationaleCta,
+            brandVoice: a.evaluation.rationaleBrandVoice,
+            emotionalResonance: a.evaluation.rationaleEmotionalResonance,
+          },
+        } : null,
+        tokenUsage: {
+          promptTokens: a.promptTokens,
+          completionTokens: a.completionTokens,
+          estimatedCostUsd: a.estimatedCostUsd,
+        },
+        createdAt: new Date(a.createdAt).toISOString(),
+      })),
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const el = document.createElement("a");
+    el.href = url;
+    el.download = `${campaign?.name || "campaign"}-evaluation-report-${new Date().toISOString().slice(0, 10)}.json`;
+    el.click();
+    URL.revokeObjectURL(url);
+  };
+
   const exportCSV = () => {
     if (!ads || ads.length === 0) { return; }
     const headers = [
@@ -125,14 +203,24 @@ export default function PerformanceTracker() {
                     Full-spectrum performance intelligence. Quality trends, cost efficiency, dimension breakdown, and emotional resonance arc.
                   </p>
                 </div>
-                <button
-                  onClick={exportCSV}
-                  disabled={!ads || ads.length === 0}
-                  className="btn-secondary flex items-center gap-2 flex-shrink-0 disabled:opacity-30"
-                  title="Export all ads to CSV">
-                  <Download size={13} />
-                  <span className="hidden sm:inline">Export CSV</span>
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={exportJSON}
+                    disabled={!ads || ads.length === 0}
+                    className="btn-secondary flex items-center gap-2 disabled:opacity-30"
+                    title="Export full evaluation report as JSON">
+                    <Download size={13} />
+                    <span className="hidden sm:inline">Export JSON</span>
+                  </button>
+                  <button
+                    onClick={exportCSV}
+                    disabled={!ads || ads.length === 0}
+                    className="btn-secondary flex items-center gap-2 disabled:opacity-30"
+                    title="Export all ads to CSV">
+                    <Download size={13} />
+                    <span className="hidden sm:inline">Export CSV</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -163,6 +163,7 @@ Dimension weights: Clarity ${campaign.weightClarity}%, Value Prop ${campaign.wei
             rationaleEmotionalResonance: { type: "string" },
             weakestDimension: { type: "string" },
             improvementSuggestion: { type: "string" },
+            confidenceScore: { type: "number", description: "How confident the evaluator is in these scores (0.0-1.0). Use 0.9+ when the ad is clearly good or bad, 0.5-0.7 when the ad is borderline or the context is ambiguous." },
             emotionalArcData: {
               type: "array",
               items: {
@@ -181,7 +182,7 @@ Dimension weights: Clarity ${campaign.weightClarity}%, Value Prop ${campaign.wei
           required: [
             "scoreClarity", "scoreValueProp", "scoreCta", "scoreBrandVoice", "scoreEmotionalResonance",
             "rationaleClarity", "rationaleValueProp", "rationaleCta", "rationaleBrandVoice", "rationaleEmotionalResonance",
-            "weakestDimension", "improvementSuggestion", "emotionalArcData",
+            "weakestDimension", "improvementSuggestion", "confidenceScore", "emotionalArcData",
           ],
           additionalProperties: false,
         },
@@ -235,13 +236,8 @@ export const appRouter = router({
       campaignGoal: z.enum(["awareness", "conversion", "retargeting"]),
       tone: z.enum(["empowering", "urgent", "friendly", "professional", "playful"]),
       brandVoiceNotes: z.string().optional(),
-      initialQualityThreshold: z.number().min(5.0).max(9.0).default(7.0),
     })).mutation(async ({ ctx, input }) => {
-      const id = await createCampaign({
-        ...input,
-        userId: ctx.user.id,
-        currentQualityThreshold: input.initialQualityThreshold,
-      });
+      const id = await createCampaign({ ...input, userId: ctx.user.id });
       return getCampaignById(id);
     }),
 
@@ -359,17 +355,16 @@ export const appRouter = router({
           rationaleCta: evaluation.rationaleCta,
           rationaleBrandVoice: evaluation.rationaleBrandVoice,
           rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
-          weakestDimension: evaluation.weakestDimension,
+           weakestDimension: evaluation.weakestDimension,
           improvementSuggestion: evaluation.improvementSuggestion,
+          confidenceScore: evaluation.confidenceScore ?? 0.8,
           emotionalArcData: evaluation.emotionalArcData,
           promptTokens: evaluation.promptTokens,
           completionTokens: evaluation.completionTokens,
           estimatedCostUsd: evalCost,
         });
-
         // Update ad status
         await updateAdStatus(adId, isPublishable ? "approved" : "rejected", evaluation.weightedScore, isPublishable);
-
         // Log iteration
         if (i > 0 && bestAdId) {
           await createIterationLog({
@@ -421,25 +416,43 @@ export const appRouter = router({
     // ─── Bulk × 5 Generation ────────────────────────────────────────────────
     bulkGenerate: protectedProcedure.input(z.object({
       campaignId: z.number(),
-      count: z.number().min(2).max(5).default(5),
+      count: z.number().min(1).max(50).default(10),
       mode: z.enum(["standard", "creative_spark"]).default("standard"),
     })).mutation(async ({ ctx, input }) => {
-      const campaign = await getCampaignById(input.campaignId);
-      if (!campaign) throw new Error("Campaign not found");
-      // Run `count` pipelines in parallel — each generates + evaluates independently
-      const pipelines = Array.from({ length: input.count }, (_, idx) =>
-        (async () => {
-          const pipelineMode = idx === 0 ? input.mode : (idx === input.count - 1 ? "creative_spark" : input.mode);
+      const campaignRaw = await getCampaignById(input.campaignId);
+      if (!campaignRaw) throw new Error("Campaign not found");
+      const campaign = campaignRaw;
+
+      // ── Helper: run one ad through generate → evaluate → remediate loop ──────
+      async function runAdPipeline(idx: number, initialMode: string): Promise<{
+        adId: number; finalAdId: number; score: number; isPublishable: boolean;
+        mode: string; totalCost: number; remediationRounds: number;
+        weakestDimension: string | null;
+      }> {
+        const MAX_REMEDIATION = 3;
+        let currentMode = initialMode;
+        let parentAdId: number | undefined;
+        let bestScore = 0;
+        let bestAdId = 0;
+        let remediationRounds = 0;
+        let weakestDimension: string | null = null;
+        let improvementSuggestion: string | undefined;
+        let totalCost = 0;
+
+        for (let attempt = 0; attempt <= MAX_REMEDIATION; attempt++) {
+          const iterMode = attempt === 0 ? currentMode : "self_healing";
           const generated = await generateAdCopy({
             audienceSegment: campaign.audienceSegment,
             product: campaign.product,
             campaignGoal: campaign.campaignGoal,
             tone: campaign.tone,
             brandVoiceNotes: campaign.brandVoiceNotes,
-            mode: pipelineMode,
-            iterationNumber: idx + 1,
+            mode: iterMode,
+            targetDimension: weakestDimension || undefined,
+            improvementSuggestion,
+            iterationNumber: idx + 1 + attempt,
           });
-          const genCost = (generated.promptTokens * 0.000003) + (generated.completionTokens * 0.000015);
+          const genCost = estimateCost(generated.promptTokens, generated.completionTokens);
           const adId = await createAd({
             campaignId: input.campaignId,
             userId: ctx.user.id,
@@ -448,8 +461,9 @@ export const appRouter = router({
             description: generated.description,
             ctaButton: generated.ctaButton,
             imagePrompt: generated.imagePrompt,
-            generationMode: pipelineMode as "standard" | "creative_spark" | "adversarial" | "self_healing",
-            iterationNumber: idx + 1,
+            generationMode: iterMode as "standard" | "creative_spark" | "adversarial" | "self_healing",
+            iterationNumber: idx + 1 + attempt,
+            parentAdId,
             promptTokens: generated.promptTokens,
             completionTokens: generated.completionTokens,
             estimatedCostUsd: genCost,
@@ -459,51 +473,97 @@ export const appRouter = router({
             { primaryText: generated.primaryText, headline: generated.headline, description: generated.description, ctaButton: generated.ctaButton },
             campaign
           );
-          const evalCost = (evaluation.promptTokens * 0.000003) + (evaluation.completionTokens * 0.000015);
+          const evalCost = estimateCost(evaluation.promptTokens, evaluation.completionTokens);
           const isPublishable = evaluation.weightedScore >= campaign.currentQualityThreshold;
           await createEvaluation({
-            adId,
-            campaignId: input.campaignId,
-            scoreClarity: evaluation.scoreClarity,
-            scoreValueProp: evaluation.scoreValueProp,
-            scoreCta: evaluation.scoreCta,
-            scoreBrandVoice: evaluation.scoreBrandVoice,
+            adId, campaignId: input.campaignId,
+            scoreClarity: evaluation.scoreClarity, scoreValueProp: evaluation.scoreValueProp,
+            scoreCta: evaluation.scoreCta, scoreBrandVoice: evaluation.scoreBrandVoice,
             scoreEmotionalResonance: evaluation.scoreEmotionalResonance,
             weightedScore: evaluation.weightedScore,
-            rationaleClarity: evaluation.rationaleClarity,
-            rationaleValueProp: evaluation.rationaleValueProp,
-            rationaleCta: evaluation.rationaleCta,
-            rationaleBrandVoice: evaluation.rationaleBrandVoice,
+            rationaleClarity: evaluation.rationaleClarity, rationaleValueProp: evaluation.rationaleValueProp,
+            rationaleCta: evaluation.rationaleCta, rationaleBrandVoice: evaluation.rationaleBrandVoice,
             rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
-            weakestDimension: evaluation.weakestDimension,
-            improvementSuggestion: evaluation.improvementSuggestion,
+            weakestDimension: evaluation.weakestDimension, improvementSuggestion: evaluation.improvementSuggestion,
+            confidenceScore: evaluation.confidenceScore ?? 0.8,
             emotionalArcData: evaluation.emotionalArcData,
-            promptTokens: evaluation.promptTokens,
-            completionTokens: evaluation.completionTokens,
+            promptTokens: evaluation.promptTokens, completionTokens: evaluation.completionTokens,
             estimatedCostUsd: evalCost,
           });
           await updateAdStatus(adId, isPublishable ? "approved" : "rejected", evaluation.weightedScore, isPublishable);
-          const totalTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
-          await updateCampaignStats(input.campaignId, totalTokens, genCost + evalCost);
-          return { adId, score: evaluation.weightedScore, isPublishable, mode: pipelineMode, totalCost: genCost + evalCost };
-        })()
-      );
-      const results = await Promise.all(pipelines);
-      // Sort by score descending — winner is index 0
-      results.sort((a, b) => b.score - a.score);
-      const winner = results[0];
+          const iterTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
+          await updateCampaignStats(input.campaignId, iterTokens, genCost + evalCost);
+          totalCost += genCost + evalCost;
+
+          // Log remediation iterations
+          if (attempt > 0 && bestAdId) {
+            await createIterationLog({
+              campaignId: input.campaignId, adId, parentAdId: bestAdId,
+              iterationNumber: idx + 1 + attempt,
+              triggerReason: `Bulk remediation: score ${bestScore.toFixed(1)} below threshold ${campaign.currentQualityThreshold}`,
+              targetDimension: weakestDimension || "overall",
+              scoreBefore: bestScore, scoreAfter: evaluation.weightedScore,
+              improvement: evaluation.weightedScore - bestScore,
+              strategyUsed: "bulk_remediation",
+            });
+            remediationRounds++;
+          }
+
+          if (evaluation.weightedScore > bestScore) {
+            bestScore = evaluation.weightedScore;
+            bestAdId = adId;
+          }
+          if (isPublishable) break;
+          // Prepare for next remediation round
+          weakestDimension = evaluation.weakestDimension;
+          improvementSuggestion = evaluation.improvementSuggestion || undefined;
+          parentAdId = adId;
+        }
+        return {
+          adId: bestAdId, finalAdId: bestAdId, score: bestScore,
+          isPublishable: bestScore >= campaign.currentQualityThreshold,
+          mode: initialMode, totalCost, remediationRounds,
+          weakestDimension,
+        };
+      }
+
+      // ── Run all pipelines in parallel batches of 10 to avoid DB overload ─────
+      const BATCH_SIZE = 10;
+      const allResults: Awaited<ReturnType<typeof runAdPipeline>>[] = [];
+      for (let batchStart = 0; batchStart < input.count; batchStart += BATCH_SIZE) {
+        const batchEnd = Math.min(batchStart + BATCH_SIZE, input.count);
+        const batchPipelines = Array.from({ length: batchEnd - batchStart }, (_, i) => {
+          const idx = batchStart + i;
+          // Mix modes: last ad in each batch is creative_spark for variety
+          const mode = idx === input.count - 1 ? "creative_spark" : input.mode;
+          return runAdPipeline(idx, mode);
+        });
+        const batchResults = await Promise.all(batchPipelines);
+        allResults.push(...batchResults);
+      }
+
+      // Sort by score descending
+      allResults.sort((a, b) => b.score - a.score);
+      const winner = allResults[0];
+      const approvedCount = allResults.filter(r => r.isPublishable).length;
+      const remediatedCount = allResults.filter(r => r.remediationRounds > 0).length;
+
       // Quality ratchet: if winner is well above threshold, raise the bar
+      let qualityRatchetApplied = false;
       if (winner.score >= campaign.currentQualityThreshold + 1.5) {
         const newThreshold = Math.min(campaign.currentQualityThreshold + 0.25, 9.5);
         await ratchetQualityThreshold(input.campaignId, newThreshold);
+        qualityRatchetApplied = true;
       }
+
       return {
-        results,
-        winnerId: winner.adId,
+        results: allResults,
+        winnerId: winner.finalAdId,
         winnerScore: winner.score,
-        totalAdsGenerated: results.length,
-        approvedCount: results.filter(r => r.isPublishable).length,
-        qualityRatchetApplied: winner.score >= campaign.currentQualityThreshold + 1.5,
+        totalAdsGenerated: allResults.length,
+        approvedCount,
+        remediatedCount,
+        qualityRatchetApplied,
       };
     }),
     getCampaignAnalytics: protectedProcedure.input(z.object({ campaignId: z.number() })).query(async ({ input }) => {
@@ -622,6 +682,7 @@ export const appRouter = router({
           rationaleCta: evaluation.rationaleCta, rationaleBrandVoice: evaluation.rationaleBrandVoice,
           rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
           weakestDimension: evaluation.weakestDimension, improvementSuggestion: evaluation.improvementSuggestion,
+          confidenceScore: evaluation.confidenceScore ?? 0.8,
           emotionalArcData: evaluation.emotionalArcData,
           promptTokens: evaluation.promptTokens, completionTokens: evaluation.completionTokens, estimatedCostUsd: evalCost,
         });

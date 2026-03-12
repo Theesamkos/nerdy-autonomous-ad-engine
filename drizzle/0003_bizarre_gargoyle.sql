@@ -1,0 +1,1 @@
+ALTER TABLE `evaluations` ADD `confidenceScore` float DEFAULT 0.8 NOT NULL;

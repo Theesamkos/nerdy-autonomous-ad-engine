@@ -1,0 +1,25 @@
+{
+  "query": "SELECT COUNT(*) as total_ads FROM ads; SELECT COUNT(*) as approved FROM ads WHERE status = 'approved'; SELECT COUNT(*) as campaigns FROM campaigns;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user cRqaaCAnwvHpXvv.a355cd60a74b --database 5Zhvxiu6fz2msfFd9Aepcy --execute SELECT COUNT(*) as total_ads FROM ads; SELECT COUNT(*) as approved FROM ads WHERE status = 'approved'; SELECT COUNT(*) as campaigns FROM campaigns;",
+  "rows": [
+    {
+      "total_ads": "56"
+    },
+    {
+      "total_ads": "approved"
+    },
+    {
+      "total_ads": "56"
+    },
+    {
+      "total_ads": "campaigns"
+    },
+    {
+      "total_ads": "5"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_ads\n56\napproved\n56\ncampaigns\n5\n",
+  "stderr": "",
+  "execution_time_ms": 512
+}

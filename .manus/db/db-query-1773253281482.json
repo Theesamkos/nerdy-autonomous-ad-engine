@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE `campaigns` ADD `initialQualityThreshold` float DEFAULT 7 NOT NULL;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user cRqaaCAnwvHpXvv.a355cd60a74b --database 5Zhvxiu6fz2msfFd9Aepcy --execute ALTER TABLE `campaigns` ADD `initialQualityThreshold` float DEFAULT 7 NOT NULL;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 663
-}

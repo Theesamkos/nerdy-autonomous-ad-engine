@@ -1,1 +1,0 @@
-ALTER TABLE `campaigns` ADD `initialQualityThreshold` float DEFAULT 7 NOT NULL;

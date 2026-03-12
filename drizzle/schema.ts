@@ -43,7 +43,6 @@ export const campaigns = mysqlTable("campaigns", {
   weightBrandVoice: int("weightBrandVoice").default(15).notNull(),
   weightEmotionalResonance: int("weightEmotionalResonance").default(20).notNull(),
   // Quality ratchet
-  initialQualityThreshold: float("initialQualityThreshold").default(7.0).notNull(),
   currentQualityThreshold: float("currentQualityThreshold").default(7.0).notNull(),
   totalAdsGenerated: int("totalAdsGenerated").default(0).notNull(),
   totalTokensUsed: int("totalTokensUsed").default(0).notNull(),
@@ -108,6 +107,8 @@ export const evaluations = mysqlTable("evaluations", {
   // Weakest dimension for self-healing
   weakestDimension: varchar("weakestDimension", { length: 64 }),
   improvementSuggestion: text("improvementSuggestion"),
+  // Evaluator confidence (0.0-1.0): how certain the LLM-as-judge is about these scores
+  confidenceScore: float("confidenceScore").default(0.8).notNull(),
   // Emotional arc data (JSON array of sentiment points)
   emotionalArcData: json("emotionalArcData"),
   // Token usage for evaluation

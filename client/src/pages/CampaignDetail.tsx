@@ -3,8 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Brain, CheckCircle2, XCircle, Swords, Sparkles,
   BarChart3, ChevronDown, ChevronUp, Target, DollarSign, Award,
-  SlidersHorizontal, Save, ArrowLeft, Copy, Check, Activity, Smartphone, Layers, Trophy,
-  Rocket, ExternalLink, ClipboardCheck
+  SlidersHorizontal, Save, ArrowLeft, Copy, Check, Activity, Smartphone, Layers, Trophy
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "wouter";
@@ -50,6 +49,76 @@ function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
       <span className="font-mono font-bold" style={{ fontSize: size * 0.22, color: "#f8fafc" }}>
         {score.toFixed(1)}
       </span>
+    </div>
+  );
+}
+
+const CTA_TYPES = ["LEARN_MORE", "SHOP_NOW", "SIGN_UP", "GET_OFFER", "BOOK_NOW", "CONTACT_US", "DOWNLOAD", "WATCH_MORE"];
+
+function ReadyToLaunchPanel({ ad }: { ad: any }) {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const copyField = (key: string, value: string) => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopiedField(key);
+      setTimeout(() => setCopiedField(null), 2000);
+    });
+  };
+  const headline = (ad.headline || "").slice(0, 27);
+  const headlineOver = (ad.headline || "").length > 27;
+  const inferredCta = CTA_TYPES.find(c => (ad.ctaButton || "").toUpperCase().includes(c.replace("_", " "))) || "LEARN_MORE";
+  const fields = [
+    { key: "headline",    label: "Headline",     value: headline,        limit: 27, over: headlineOver },
+    { key: "primaryText", label: "Primary Text",  value: ad.primaryText || "",  limit: 125, over: (ad.primaryText || "").length > 125 },
+    { key: "description", label: "Description",  value: ad.description || "",  limit: 30,  over: (ad.description || "").length > 30 },
+    { key: "ctaType",     label: "CTA Type",      value: inferredCta,     limit: null, over: false },
+  ];
+  return (
+    <div className="p-4 space-y-3" style={{ borderTop: "1px solid rgba(52,211,153,0.12)", background: "rgba(52,211,153,0.02)" }}>
+      <div className="flex items-center gap-2 mb-2">
+        <Target size={11} style={{ color: "#34d399" }} />
+        <span className="font-mono font-bold text-[9px] tracking-widest uppercase" style={{ color: "#34d399" }}>Ready to Launch</span>
+        <span className="font-mono text-[9px] px-1.5 py-0.5 rounded" style={{ background: "rgba(52,211,153,0.08)", color: "rgba(52,211,153,0.6)" }}>Meta Ads Manager format</span>
+      </div>
+      <div className="space-y-2">
+        {fields.map(({ key, label, value, limit, over }) => (
+          <div key={key} className="flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>{label}</span>
+                {limit && (
+                  <span className="font-mono text-[9px]" style={{ color: over ? "#f87171" : "rgba(100,116,139,0.35)" }}>
+                    {value.length}/{limit}{over ? " ⚠" : ""}
+                  </span>
+                )}
+              </div>
+              <div className="font-mono text-[10px] rounded px-2 py-1.5 leading-relaxed"
+                style={{ background: "rgba(2,11,24,0.6)", border: "1px solid rgba(34,211,238,0.08)", color: "rgba(226,232,240,0.8)", wordBreak: "break-word" }}>
+                {value || <span style={{ color: "rgba(100,116,139,0.3)" }}>—</span>}
+              </div>
+            </div>
+            <button onClick={() => copyField(key, value)}
+              className="flex-shrink-0 mt-5 flex items-center gap-1 font-mono text-[9px] px-2 py-1 rounded transition-all"
+              style={{
+                background: copiedField === key ? "rgba(52,211,153,0.1)" : "rgba(34,211,238,0.05)",
+                border: `1px solid ${copiedField === key ? "rgba(52,211,153,0.3)" : "rgba(34,211,238,0.1)"}`,
+                color: copiedField === key ? "#34d399" : "rgba(100,116,139,0.5)",
+              }}>
+              {copiedField === key ? <Check size={9} /> : <Copy size={9} />}
+              {copiedField === key ? "Copied" : "Copy"}
+            </button>
+          </div>
+        ))}
+      </div>
+      <a href="https://www.facebook.com/adsmanager/creation" target="_blank" rel="noopener noreferrer"
+        className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg font-mono font-bold text-[10px] tracking-widest uppercase transition-all"
+        style={{
+          background: "rgba(52,211,153,0.06)",
+          border: "1px solid rgba(52,211,153,0.2)",
+          color: "#34d399",
+        }}>
+        <Target size={11} />
+        Open Meta Ads Manager
+      </a>
     </div>
   );
 }
@@ -167,6 +236,11 @@ function AdCard({ ad, evaluation, isExpanded, onToggle, onCopy, copied, showPrev
         )}
       </AnimatePresence>
 
+      {/* Ready to Launch panel for approved ads */}
+      {ad.isPublishable && (
+        <ReadyToLaunchPanel ad={ad} />
+      )}
+
       {/* Expanded evaluation */}
       <AnimatePresence>
         {isExpanded && evaluation && (
@@ -211,6 +285,29 @@ function AdCard({ ad, evaluation, isExpanded, onToggle, onCopy, copied, showPrev
                 ))}
               </div>
 
+              {/* Confidence Score */}
+              {evaluation.confidenceScore !== undefined && (
+                <div className="md:col-span-2 flex items-center gap-3 rounded-lg px-4 py-3"
+                  style={{
+                    background: (evaluation.confidenceScore ?? 0.8) >= 0.8 ? "rgba(52,211,153,0.04)" : (evaluation.confidenceScore ?? 0.8) >= 0.6 ? "rgba(245,158,11,0.04)" : "rgba(248,113,113,0.04)",
+                    border: `1px solid ${(evaluation.confidenceScore ?? 0.8) >= 0.8 ? "rgba(52,211,153,0.12)" : (evaluation.confidenceScore ?? 0.8) >= 0.6 ? "rgba(245,158,11,0.12)" : "rgba(248,113,113,0.12)"}`
+                  }}>
+                  <div className="flex-1">
+                    <div className="font-mono text-[9px] tracking-widest uppercase mb-1.5" style={{ color: "rgba(100,116,139,0.5)" }}>Evaluator Confidence</div>
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(34,211,238,0.06)" }}>
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${(evaluation.confidenceScore ?? 0.8) * 100}%` }}
+                        transition={{ duration: 0.8 }} className="h-full rounded-full"
+                        style={{ background: (evaluation.confidenceScore ?? 0.8) >= 0.8 ? "#34d399" : (evaluation.confidenceScore ?? 0.8) >= 0.6 ? "#f59e0b" : "#f87171" }} />
+                    </div>
+                  </div>
+                  <span className="font-mono font-bold text-[11px]" style={{ color: (evaluation.confidenceScore ?? 0.8) >= 0.8 ? "#34d399" : (evaluation.confidenceScore ?? 0.8) >= 0.6 ? "#f59e0b" : "#f87171" }}>
+                    {Math.round((evaluation.confidenceScore ?? 0.8) * 100)}%
+                  </span>
+                  <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+                    {(evaluation.confidenceScore ?? 0.8) >= 0.8 ? "High confidence" : (evaluation.confidenceScore ?? 0.8) >= 0.6 ? "Medium confidence" : "Low confidence — review manually"}
+                  </span>
+                </div>
+              )}
               {evaluation.improvementSuggestion && (
                 <div className="md:col-span-2 rounded-lg p-4"
                   style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.15)" }}>
@@ -220,116 +317,11 @@ function AdCard({ ad, evaluation, isExpanded, onToggle, onCopy, copied, showPrev
                   </p>
                 </div>
               )}
-              {ad.status === "approved" && (
-                <ReadyToLaunchPanel ad={ad} />
-              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
-  );
-}
-
-// ─── Meta CTA options ─────────────────────────────────────────────────────────
-const META_CTA_OPTIONS: Record<string, string> = {
-  "Learn More":    "LEARN_MORE",
-  "Sign Up":       "SIGN_UP",
-  "Get Quote":     "GET_QUOTE",
-  "Contact Us":    "CONTACT_US",
-  "Book Now":      "BOOK_NOW",
-  "Shop Now":      "SHOP_NOW",
-  "Download":      "DOWNLOAD",
-  "Subscribe":     "SUBSCRIBE",
-  "Get Offer":     "GET_OFFER",
-  "Apply Now":     "APPLY_NOW",
-};
-
-function ReadyToLaunchPanel({ ad }: { ad: any }) {
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-
-  const copyField = (label: string, value: string) => {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopiedField(label);
-      toast.success(`${label} copied to clipboard`);
-      setTimeout(() => setCopiedField(null), 2000);
-    });
-  };
-
-  // Truncate headline to Meta's 27-char limit
-  const headline = (ad.headline || "").substring(0, 27);
-  const headlineWarning = (ad.headline || "").length > 27;
-  const primaryText = ad.primaryText || "";
-  const description = (ad.description || "").substring(0, 30);
-  const ctaButton = ad.ctaButton || "Learn More";
-  const metaCta = META_CTA_OPTIONS[ctaButton] || "LEARN_MORE";
-
-  // Build the Meta Ads Manager deep link
-  const adsManagerUrl = `https://www.facebook.com/adsmanager/manage/campaigns?act=&objective=OUTCOME_AWARENESS`;
-
-  const fields = [
-    { label: "Headline",     value: headline,     limit: 27,  warning: headlineWarning,
-      note: headlineWarning ? `Truncated from ${ad.headline.length} chars` : undefined },
-    { label: "Primary Text", value: primaryText,  limit: 125, warning: primaryText.length > 125,
-      note: primaryText.length > 125 ? `${primaryText.length} chars — Meta recommends ≤125` : undefined },
-    { label: "Description",  value: description,  limit: 30,  warning: (ad.description || "").length > 30,
-      note: (ad.description || "").length > 30 ? `Truncated to 30 chars` : undefined },
-    { label: "CTA Type",     value: metaCta,      limit: null, warning: false, note: `Meta API value for "${ctaButton}"` },
-  ];
-
-  return (
-    <div className="md:col-span-2 rounded-lg overflow-hidden"
-      style={{ background: "rgba(52,211,153,0.04)", border: "1px solid rgba(52,211,153,0.2)" }}>
-      <div className="flex items-center gap-2 px-4 py-3"
-        style={{ borderBottom: "1px solid rgba(52,211,153,0.12)", background: "rgba(52,211,153,0.06)" }}>
-        <Rocket size={12} style={{ color: "#34d399" }} />
-        <span className="font-mono text-[10px] font-bold tracking-widest uppercase" style={{ color: "#34d399" }}>Ready to Launch</span>
-        <span className="font-mono text-[9px] ml-auto" style={{ color: "rgba(52,211,153,0.5)" }}>Formatted for Meta Ads Manager</span>
-      </div>
-      <div className="p-4 space-y-3">
-        {fields.map(({ label, value, warning, note }) => (
-          <div key={label} className="flex items-start gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>{label}</span>
-                {warning && <span className="font-mono text-[8px]" style={{ color: "#f59e0b" }}>⚠ {note}</span>}
-                {!warning && note && <span className="font-mono text-[8px]" style={{ color: "rgba(100,116,139,0.4)" }}>{note}</span>}
-              </div>
-              <p className="font-mono text-[11px] leading-relaxed" style={{ color: "rgba(226,232,240,0.8)" }}>{value}</p>
-            </div>
-            <button
-              onClick={() => copyField(label, value)}
-              className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded font-mono text-[9px] transition-all"
-              style={{
-                background: copiedField === label ? "rgba(52,211,153,0.15)" : "rgba(34,211,238,0.06)",
-                border: `1px solid ${copiedField === label ? "rgba(52,211,153,0.3)" : "rgba(34,211,238,0.15)"}`,
-                color: copiedField === label ? "#34d399" : "rgba(100,116,139,0.6)",
-              }}>
-              {copiedField === label ? <ClipboardCheck size={10} /> : <Copy size={10} />}
-              {copiedField === label ? "Copied" : "Copy"}
-            </button>
-          </div>
-        ))}
-        <div className="pt-2" style={{ borderTop: "1px solid rgba(52,211,153,0.1)" }}>
-          <a
-            href={adsManagerUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-[10px] font-bold transition-all"
-            style={{
-              background: "rgba(52,211,153,0.1)",
-              border: "1px solid rgba(52,211,153,0.3)",
-              color: "#34d399",
-            }}>
-            <ExternalLink size={11} />
-            Open Meta Ads Manager
-          </a>
-          <p className="font-mono text-[9px] mt-2" style={{ color: "rgba(100,116,139,0.4)" }}>
-            Copy each field above, then paste into your campaign in Ads Manager.
-          </p>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -400,7 +392,11 @@ export default function CampaignDetail() {
   });
 
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
-  const [bulkResult, setBulkResult] = useState<{ winnerId: number; winnerScore: number; totalAdsGenerated: number; approvedCount: number } | null>(null);
+  const [batchSize, setBatchSize] = useState<5 | 10 | 25 | 50>(10);
+  const [bulkResult, setBulkResult] = useState<{
+    winnerId: number; winnerScore: number; totalAdsGenerated: number;
+    approvedCount: number; remediatedCount: number; qualityRatchetApplied: boolean;
+  } | null>(null);
 
   const bulkGenerateMutation = trpc.ads.bulkGenerate.useMutation({
     onSuccess: (result) => {
@@ -414,11 +410,14 @@ export default function CampaignDetail() {
         winnerScore: result.winnerScore,
         totalAdsGenerated: result.totalAdsGenerated,
         approvedCount: result.approvedCount,
+        remediatedCount: result.remediatedCount,
+        qualityRatchetApplied: result.qualityRatchetApplied,
       });
       toast.success(
-        `Bulk complete — ${result.approvedCount}/${result.totalAdsGenerated} approved. Winner: ${result.winnerScore.toFixed(1)}/10`,
+        `Batch complete — ${result.approvedCount}/${result.totalAdsGenerated} approved. Winner: ${result.winnerScore.toFixed(1)}/10`,
         { duration: 6000 }
       );
+      if (result.remediatedCount > 0) toast.info(`${result.remediatedCount} ad(s) auto-remediated and improved.`);
       if (result.qualityRatchetApplied) toast.info("Quality threshold raised — the bar just got higher.");
     },
     onError: (err) => { setIsBulkGenerating(false); setIsGenerating(false); setLogStep(0); toast.error(err.message); },
@@ -429,20 +428,19 @@ export default function CampaignDetail() {
     setIsGenerating(true);
     setLogStep(0);
     setBulkResult(null);
-    // Animate log steps over ~12 seconds (5 pipelines × ~2.5s each)
+    // Animate log steps scaled to batch size
+    const perStep = batchSize <= 10 ? 1200 : batchSize <= 25 ? 900 : 600;
     const BULK_LOG = [
-      { type: "sys",  msg: "Initializing 5 parallel generation pipelines..." },
-      { type: "ai",   msg: "Pipeline 1/5: Generating standard ad copy..." },
-      { type: "ai",   msg: "Pipeline 2/5: Generating standard variant..." },
-      { type: "ai",   msg: "Pipeline 3/5: Generating standard variant..." },
-      { type: "ai",   msg: "Pipeline 4/5: Generating standard variant..." },
-      { type: "ai",   msg: "Pipeline 5/5: Creative Spark mode — breaking rules..." },
-      { type: "eval", msg: "Evaluating all 5 ads across 5 quality dimensions..." },
-      { type: "eval", msg: "Ranking by weighted score..." },
-      { type: "pass", msg: "Surfacing winner — highest scoring ad wins." },
+      { type: "sys",  msg: `Initializing ${batchSize} parallel generation pipelines...` },
+      { type: "ai",   msg: `Generating ${batchSize} ad variants with brand context...` },
+      { type: "eval", msg: `Evaluating all ${batchSize} ads across 5 quality dimensions...` },
+      { type: "heal", msg: `Running remediation loop on ads below threshold...` },
+      { type: "eval", msg: `Re-evaluating remediated ads (up to 3 rounds per ad)...` },
+      { type: "pass", msg: `Ranking by weighted score — surfacing winner...` },
+      { type: "pass", msg: `Quality ratchet check — raising the bar if warranted...` },
     ];
-    BULK_LOG.forEach((_, i) => { setTimeout(() => setLogStep(i + 1), i * 1400); });
-    bulkGenerateMutation.mutate({ campaignId, count: 5 });
+    BULK_LOG.forEach((_, i) => { setTimeout(() => setLogStep(i + 1), i * perStep); });
+    bulkGenerateMutation.mutate({ campaignId, count: batchSize });
   };
 
   const generateMutation = trpc.ads.generateAndEvaluate.useMutation({
@@ -621,22 +619,47 @@ export default function CampaignDetail() {
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
-                {/* Bulk × 5 result banner */}
+              <div className="space-y-4">
+                {/* Batch result summary */}
                 {bulkResult && (
-                  <div className="flex items-center gap-3 px-4 py-3 rounded-lg"
-                    style={{ background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.15)" }}>
-                    <Trophy size={14} style={{ color: "#f59e0b", flexShrink: 0 }} />
-                    <div className="flex-1 min-w-0">
-                      <span className="font-mono text-[10px] font-bold" style={{ color: "#f59e0b" }}>BULK COMPLETE</span>
-                      <span className="font-mono text-[10px] ml-2" style={{ color: "rgba(148,163,184,0.7)" }}>
-                        {bulkResult.approvedCount}/{bulkResult.totalAdsGenerated} approved · Winner: {bulkResult.winnerScore.toFixed(1)}/10
-                      </span>
+                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                    className="rounded-xl p-4"
+                    style={{ background: "rgba(34,211,238,0.04)", border: "1px solid rgba(34,211,238,0.15)" }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Trophy size={13} style={{ color: "#f59e0b" }} />
+                        <span className="font-mono text-[10px] font-bold tracking-widest" style={{ color: "#f59e0b" }}>BATCH COMPLETE</span>
+                      </div>
+                      <button onClick={() => setBulkResult(null)} className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.4)" }}>✕</button>
                     </div>
-                    <button onClick={() => setBulkResult(null)}
-                      className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.4)" }}>✕</button>
-                  </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-lg p-3 text-center" style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.12)" }}>
+                        <div className="font-mono font-bold text-lg" style={{ color: "#34d399" }}>
+                          {bulkResult.approvedCount}<span className="text-[10px] font-normal opacity-60">/{bulkResult.totalAdsGenerated}</span>
+                        </div>
+                        <div className="font-mono text-[9px] tracking-widest mt-0.5" style={{ color: "rgba(100,116,139,0.5)" }}>APPROVED</div>
+                      </div>
+                      <div className="rounded-lg p-3 text-center" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)" }}>
+                        <div className="font-mono font-bold text-lg" style={{ color: "#f59e0b" }}>
+                          {bulkResult.winnerScore.toFixed(1)}
+                        </div>
+                        <div className="font-mono text-[9px] tracking-widest mt-0.5" style={{ color: "rgba(100,116,139,0.5)" }}>WINNER SCORE</div>
+                      </div>
+                      <div className="rounded-lg p-3 text-center" style={{ background: "rgba(251,146,60,0.06)", border: "1px solid rgba(251,146,60,0.12)" }}>
+                        <div className="font-mono font-bold text-lg" style={{ color: "#fb923c" }}>
+                          {bulkResult.remediatedCount}
+                        </div>
+                        <div className="font-mono text-[9px] tracking-widest mt-0.5" style={{ color: "rgba(100,116,139,0.5)" }}>REMEDIATED</div>
+                      </div>
+                    </div>
+                    {bulkResult.qualityRatchetApplied && (
+                      <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "rgba(96,165,250,0.06)", border: "1px solid rgba(96,165,250,0.15)" }}>
+                        <span className="font-mono text-[9px] tracking-widest" style={{ color: "#60a5fa" }}>↑ QUALITY RATCHET APPLIED — threshold raised automatically</span>
+                      </div>
+                    )}
+                  </motion.div>
                 )}
+
                 {/* Primary action row */}
                 <div className="flex gap-3 flex-wrap">
                   <button onClick={() => handleGenerate("standard")}
@@ -648,19 +671,51 @@ export default function CampaignDetail() {
                     <Sparkles size={13} /> Creative Mode
                   </button>
                 </div>
-                {/* Bulk × 5 button */}
-                <button onClick={handleBulkGenerate}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-mono font-bold text-[11px] tracking-widest uppercase transition-all"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(34,211,238,0.08) 100%)",
-                    border: "1px solid rgba(245,158,11,0.25)",
-                    color: "#f59e0b",
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.5)")}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.25)")}>
-                  <Layers size={13} />
-                  Bulk × 5 — Race to Best
-                </button>
+
+                {/* Batch Generation Panel */}
+                <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(245,158,11,0.2)" }}>
+                  <div className="px-4 py-3 flex items-center justify-between" style={{ background: "rgba(245,158,11,0.06)", borderBottom: "1px solid rgba(245,158,11,0.12)" }}>
+                    <div className="flex items-center gap-2">
+                      <Layers size={12} style={{ color: "#f59e0b" }} />
+                      <span className="font-mono font-bold text-[10px] tracking-widest uppercase" style={{ color: "#f59e0b" }}>Batch Generation</span>
+                      <span className="font-mono text-[9px] px-2 py-0.5 rounded" style={{ background: "rgba(245,158,11,0.1)", color: "rgba(245,158,11,0.7)" }}>with remediation loop</span>
+                    </div>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>Batch size:</span>
+                      <div className="flex gap-1.5">
+                        {([5, 10, 25, 50] as const).map(n => (
+                          <button key={n} onClick={() => setBatchSize(n)}
+                            className="px-3 py-1.5 rounded-lg font-mono font-bold text-[11px] transition-all"
+                            style={{
+                              background: batchSize === n ? "rgba(245,158,11,0.15)" : "rgba(34,211,238,0.04)",
+                              border: `1px solid ${batchSize === n ? "rgba(245,158,11,0.4)" : "rgba(34,211,238,0.1)"}`,
+                              color: batchSize === n ? "#f59e0b" : "rgba(100,116,139,0.5)",
+                            }}>
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="font-mono text-[9px] leading-relaxed" style={{ color: "rgba(100,116,139,0.4)" }}>
+                      Generates {batchSize} ads in parallel batches of 10. Any ad scoring below threshold is diagnosed,
+                      targeted, and rewritten up to 3× until it passes. Winner is the highest-scoring approved ad.
+                    </div>
+                    <button onClick={handleBulkGenerate}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-mono font-bold text-[11px] tracking-widest uppercase transition-all"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(34,211,238,0.08) 100%)",
+                        border: "1px solid rgba(245,158,11,0.3)",
+                        color: "#f59e0b",
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.6)")}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.3)")}>
+                      <Layers size={13} />
+                      Launch Batch × {batchSize}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
