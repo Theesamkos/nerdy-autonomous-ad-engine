@@ -944,7 +944,8 @@ export default function CampaignDetail() {
   });
 
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
-  const [bulkResult, setBulkResult] = useState<{ winnerId: number; winnerScore: number; totalAdsGenerated: number; approvedCount: number } | null>(null);
+  const [batchSize, setBatchSize] = useState<5 | 10 | 25 | 50>(10);
+  const [bulkResult, setBulkResult] = useState<{ winnerId: number; winnerScore: number; totalAdsGenerated: number; approvedCount: number; remediatedCount?: number } | null>(null);
   const [intelligenceBrief, setIntelligenceBrief] = useState<{
     brief: string;
     generatedAt: Date | string;
@@ -1010,20 +1011,19 @@ export default function CampaignDetail() {
     setLogStep(0);
     setBulkResult(null);
     setShowIntelligenceBrief(false);
-    // Animate log steps over ~12 seconds (5 pipelines × ~2.5s each)
+    const n = batchSize;
+    const batchGroups = Math.ceil(n / 10);
     const BULK_LOG = [
-      { type: "sys",  msg: "Initializing 5 parallel generation pipelines..." },
-      { type: "ai",   msg: "Pipeline 1/5: Generating standard ad copy..." },
-      { type: "ai",   msg: "Pipeline 2/5: Generating standard variant..." },
-      { type: "ai",   msg: "Pipeline 3/5: Generating standard variant..." },
-      { type: "ai",   msg: "Pipeline 4/5: Generating standard variant..." },
-      { type: "ai",   msg: "Pipeline 5/5: Creative Spark mode — breaking rules..." },
-      { type: "eval", msg: "Evaluating all 5 ads across 5 quality dimensions..." },
-      { type: "eval", msg: "Ranking by weighted score..." },
-      { type: "pass", msg: "Surfacing winner — highest scoring ad wins." },
+      { type: "sys",  msg: `Initializing batch pipeline — ${n} ads across ${batchGroups} batch${batchGroups > 1 ? "es" : ""}...` },
+      { type: "ai",   msg: `Generating ad copy with variety matrix (${n} unique tone/format/hook combos)...` },
+      { type: "eval", msg: `LLM-as-Judge evaluating all ${n} ads across 5 quality dimensions...` },
+      { type: "sys",  msg: "Running self-healing remediation on below-threshold ads (up to 3 rounds)..." },
+      { type: "eval", msg: "Applying quality ratchet — raising bar if winner is exceptional..." },
+      { type: "pass", msg: `Batch complete — surfacing winner and approved ads.` },
     ];
-    BULK_LOG.forEach((_, i) => { setTimeout(() => setLogStep(i + 1), i * 1400); });
-    bulkGenerateMutation.mutate({ campaignId, count: 5 });
+    const interval = Math.max(800, Math.min(2000, (n * 120)));
+    BULK_LOG.forEach((_, i) => { setTimeout(() => setLogStep(i + 1), i * interval); });
+    bulkGenerateMutation.mutate({ campaignId, count: n });
   };
 
   const handleGenerate = (mode: "standard" | "creative_spark" = "standard") => {
@@ -1243,7 +1243,33 @@ export default function CampaignDetail() {
           <div className="flex items-center gap-3 flex-wrap">
             <span className="tag-ops tag-teal">{campaign.campaignGoal}</span>
             <span className="tag-ops tag-dim">{campaign.tone}</span>
-            <span className="tag-ops tag-teal">Threshold: {campaign.currentQualityThreshold.toFixed(1)}/10</span>
+            <button
+              onClick={() => { setShowThresholdEditor(true); setThresholdInput(campaign.currentQualityThreshold.toFixed(1)); }}
+              className="tag-ops tag-teal cursor-pointer hover:opacity-80 transition-opacity"
+              style={{ border: "1px dashed rgba(52,211,153,0.5)", background: "rgba(52,211,153,0.06)" }}
+              title="Click to adjust quality threshold">
+              ⚙ Threshold: {campaign.currentQualityThreshold.toFixed(1)}/10
+            </button>
+            {showThresholdEditor && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "rgba(2,11,24,0.8)", border: "1px solid rgba(52,211,153,0.3)" }}>
+                <span className="font-mono text-[10px] text-emerald-400">SET:</span>
+                <input
+                  type="range" min="1.0" max="9.9" step="0.1"
+                  value={thresholdInput || campaign.currentQualityThreshold}
+                  onChange={e => setThresholdInput(e.target.value)}
+                  className="w-24 accent-emerald-400"
+                />
+                <span className="font-mono text-[11px] text-emerald-300 w-8">{parseFloat(thresholdInput || String(campaign.currentQualityThreshold)).toFixed(1)}</span>
+                <button
+                  onClick={() => updateThresholdMutation.mutate({ campaignId, threshold: parseFloat(thresholdInput) })}
+                  disabled={updateThresholdMutation.isPending}
+                  className="px-2 py-0.5 rounded text-[10px] font-mono font-bold"
+                  style={{ background: "rgba(52,211,153,0.2)", color: "#34d399", border: "1px solid rgba(52,211,153,0.3)" }}>
+                  {updateThresholdMutation.isPending ? "..." : "Apply"}
+                </button>
+                <button onClick={() => setShowThresholdEditor(false)} className="text-slate-500 hover:text-slate-300 text-xs">✕</button>
+              </div>
+            )}
             <span className="tag-ops tag-dim">{campaign.totalAdsGenerated} ads generated</span>
             <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg"
               style={{ border: "1px solid rgba(34,211,238,0.14)", background: optimisticAutopilotEnabled ? "rgba(52,211,153,0.06)" : "rgba(2,11,24,0.45)" }}>
@@ -1549,19 +1575,64 @@ export default function CampaignDetail() {
                     <Sparkles size={13} /> Creative Mode
                   </button>
                 </div>
-                {/* Bulk × 5 button */}
-                <button onClick={handleBulkGenerate}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-mono font-bold text-[11px] tracking-widest uppercase transition-all"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(34,211,238,0.08) 100%)",
-                    border: "1px solid rgba(245,158,11,0.25)",
-                    color: "#f59e0b",
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.5)")}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.25)")}>
-                  <Layers size={13} />
-                  Bulk × 5 — Race to Best
-                </button>
+                {/* ⚡ BATCH GENERATION ENGINE — up to 50 ads */}
+                <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(245,158,11,0.2)", background: "linear-gradient(135deg, rgba(245,158,11,0.04) 0%, rgba(34,211,238,0.03) 100%)" }}>
+                  <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: "1px solid rgba(245,158,11,0.1)" }}>
+                    <div className="flex items-center gap-2">
+                      <Layers size={12} style={{ color: "#f59e0b" }} />
+                      <span className="font-mono font-bold text-[10px] tracking-widest uppercase" style={{ color: "#f59e0b" }}>⚡ Batch Generation Engine</span>
+                    </div>
+                    <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.6)" }}>VARIETY MATRIX ACTIVE</span>
+                  </div>
+                  <div className="px-4 py-3 space-y-3">
+                    {/* Batch size selector */}
+                    <div className="space-y-1.5">
+                      <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.7)" }}>Batch Size</span>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {([5, 10, 25, 50] as const).map(n => (
+                          <button key={n} onClick={() => setBatchSize(n)}
+                            className="py-1.5 rounded-lg font-mono font-bold text-[11px] tracking-wider transition-all"
+                            style={{
+                              background: batchSize === n ? "rgba(245,158,11,0.2)" : "rgba(2,11,24,0.6)",
+                              border: batchSize === n ? "1px solid rgba(245,158,11,0.5)" : "1px solid rgba(100,116,139,0.15)",
+                              color: batchSize === n ? "#f59e0b" : "rgba(148,163,184,0.6)",
+                            }}>
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Batch info row */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.6)" }}>
+                          {batchSize} unique tone/format/hook combos
+                        </span>
+                        {batchSize >= 25 && (
+                          <span className="font-mono text-[8px] px-1.5 py-0.5 rounded" style={{ background: "rgba(52,211,153,0.1)", color: "#34d399", border: "1px solid rgba(52,211,153,0.2)" }}>
+                            SELF-HEAL ENABLED
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.5)" }}>
+                        ~{batchSize <= 5 ? "30s" : batchSize <= 10 ? "60s" : batchSize <= 25 ? "2-3min" : "4-6min"}
+                      </span>
+                    </div>
+                    {/* Generate button */}
+                    <button onClick={handleBulkGenerate} disabled={isBulkGenerating}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-mono font-bold text-[11px] tracking-widest uppercase transition-all disabled:opacity-50"
+                      style={{
+                        background: isBulkGenerating ? "rgba(245,158,11,0.06)" : "linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(34,211,238,0.1) 100%)",
+                        border: "1px solid rgba(245,158,11,0.35)",
+                        color: "#f59e0b",
+                      }}
+                      onMouseEnter={e => { if (!isBulkGenerating) e.currentTarget.style.borderColor = "rgba(245,158,11,0.6)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(245,158,11,0.35)"; }}>
+                      <Layers size={13} />
+                      {isBulkGenerating ? `Generating ${batchSize} Ads...` : `Generate ${batchSize} Ads — Race to Best`}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

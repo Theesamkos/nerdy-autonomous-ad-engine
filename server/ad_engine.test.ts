@@ -382,10 +382,10 @@ describe("ads.bulkGenerate", () => {
       .rejects.toThrow();
   });
 
-  it("rejects count above 10", async () => {
+  it("rejects count above 50", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
-    await expect(caller.ads.bulkGenerate({ campaignId: 1, count: 11 }))
+    await expect(caller.ads.bulkGenerate({ campaignId: 1, count: 51 }))
       .rejects.toThrow();
   });
 });

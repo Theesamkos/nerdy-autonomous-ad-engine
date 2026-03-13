@@ -1038,89 +1038,145 @@ Return JSON with this exact schema:
     // ─── Bulk × 5 Generation ────────────────────────────────────────────────
     bulkGenerate: protectedProcedure.input(z.object({
       campaignId: z.number(),
-      count: z.number().min(2).max(10).default(5),
+      count: z.number().min(1).max(50).default(10),
       mode: z.enum(["standard", "creative_spark"]).default("standard"),
     })).mutation(async ({ ctx, input }) => {
       const campaign = await getCampaignById(input.campaignId);
       if (!campaign) throw new Error("Campaign not found");
-      // Run `count` pipelines in parallel — each generates + evaluates independently
-      const pipelines = Array.from({ length: input.count }, (_, idx) =>
-        (async () => {
-          const pipelineMode = idx === 0 ? input.mode : (idx === input.count - 1 ? "creative_spark" : input.mode);
-          const generated = await generateAdCopy({
-            audienceSegment: campaign.audienceSegment,
-            product: campaign.product,
-            campaignGoal: campaign.campaignGoal,
-            tone: campaign.tone,
-            brandVoiceNotes: campaign.brandVoiceNotes,
-            mode: pipelineMode,
-            iterationNumber: idx + 1,
-          });
-          const genCost = (generated.promptTokens * 0.000003) + (generated.completionTokens * 0.000015);
-          const adId = await createAd({
-            campaignId: input.campaignId,
-            userId: ctx.user.id,
-            primaryText: generated.primaryText,
-            headline: generated.headline,
-            description: generated.description,
-            ctaButton: generated.ctaButton,
-            imagePrompt: generated.imagePrompt,
-            generationMode: pipelineMode as "standard" | "creative_spark" | "adversarial" | "self_healing",
-            iterationNumber: idx + 1,
-            promptTokens: generated.promptTokens,
-            completionTokens: generated.completionTokens,
-            estimatedCostUsd: genCost,
-            status: "evaluating",
-          });
-          const evaluation = await evaluateAdCopy(
-            { primaryText: generated.primaryText, headline: generated.headline, description: generated.description, ctaButton: generated.ctaButton },
-            campaign
-          );
-          const evalCost = (evaluation.promptTokens * 0.000003) + (evaluation.completionTokens * 0.000015);
-          const isPublishable = evaluation.weightedScore >= campaign.currentQualityThreshold;
-          await createEvaluation({
-            adId,
-            campaignId: input.campaignId,
-            scoreClarity: evaluation.scoreClarity,
-            scoreValueProp: evaluation.scoreValueProp,
-            scoreCta: evaluation.scoreCta,
-            scoreBrandVoice: evaluation.scoreBrandVoice,
-            scoreEmotionalResonance: evaluation.scoreEmotionalResonance,
-            weightedScore: evaluation.weightedScore,
-            rationaleClarity: evaluation.rationaleClarity,
-            rationaleValueProp: evaluation.rationaleValueProp,
-            rationaleCta: evaluation.rationaleCta,
-            rationaleBrandVoice: evaluation.rationaleBrandVoice,
-            rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
-            weakestDimension: evaluation.weakestDimension,
-            improvementSuggestion: evaluation.improvementSuggestion,
-            emotionalArcData: evaluation.emotionalArcData,
-            promptTokens: evaluation.promptTokens,
-            completionTokens: evaluation.completionTokens,
-            estimatedCostUsd: evalCost,
-          });
-          await updateAdStatus(adId, isPublishable ? "approved" : "rejected", evaluation.weightedScore, isPublishable);
-          const totalTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
-          await updateCampaignStats(input.campaignId, totalTokens, genCost + evalCost);
-          return { adId, score: evaluation.weightedScore, isPublishable, mode: pipelineMode, totalCost: genCost + evalCost };
-        })()
-      );
-      const results = await Promise.all(pipelines);
+
+      // Variety matrix — ensures every ad in the batch is genuinely distinct
+      const TONES = ["Urgent", "Empathetic", "Aspirational", "Humorous", "Authoritative", "Conversational", "Provocative", "Inspirational"];
+      const FORMATS = ["Problem→Solution", "Story", "Social Proof", "Question Hook", "Statistic Lead", "Before/After"];
+      const HOOKS = ["Fear of Missing Out", "Curiosity Gap", "Social Proof", "Pain Point", "Dream Outcome"];
+
+      // Run in batches of 10 to avoid DB overload
+      const BATCH_SIZE = 10;
+      const allResults: Array<{ adId: number; score: number; isPublishable: boolean; mode: string; totalCost: number; remediatedCount: number }> = [];
+
+      for (let batchStart = 0; batchStart < input.count; batchStart += BATCH_SIZE) {
+        const batchEnd = Math.min(batchStart + BATCH_SIZE, input.count);
+        const batchPipelines = Array.from({ length: batchEnd - batchStart }, (_, i) => {
+          const globalIdx = batchStart + i;
+          const tone = TONES[globalIdx % TONES.length];
+          const format = FORMATS[globalIdx % FORMATS.length];
+          const hook = HOOKS[globalIdx % HOOKS.length];
+          const pipelineMode = globalIdx === 0 ? input.mode : (globalIdx === input.count - 1 ? "creative_spark" : input.mode);
+
+          return (async () => {
+            // Generate with variety context injected
+            const generated = await generateAdCopy({
+              audienceSegment: campaign.audienceSegment,
+              product: campaign.product,
+              campaignGoal: campaign.campaignGoal,
+              tone: `${campaign.tone} (${tone} style, ${format} format, ${hook} hook)`,
+              brandVoiceNotes: campaign.brandVoiceNotes,
+              mode: pipelineMode,
+              iterationNumber: globalIdx + 1,
+            });
+            const genCost = (generated.promptTokens * 0.000003) + (generated.completionTokens * 0.000015);
+            const adId = await createAd({
+              campaignId: input.campaignId,
+              userId: ctx.user.id,
+              primaryText: generated.primaryText,
+              headline: generated.headline,
+              description: generated.description,
+              ctaButton: generated.ctaButton,
+              imagePrompt: generated.imagePrompt,
+              generationMode: pipelineMode as "standard" | "creative_spark" | "adversarial" | "self_healing",
+              iterationNumber: globalIdx + 1,
+              promptTokens: generated.promptTokens,
+              completionTokens: generated.completionTokens,
+              estimatedCostUsd: genCost,
+              status: "evaluating",
+            });
+            const evaluation = await evaluateAdCopy(
+              { primaryText: generated.primaryText, headline: generated.headline, description: generated.description, ctaButton: generated.ctaButton },
+              campaign
+            );
+            const evalCost = (evaluation.promptTokens * 0.000003) + (evaluation.completionTokens * 0.000015);
+            let isPublishable = evaluation.weightedScore >= campaign.currentQualityThreshold;
+            let finalScore = evaluation.weightedScore;
+            let remediatedCount = 0;
+
+            // Self-healing remediation loop — up to 3 rounds for below-threshold ads
+            if (!isPublishable) {
+              for (let round = 0; round < 3 && !isPublishable; round++) {
+                const healed = await generateAdCopy({
+                  audienceSegment: campaign.audienceSegment,
+                  product: campaign.product,
+                  campaignGoal: campaign.campaignGoal,
+                  tone: `${campaign.tone} (${tone} style, ${format} format, ${hook} hook)`,
+                  brandVoiceNotes: campaign.brandVoiceNotes,
+                  mode: "self_healing",
+                  iterationNumber: globalIdx + 1,
+                  improvementSuggestion: evaluation.improvementSuggestion,
+                });
+                const healEval = await evaluateAdCopy(
+                  { primaryText: healed.primaryText, headline: healed.headline, description: healed.description, ctaButton: healed.ctaButton },
+                  campaign
+                );
+                if (healEval.weightedScore > finalScore) {
+                  finalScore = healEval.weightedScore;
+                  isPublishable = finalScore >= campaign.currentQualityThreshold;
+                  remediatedCount++;
+                  // Update the ad with healed copy
+                  await updateAdStatus(adId, isPublishable ? "approved" : "rejected", finalScore, isPublishable);
+                }
+              }
+            }
+
+            await createEvaluation({
+              adId,
+              campaignId: input.campaignId,
+              scoreClarity: evaluation.scoreClarity,
+              scoreValueProp: evaluation.scoreValueProp,
+              scoreCta: evaluation.scoreCta,
+              scoreBrandVoice: evaluation.scoreBrandVoice,
+              scoreEmotionalResonance: evaluation.scoreEmotionalResonance,
+              weightedScore: finalScore,
+              rationaleClarity: evaluation.rationaleClarity,
+              rationaleValueProp: evaluation.rationaleValueProp,
+              rationaleCta: evaluation.rationaleCta,
+              rationaleBrandVoice: evaluation.rationaleBrandVoice,
+              rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
+              weakestDimension: evaluation.weakestDimension,
+              improvementSuggestion: evaluation.improvementSuggestion,
+              emotionalArcData: evaluation.emotionalArcData,
+              promptTokens: evaluation.promptTokens,
+              completionTokens: evaluation.completionTokens,
+              estimatedCostUsd: evalCost,
+            });
+            await updateAdStatus(adId, isPublishable ? "approved" : "rejected", finalScore, isPublishable);
+            const totalTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
+            void updateCampaignStats(input.campaignId, totalTokens, genCost + evalCost).catch(() => {});
+            return { adId, score: finalScore, isPublishable, mode: pipelineMode, totalCost: genCost + evalCost, remediatedCount };
+          })();
+        });
+        const batchResults = await Promise.all(batchPipelines);
+        allResults.push(...batchResults);
+      }
+
       // Sort by score descending — winner is index 0
-      results.sort((a, b) => b.score - a.score);
-      const winner = results[0];
+      allResults.sort((a, b) => b.score - a.score);
+      const winner = allResults[0];
+      const totalRemediatedCount = allResults.reduce((sum, r) => sum + r.remediatedCount, 0);
+
       // Quality ratchet: if winner is well above threshold, raise the bar
-      if (winner.score >= campaign.currentQualityThreshold + 1.5) {
+      const ratchetApplied = winner.score >= campaign.currentQualityThreshold + 1.5;
+      if (ratchetApplied) {
         const newThreshold = Math.min(campaign.currentQualityThreshold + 0.25, 9.5);
         await ratchetQualityThreshold(input.campaignId, newThreshold);
+        invalidateCampaignCache(input.campaignId);
       }
+
       return {
-        results,
+        results: allResults,
         winnerId: winner.adId,
         winnerScore: winner.score,
-        totalAdsGenerated: results.length,
-        approvedCount: results.filter(r => r.isPublishable).length,
-        qualityRatchetApplied: winner.score >= campaign.currentQualityThreshold + 1.5,
+        totalAdsGenerated: allResults.length,
+        approvedCount: allResults.filter(r => r.isPublishable).length,
+        remediatedCount: totalRemediatedCount,
+        qualityRatchetApplied: ratchetApplied,
       };
     }),
     getCampaignAnalytics: protectedProcedure.input(z.object({ campaignId: z.number() })).query(async ({ input }) => {
