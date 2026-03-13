@@ -129,11 +129,34 @@ async function evaluateAdCopy(
   ad: { primaryText: string; headline: string; description: string; ctaButton: string },
   campaign: { audienceSegment: string; product: string; campaignGoal: string; tone: string; weightClarity: number; weightValueProp: number; weightCta: number; weightBrandVoice: number; weightEmotionalResonance: number; currentQualityThreshold: number }
 ) {
+  // Reference ad calibration: few-shot examples anchor the evaluator's scoring to real-world Varsity Tutors ad performance patterns.
+  // High-performing examples (8.5+) show what excellent looks like. Low-performing (5.0-6.5) show common failure modes.
+  const REFERENCE_ADS_CALIBRATION = `
+CALIBRATION REFERENCE — use these to anchor your scoring:
+
+HIGH-PERFORMING AD (target 8.5+/10):
+Primary: "Your child's SAT score doesn't define them — but it does open doors. Our expert tutors helped 94% of students raise their scores by 200+ points. Free diagnostic test this week."
+Headline: "200+ Point Score Increase"
+CTA: "Get Started"
+Why it works: Specific proof point (94%, 200+), emotional reframe (doesn't define them), urgency (this week), clear CTA matching conversion goal.
+
+AVERAGE AD (target 6.5-7.5/10):
+Primary: "Struggling with the SAT? Varsity Tutors has expert tutors ready to help your student succeed. Book a session today."
+Headline: "Expert SAT Tutors"
+CTA: "Book Now"
+Why it's average: Generic claim (expert tutors), no proof, weak emotional hook, but clear CTA and brand-appropriate.
+
+LOW-PERFORMING AD (target below 6.0/10):
+Primary: "We offer SAT tutoring services for students who want to improve their scores. Our tutors are qualified and experienced."
+Headline: "SAT Tutoring Available"
+CTA: "Learn More"
+Why it fails: No emotional hook, no proof, passive language, generic headline, weak CTA for any funnel stage.
+`;
   const systemPrompt = `You are an expert ad quality evaluator for Meta (Facebook/Instagram) ads. You score ads with brutal honesty and precision across 5 dimensions.
 
 ${BRAND_CONTEXT}
-
-Score each dimension 1-10 with detailed rationale. Be harsh — a 7 means genuinely good, 8+ means excellent, 9-10 is rare and exceptional.
+${REFERENCE_ADS_CALIBRATION}
+Score each dimension 1-10 with detailed rationale. Be harsh — a 7 means genuinely good, 8+ means excellent, 9-10 is rare and exceptional. Use the calibration reference above to anchor your scores.
 
 Also analyze the emotional arc of the primary text: break it into 3-5 segments and score the emotional intensity (1-10) and valence (-1 negative to +1 positive) of each segment.
 
@@ -412,7 +435,7 @@ export const appRouter = router({
     })).mutation(async ({ input }) => {
       await ratchetQualityThreshold(input.campaignId, input.threshold);
       invalidateCampaignCache(input.campaignId);
-      return getCampaignById(input.campaignId);
+      return { success: true, newThreshold: input.threshold };
     }),
   }),
 

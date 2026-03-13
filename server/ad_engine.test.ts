@@ -95,7 +95,7 @@ vi.mock("./_core/llm", () => ({
   invokeLLM: vi.fn().mockResolvedValue({
     choices: [{
       message: {
-        content: JSON.stringify({
+          content: JSON.stringify({
           primaryText: "Unlock your child's SAT potential with expert 1-on-1 tutoring.",
           headline: "Score Higher. Get In.",
           description: "Score guarantee included",
@@ -115,11 +115,17 @@ vi.mock("./_core/llm", () => ({
           rationaleEmotionalResonance: "Emotionally resonant",
           weakestDimension: "cta",
           improvementSuggestion: "Make CTA more urgent",
+          confidenceScore: 0.85,
           emotionalArcData: [{ segment: "1", text: "Unlock your child's potential", intensity: 7, valence: 0.8 }],
           // Creative spark fields
           ideas: [
             { concept: "Wild idea 1", hook: "Hook 1", angle: "Angle 1", wildFactor: 9 },
             { concept: "Wild idea 2", hook: "Hook 2", angle: "Angle 2", wildFactor: 7 },
+          ],
+          // Smart Prompt Expansion fields
+          angles: [
+            { angleId: "a1", angleName: "Anxious Parent Relief", tone: "empowering", format: "problem_solution", emotionalHook: "relief", audienceAngle: "anxious_parent", exampleHeadline: "Stop Worrying About SAT", examplePrimaryText: "Your child can score 200+ points higher.", creativeDirection: "Lead with the parent's anxiety, resolve with proof." },
+            { angleId: "a2", angleName: "Student Aspiration", tone: "urgent", format: "bold_claim", emotionalHook: "aspiration", audienceAngle: "motivated_student", exampleHeadline: "Your Dream School Awaits", examplePrimaryText: "Top scorers didn't get lucky. They got tutored.", creativeDirection: "Speak directly to the student's ambition." },
           ],
         }),
       },
@@ -316,5 +322,82 @@ describe("auth router", () => {
     const caller = appRouter.createCaller(ctx);
     const result = await caller.auth.logout();
     expect(result.success).toBe(true);
+  });
+});
+
+describe("campaigns.updateThreshold", () => {
+  it("updates the quality threshold for a campaign", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.campaigns.updateThreshold({ campaignId: 1, threshold: 7.5 });
+    expect(result.success).toBe(true);
+    expect(result.newThreshold).toBe(7.5);
+  });
+
+  it("rejects threshold below 1.0", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.campaigns.updateThreshold({ campaignId: 1, threshold: 0.5 }))
+      .rejects.toThrow();
+  });
+
+  it("rejects threshold above 9.9", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.campaigns.updateThreshold({ campaignId: 1, threshold: 10.5 }))
+      .rejects.toThrow();
+  });
+});
+
+describe("ads.getVarietyMatrix", () => {
+  it("returns tones, formats, and emotionalHooks arrays", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ads.getVarietyMatrix();
+    expect(Array.isArray(result.tones)).toBe(true);
+    expect(Array.isArray(result.formats)).toBe(true);
+    expect(Array.isArray(result.emotionalHooks)).toBe(true);
+    expect(result.tones.length).toBeGreaterThanOrEqual(6);
+    expect(result.formats.length).toBeGreaterThanOrEqual(5);
+    expect(result.emotionalHooks.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("ads.bulkGenerate", () => {
+  it("returns results with totalAdsGenerated, approvedCount, and varietyStats", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ads.bulkGenerate({ campaignId: 1, count: 2 });
+    expect(result).toBeDefined();
+    expect(typeof result.totalAdsGenerated).toBe("number");
+    expect(typeof result.approvedCount).toBe("number");
+    expect(result.varietyStats).toBeDefined();
+  });
+
+  it("rejects count below 1", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.ads.bulkGenerate({ campaignId: 1, count: 0 }))
+      .rejects.toThrow();
+  });
+
+  it("rejects count above 50", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.ads.bulkGenerate({ campaignId: 1, count: 51 }))
+      .rejects.toThrow();
+  });
+});
+
+describe("ads.expandPrompt", () => {
+  it("returns an array of creative angles from a vague prompt", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ads.expandPrompt({ campaignId: 1, vaguePrompt: "tutoring for stressed parents" });
+    expect(Array.isArray(result.angles)).toBe(true);
+    expect(result.angles.length).toBeGreaterThan(0);
+    expect(result.angles[0]).toHaveProperty("angleName");
+    expect(result.angles[0]).toHaveProperty("tone");
+    expect(result.angles[0]).toHaveProperty("emotionalHook");
   });
 });

@@ -396,7 +396,7 @@ export default function CampaignDetail() {
   const [thresholdInput, setThresholdInput] = useState<string>("");
   const updateThresholdMutation = trpc.campaigns.updateThreshold.useMutation({
     onSuccess: (updated) => {
-      toast.success(`Quality threshold set to ${updated?.currentQualityThreshold.toFixed(1)}/10`);
+      toast.success(`Quality threshold set to ${updated.newThreshold.toFixed(1)}/10`);
       setShowThresholdEditor(false);
       refetchCampaign();
     },
