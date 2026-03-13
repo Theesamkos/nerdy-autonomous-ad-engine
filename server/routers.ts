@@ -6,9 +6,9 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
 import {
   createCampaign, getCampaignsByUser, getCampaignById, updateCampaignWeights,
-  updateCampaignStats, ratchetQualityThreshold,
-  createAd, getAdById, getAdsByCampaign, updateAdStatus,
-  createEvaluation, getEvaluationByAdId, getEvaluationsByCampaign,
+  updateCampaignStats, ratchetQualityThreshold, updateCampaignAutopilot,
+  createAd, getAdById, getAdsByCampaign, updateAdStatus, updateAdFields,
+  createEvaluation, getEvaluationByAdId, getEvaluationsByCampaign, updateLatestEvaluationByAdId,
   createIterationLog, getIterationLogsByCampaign,
   createAdversarialSession, getAdversarialSessionsByCampaign, updateAdversarialSession,
   createCreativeSparkIdeas, getCreativeSparkIdeasByCampaign, toggleSaveCreativeSparkIdea,
@@ -23,20 +23,13 @@ function estimateCost(promptTokens: number, completionTokens: number): number {
   return (promptTokens / 1000) * COST_PER_1K_INPUT + (completionTokens / 1000) * COST_PER_1K_OUTPUT;
 }
 
-// ─── In-memory campaign cache (30s TTL) ───────────────────────────────────────
-// Nerdy cares about latency above all else. Caching the campaign object avoids
-// a DB round-trip on every iteration of the self-healing loop.
-const campaignCache = new Map<number, { data: Awaited<ReturnType<typeof getCampaignById>>; expiresAt: number }>();
-async function getCampaignCached(campaignId: number) {
-  const cached = campaignCache.get(campaignId);
-  if (cached && cached.expiresAt > Date.now()) return cached.data;
-  const data = await getCampaignById(campaignId);
-  if (data) campaignCache.set(campaignId, { data, expiresAt: Date.now() + 30_000 });
-  return data;
-}
-// Invalidate cache when campaign weights/threshold change
-function invalidateCampaignCache(campaignId: number) {
-  campaignCache.delete(campaignId);
+function getPercentile(sortedValues: number[], percentile: number): number | null {
+  if (sortedValues.length === 0) return null;
+  const index = Math.min(
+    sortedValues.length - 1,
+    Math.max(0, Math.ceil((percentile / 100) * sortedValues.length) - 1)
+  );
+  return sortedValues[index];
 }
 
 // ─── Brand context for Varsity Tutors ────────────────────────────────────────
@@ -179,7 +172,6 @@ Dimension weights: Clarity ${campaign.weightClarity}%, Value Prop ${campaign.wei
             rationaleEmotionalResonance: { type: "string" },
             weakestDimension: { type: "string" },
             improvementSuggestion: { type: "string" },
-            confidenceScore: { type: "number", description: "How confident the evaluator is in these scores (0.0-1.0). Use 0.9+ when the ad is clearly good or bad, 0.5-0.7 when the ad is borderline or the context is ambiguous." },
             emotionalArcData: {
               type: "array",
               items: {
@@ -198,7 +190,7 @@ Dimension weights: Clarity ${campaign.weightClarity}%, Value Prop ${campaign.wei
           required: [
             "scoreClarity", "scoreValueProp", "scoreCta", "scoreBrandVoice", "scoreEmotionalResonance",
             "rationaleClarity", "rationaleValueProp", "rationaleCta", "rationaleBrandVoice", "rationaleEmotionalResonance",
-            "weakestDimension", "improvementSuggestion", "confidenceScore", "emotionalArcData",
+            "weakestDimension", "improvementSuggestion", "emotionalArcData",
           ],
           additionalProperties: false,
         },
@@ -223,136 +215,228 @@ Dimension weights: Clarity ${campaign.weightClarity}%, Value Prop ${campaign.wei
   return { ...parsed, weightedScore, promptTokens: usage.prompt_tokens, completionTokens: usage.completion_tokens };
 }
 
-// ─── Variety Matrix for Batch Generation ────────────────────────────────────
-// When generating 50 ads, each gets a unique combination of tone, format,
-// emotional hook, and audience angle. No two consecutive ads share the same
-// tone+format combo. This ensures maximum creative diversity.
-const TONES = [
-  { id: "empowering",    label: "Empowering",     instruction: "Lead with transformation. The reader is the hero. Your product is the catalyst. Make them feel capable." },
-  { id: "urgent",        label: "Urgent",          instruction: "Create genuine urgency without being manipulative. Deadlines, scarcity, or missed opportunity. Make inaction feel costly." },
-  { id: "friendly",      label: "Friendly",        instruction: "Warm, conversational, like a trusted friend giving advice. No jargon. Relatable. Makes the reader feel seen." },
-  { id: "professional",  label: "Professional",    instruction: "Authoritative, data-driven, credibility-first. Stats, credentials, proof points. Speaks to analytical decision-makers." },
-  { id: "playful",       label: "Playful",         instruction: "Wit, humor, unexpected angles. Subvert expectations. Make them smile before you make them click." },
-  { id: "provocative",   label: "Provocative",     instruction: "Challenge assumptions. Start with a controversial or counterintuitive statement. Make them stop and think." },
-  { id: "storytelling",  label: "Storytelling",    instruction: "Open with a specific scene or character moment. Let the narrative carry the message. Show, don't tell." },
-  { id: "social_proof",  label: "Social Proof",    instruction: "Lead with real results, testimonials, or numbers. Let other people's success do the selling." },
-];
+type GenerateAndEvaluateInput = {
+  campaignId: number;
+  mode: "standard" | "creative_spark" | "adversarial" | "self_healing";
+  competitorAd?: string;
+  parentAdId?: number;
+  maxIterations: number;
+};
 
-const FORMATS = [
-  { id: "problem_solution",  label: "Problem → Solution",   instruction: "Open with a pain point the audience deeply feels. Agitate it briefly. Then present the solution as relief." },
-  { id: "before_after",      label: "Before → After",        instruction: "Paint a vivid before state (struggle). Then paint the after state (success). Make the gap feel real." },
-  { id: "question_hook",     label: "Question Hook",         instruction: "Open with a question that makes the reader say 'yes, that's me.' Draw them in before making any claims." },
-  { id: "bold_claim",        label: "Bold Claim",            instruction: "Lead with a specific, bold, credible claim. Back it up immediately. End with a clear action." },
-  { id: "listicle",          label: "Listicle",              instruction: "Use a numbered or bulleted structure in the primary text. Scannable, specific, high information density." },
-  { id: "testimonial_style", label: "Testimonial Style",     instruction: "Write in first person as if a real customer is speaking. Specific details make it feel authentic." },
-];
+export type GenerationPipelineHooks = {
+  onInit?: (payload: { message: string }) => Promise<void> | void;
+  onPromptBuilt?: (payload: { message: string; tone: string; format: string; hook: string }) => Promise<void> | void;
+  onGenerating?: (payload: { message: string }) => Promise<void> | void;
+  onToken?: (payload: { token: string }) => Promise<void> | void;
+  onCopyComplete?: (payload: { headline: string; primaryText: string; description: string; ctaButton: string }) => Promise<void> | void;
+  onEvaluating?: (payload: { message: string }) => Promise<void> | void;
+  onScoreUpdate?: (payload: { dimension: string; score: number }) => Promise<void> | void;
+  onResult?: (payload: { score: number; status: "approved" | "rejected"; iterationCount: number }) => Promise<void> | void;
+  onHealing?: (payload: { message: string; previousScore: number }) => Promise<void> | void;
+  onComplete?: (payload: { adId: number | null; finalScore: number; totalMs: number }) => Promise<void> | void;
+  shouldStop?: () => boolean;
+};
 
-const EMOTIONAL_HOOKS = [
-  { id: "fear_of_missing_out",  label: "FOMO",          instruction: "Tap into the fear of falling behind peers, missing a window, or making the wrong choice." },
-  { id: "aspiration",           label: "Aspiration",    instruction: "Paint the dream outcome. Make the reader visualize their best-case future." },
-  { id: "relief",               label: "Relief",        instruction: "Acknowledge the stress and exhaustion. Position the product as the thing that finally makes it easier." },
-  { id: "pride",                label: "Pride",         instruction: "Tap into the desire to achieve, to prove something, to be the one who made it happen." },
-  { id: "belonging",            label: "Belonging",     instruction: "Everyone like you is doing this. Join the community of people who made the smart choice." },
-];
-
-const AUDIENCE_ANGLES = [
-  { id: "anxious_parent",     label: "Anxious Parent",      instruction: "Speak to a parent who lies awake worrying about their child's future. They want certainty and results." },
-  { id: "motivated_student",  label: "Motivated Student",   instruction: "Speak to a student who wants to win, not just pass. They're competitive and goal-oriented." },
-  { id: "comparison_shopper", label: "Comparison Shopper",  instruction: "Speak to someone who has already tried other solutions and is skeptical. Lead with differentiation." },
-  { id: "last_minute",        label: "Last-Minute Crammer", instruction: "Speak to someone with limited time who needs maximum results fast. Urgency and efficiency are everything." },
-];
-
-// Build a variety assignment for N ads — cycles through all combinations
-// ensuring maximum diversity with no two consecutive ads sharing tone+format
-function buildVarietyMatrix(count: number): Array<{
-  tone: typeof TONES[0];
-  format: typeof FORMATS[0];
-  emotionalHook: typeof EMOTIONAL_HOOKS[0];
-  audienceAngle: typeof AUDIENCE_ANGLES[0];
-  varietyLabel: string;
-}> {
-  const assignments = [];
-  for (let i = 0; i < count; i++) {
-    // Use prime-number stepping to avoid repetitive cycling patterns
-    const toneIdx = (i * 3) % TONES.length;
-    const formatIdx = (i * 5) % FORMATS.length;
-    const hookIdx = (i * 7) % EMOTIONAL_HOOKS.length;
-    const angleIdx = (i * 11) % AUDIENCE_ANGLES.length;
-    assignments.push({
-      tone: TONES[toneIdx],
-      format: FORMATS[formatIdx],
-      emotionalHook: EMOTIONAL_HOOKS[hookIdx],
-      audienceAngle: AUDIENCE_ANGLES[angleIdx],
-      varietyLabel: `${TONES[toneIdx].label} / ${FORMATS[formatIdx].label} / ${EMOTIONAL_HOOKS[hookIdx].label}`,
-    });
+function ensurePipelineOpen(hooks?: GenerationPipelineHooks) {
+  if (hooks?.shouldStop?.()) {
+    const error = new Error("Generation stream closed by client");
+    (error as Error & { code?: string }).code = "STREAM_CLOSED";
+    throw error;
   }
-  return assignments;
 }
 
-// ─── Smart Prompt Expansion helper ───────────────────────────────────────────
-// Takes a vague user prompt and expands it into 8 distinct creative angles,
-// each with a specific tone, format, emotional hook, and example headline.
-async function expandPrompt(vaguePompt: string, campaign: {
-  audienceSegment: string; product: string; campaignGoal: string; tone: string;
-}): Promise<Array<{
-  angleId: string;
-  angleName: string;
-  tone: string;
-  format: string;
-  emotionalHook: string;
-  audienceAngle: string;
-  exampleHeadline: string;
-  examplePrimaryText: string;
-  creativeDirection: string;
-}>> {
-  const response = await invokeLLM({
-    messages: [
-      {
-        role: "system",
-        content: `You are a senior creative strategist at a top performance marketing agency. Your job is to take a vague creative brief and expand it into 8 distinct, fully-developed creative angles — each with a different tone, format, emotional hook, and audience framing. Every angle must feel genuinely different. No two angles should feel like variations of the same idea.\n\n${BRAND_CONTEXT}\n\nReturn ONLY valid JSON.`,
-      },
-      {
-        role: "user",
-        content: `Vague brief: "${vaguePompt}"\n\nCampaign context:\n- Product: ${campaign.product}\n- Audience: ${campaign.audienceSegment}\n- Goal: ${campaign.campaignGoal}\n- Base tone: ${campaign.tone}\n\nExpand this into 8 distinct creative angles. For each, provide:\n- A short angle name (3-5 words)\n- The tone (from: empowering, urgent, friendly, professional, playful, provocative, storytelling, social_proof)\n- The format (from: problem_solution, before_after, question_hook, bold_claim, listicle, testimonial_style)\n- The emotional hook (from: fear_of_missing_out, aspiration, relief, pride, belonging)\n- The audience angle (from: anxious_parent, motivated_student, comparison_shopper, last_minute)\n- An example headline (max 40 chars, punchy)\n- An example primary text (1-2 sentences, stops the scroll)\n- A creative direction sentence (what makes this angle unique)`,
-      },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "creative_angles",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            angles: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  angleId: { type: "string" },
-                  angleName: { type: "string" },
-                  tone: { type: "string" },
-                  format: { type: "string" },
-                  emotionalHook: { type: "string" },
-                  audienceAngle: { type: "string" },
-                  exampleHeadline: { type: "string" },
-                  examplePrimaryText: { type: "string" },
-                  creativeDirection: { type: "string" },
-                },
-                required: ["angleId", "angleName", "tone", "format", "emotionalHook", "audienceAngle", "exampleHeadline", "examplePrimaryText", "creativeDirection"],
-                additionalProperties: false,
-              },
-            },
-          },
-          required: ["angles"],
-          additionalProperties: false,
-        },
-      },
-    },
+export async function runGenerateAndEvaluatePipeline(params: {
+  userId: number;
+  input: GenerateAndEvaluateInput;
+  hooks?: GenerationPipelineHooks;
+}) {
+  const { userId, input, hooks } = params;
+  const pipelineStart = Date.now();
+  const campaign = await getCampaignById(input.campaignId);
+  if (!campaign) throw new Error("Campaign not found");
+
+  ensurePipelineOpen(hooks);
+  await hooks?.onInit?.({ message: "Initializing generation pipeline..." });
+
+  let bestAdId: number | null = null;
+  let bestScore = 0;
+  let iterationNumber = 1;
+  const results: Array<{ adId: number; score: number; iteration: number }> = [];
+
+  for (let i = 0; i < input.maxIterations; i++) {
+    ensurePipelineOpen(hooks);
+    iterationNumber = i + 1;
+
+    let targetDimension: string | undefined;
+    let improvementSuggestion: string | undefined;
+    if (i > 0 && bestAdId) {
+      const prevEval = await getEvaluationByAdId(bestAdId);
+      targetDimension = prevEval?.weakestDimension || undefined;
+      improvementSuggestion = prevEval?.improvementSuggestion || undefined;
+    }
+
+    await hooks?.onPromptBuilt?.({
+      message: "Audience profile loaded. Building prompt...",
+      tone: String(campaign.tone ?? "Urgent"),
+      format: "Problem→Solution",
+      hook: "Fear of Missing Out",
+    });
+    await hooks?.onGenerating?.({ message: "Generating ad copy..." });
+
+    const startTime = Date.now();
+    const generated = await generateAdCopy({
+      audienceSegment: campaign.audienceSegment,
+      product: campaign.product,
+      campaignGoal: campaign.campaignGoal,
+      tone: campaign.tone,
+      brandVoiceNotes: campaign.brandVoiceNotes,
+      mode: i > 0 ? "self_healing" : input.mode,
+      targetDimension,
+      competitorAd: input.competitorAd,
+      improvementSuggestion,
+      iterationNumber,
+    });
+    const generationMs = Date.now() - startTime;
+
+    for (const token of generated.headline.split(/\s+/).filter(Boolean)) {
+      ensurePipelineOpen(hooks);
+      await hooks?.onToken?.({ token });
+    }
+    await hooks?.onCopyComplete?.({
+      headline: generated.headline,
+      primaryText: generated.primaryText,
+      description: generated.description,
+      ctaButton: generated.ctaButton,
+    });
+
+    const genCost = estimateCost(generated.promptTokens, generated.completionTokens);
+
+    const adId = await createAd({
+      campaignId: input.campaignId,
+      userId,
+      primaryText: generated.primaryText,
+      headline: generated.headline,
+      description: generated.description,
+      ctaButton: generated.ctaButton,
+      imagePrompt: generated.imagePrompt,
+      generationMode: i > 0 ? "self_healing" : input.mode,
+      iterationNumber,
+      parentAdId: input.parentAdId || bestAdId || undefined,
+      promptTokens: generated.promptTokens,
+      completionTokens: generated.completionTokens,
+      generationMs,
+      estimatedCostUsd: genCost,
+      status: "evaluating",
+    });
+
+    await hooks?.onEvaluating?.({ message: "LLM Judge evaluating quality..." });
+
+    const evaluation = await evaluateAdCopy(
+      { primaryText: generated.primaryText, headline: generated.headline, description: generated.description, ctaButton: generated.ctaButton },
+      campaign
+    );
+
+    const evalCost = estimateCost(evaluation.promptTokens, evaluation.completionTokens);
+    const isPublishable = evaluation.weightedScore >= campaign.currentQualityThreshold;
+
+    for (const [dimension, score] of [
+      ["Clarity", evaluation.scoreClarity],
+      ["Value Prop", evaluation.scoreValueProp],
+      ["CTA", evaluation.scoreCta],
+      ["Brand Voice", evaluation.scoreBrandVoice],
+      ["Emotional Resonance", evaluation.scoreEmotionalResonance],
+    ] as const) {
+      ensurePipelineOpen(hooks);
+      await hooks?.onScoreUpdate?.({ dimension, score });
+    }
+
+    await createEvaluation({
+      adId,
+      campaignId: input.campaignId,
+      scoreClarity: evaluation.scoreClarity,
+      scoreValueProp: evaluation.scoreValueProp,
+      scoreCta: evaluation.scoreCta,
+      scoreBrandVoice: evaluation.scoreBrandVoice,
+      scoreEmotionalResonance: evaluation.scoreEmotionalResonance,
+      weightedScore: evaluation.weightedScore,
+      rationaleClarity: evaluation.rationaleClarity,
+      rationaleValueProp: evaluation.rationaleValueProp,
+      rationaleCta: evaluation.rationaleCta,
+      rationaleBrandVoice: evaluation.rationaleBrandVoice,
+      rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
+      weakestDimension: evaluation.weakestDimension,
+      improvementSuggestion: evaluation.improvementSuggestion,
+      emotionalArcData: evaluation.emotionalArcData,
+      promptTokens: evaluation.promptTokens,
+      completionTokens: evaluation.completionTokens,
+      estimatedCostUsd: evalCost,
+    });
+
+    await updateAdStatus(adId, isPublishable ? "approved" : "rejected", evaluation.weightedScore, isPublishable);
+
+    if (i > 0 && bestAdId) {
+      await createIterationLog({
+        campaignId: input.campaignId,
+        adId,
+        parentAdId: bestAdId,
+        iterationNumber,
+        triggerReason: `Score ${bestScore.toFixed(1)} below threshold ${campaign.currentQualityThreshold}`,
+        targetDimension,
+        scoreBefore: bestScore,
+        scoreAfter: evaluation.weightedScore,
+        improvement: evaluation.weightedScore - bestScore,
+        strategyUsed: "self_healing_targeted",
+      });
+    }
+
+    const totalTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
+    await updateCampaignStats(input.campaignId, totalTokens, genCost + evalCost);
+
+    results.push({ adId, score: evaluation.weightedScore, iteration: iterationNumber });
+
+    if (evaluation.weightedScore > bestScore) {
+      bestScore = evaluation.weightedScore;
+      bestAdId = adId;
+    }
+
+    const hasNextIteration = i < input.maxIterations - 1;
+    if (isPublishable || !hasNextIteration) {
+      await hooks?.onResult?.({
+        score: evaluation.weightedScore,
+        status: isPublishable ? "approved" : "rejected",
+        iterationCount: iterationNumber,
+      });
+    } else {
+      await hooks?.onHealing?.({
+        message: `Score ${evaluation.weightedScore.toFixed(1)} below threshold ${campaign.currentQualityThreshold.toFixed(1)}. Running self-healing iteration ${iterationNumber + 1}...`,
+        previousScore: evaluation.weightedScore,
+      });
+    }
+
+    if (isPublishable) break;
+  }
+
+  if (bestScore >= campaign.currentQualityThreshold + 1.5) {
+    const newThreshold = Math.min(campaign.currentQualityThreshold + 0.25, 9.5);
+    await ratchetQualityThreshold(input.campaignId, newThreshold);
+  }
+
+  const output = {
+    bestAdId,
+    bestScore,
+    totalIterations: iterationNumber,
+    results,
+    isPublishable: bestScore >= campaign.currentQualityThreshold,
+    qualityRatchetApplied: bestScore >= campaign.currentQualityThreshold + 1.5,
+  };
+
+  await hooks?.onComplete?.({
+    adId: bestAdId,
+    finalScore: bestScore,
+    totalMs: Date.now() - pipelineStart,
   });
-  const rawContent = response.choices[0]?.message?.content;
-  const parsed = JSON.parse(typeof rawContent === "string" ? rawContent : "{\"angles\":[]}");
-  return parsed.angles || [];
+
+  return output;
 }
 
 // ─── Main Router ──────────────────────────────────────────────────────────────
@@ -384,8 +468,13 @@ export const appRouter = router({
       campaignGoal: z.enum(["awareness", "conversion", "retargeting"]),
       tone: z.enum(["empowering", "urgent", "friendly", "professional", "playful"]),
       brandVoiceNotes: z.string().optional(),
+      initialQualityThreshold: z.number().min(5.0).max(9.0).default(7.0),
     })).mutation(async ({ ctx, input }) => {
-      const id = await createCampaign({ ...input, userId: ctx.user.id });
+      const id = await createCampaign({
+        ...input,
+        userId: ctx.user.id,
+        currentQualityThreshold: input.initialQualityThreshold,
+      });
       return getCampaignById(id);
     }),
 
@@ -401,18 +490,35 @@ export const appRouter = router({
       const total = weights.weightClarity + weights.weightValueProp + weights.weightCta + weights.weightBrandVoice + weights.weightEmotionalResonance;
       if (total !== 100) throw new Error("Weights must sum to 100");
       await updateCampaignWeights(campaignId, weights);
-      invalidateCampaignCache(campaignId);
       return getCampaignById(campaignId);
     }),
 
-    // Manual threshold override — lets users set the quality gate directly
-    updateThreshold: protectedProcedure.input(z.object({
+    toggleAutopilot: protectedProcedure.input(z.object({
       campaignId: z.number(),
-      threshold: z.number().min(1).max(9.9),
+      enabled: z.boolean(),
+      frequencyHours: z.number().min(1).max(168).default(24).optional(),
     })).mutation(async ({ input }) => {
-      await ratchetQualityThreshold(input.campaignId, input.threshold);
-      invalidateCampaignCache(input.campaignId);
+      await updateCampaignAutopilot(input.campaignId, {
+        autopilotEnabled: input.enabled,
+        ...(input.frequencyHours !== undefined && { autopilotFrequencyHours: input.frequencyHours }),
+      });
       return getCampaignById(input.campaignId);
+    }),
+
+    getAutopilotStatus: protectedProcedure.input(z.object({
+      campaignId: z.number(),
+    })).query(async ({ input }) => {
+      const campaign = await getCampaignById(input.campaignId);
+      if (!campaign) throw new Error("Campaign not found");
+      return {
+        enabled: campaign.autopilotEnabled,
+        frequencyHours: campaign.autopilotFrequencyHours,
+        lastRunAt: campaign.autopilotLastRunAt,
+        totalRuns: campaign.autopilotTotalRuns,
+        nextRunAt: campaign.autopilotEnabled && campaign.autopilotLastRunAt
+          ? new Date(campaign.autopilotLastRunAt.getTime() + campaign.autopilotFrequencyHours * 3600 * 1000)
+          : null,
+      };
     }),
   }),
 
@@ -428,6 +534,445 @@ export const appRouter = router({
       return { ad, evaluation };
     }),
 
+    simulateABTest: protectedProcedure.input(z.object({
+      adAId: z.number(),
+      adBId: z.number(),
+    })).mutation(async ({ input }) => {
+      if (input.adAId === input.adBId) {
+        throw new Error("Pick two different ads for A/B simulation");
+      }
+
+      const [adA, adB] = await Promise.all([
+        getAdById(input.adAId),
+        getAdById(input.adBId),
+      ]);
+      if (!adA || !adB) throw new Error("One or both ads not found");
+      if (adA.campaignId !== adB.campaignId) {
+        throw new Error("Ads must belong to the same campaign");
+      }
+      if (adA.status !== "approved" || adB.status !== "approved") {
+        throw new Error("A/B simulation requires approved ads");
+      }
+
+      const [evalA, evalB] = await Promise.all([
+        getEvaluationByAdId(adA.id),
+        getEvaluationByAdId(adB.id),
+      ]);
+      if (!evalA || !evalB) throw new Error("Evaluation data missing for one or both ads");
+
+      const ctrA = (
+        (evalA.scoreCta * 0.4 + evalA.scoreValueProp * 0.3 + evalA.scoreEmotionalResonance * 0.3) /
+        10
+      ) * 0.032;
+      const ctrB = (
+        (evalB.scoreCta * 0.4 + evalB.scoreValueProp * 0.3 + evalB.scoreEmotionalResonance * 0.3) /
+        10
+      ) * 0.032;
+
+      const conversionRateA = ((evalA.scoreClarity * 0.5 + evalA.scoreCta * 0.5) / 10) * 0.018;
+      const conversionRateB = ((evalB.scoreClarity * 0.5 + evalB.scoreCta * 0.5) / 10) * 0.018;
+
+      const estimatedCpcA = ctrA > 0 ? adA.estimatedCostUsd / ctrA : null;
+      const estimatedCpcB = ctrB > 0 ? adB.estimatedCostUsd / ctrB : null;
+
+      const compositeA = (
+        evalA.scoreClarity +
+        evalA.scoreValueProp +
+        evalA.scoreCta +
+        evalA.scoreBrandVoice +
+        evalA.scoreEmotionalResonance
+      ) / 5;
+      const compositeB = (
+        evalB.scoreClarity +
+        evalB.scoreValueProp +
+        evalB.scoreCta +
+        evalB.scoreBrandVoice +
+        evalB.scoreEmotionalResonance
+      ) / 5;
+
+      const scoreGap = Math.abs(compositeA - compositeB);
+      const normalizedGap = Math.min(scoreGap / 10, 1);
+      const confidencePct = Math.round((0.5 + normalizedGap * 0.45) * 100);
+
+      const winner =
+        Math.abs(ctrA - ctrB) < Number.EPSILON
+          ? "tie"
+          : ctrA > ctrB
+            ? "A"
+            : "B";
+
+      const dimensions = [
+        { key: "clarity", label: "Clarity", a: evalA.scoreClarity, b: evalB.scoreClarity },
+        { key: "valueProp", label: "Value Prop", a: evalA.scoreValueProp, b: evalB.scoreValueProp },
+        { key: "cta", label: "CTA", a: evalA.scoreCta, b: evalB.scoreCta },
+        { key: "brandVoice", label: "Brand Voice", a: evalA.scoreBrandVoice, b: evalB.scoreBrandVoice },
+        { key: "emotionalResonance", label: "Emotional Resonance", a: evalA.scoreEmotionalResonance, b: evalB.scoreEmotionalResonance },
+      ].map((dim) => ({
+        ...dim,
+        gap: dim.a - dim.b,
+        leader: Math.abs(dim.a - dim.b) < Number.EPSILON ? "tie" : dim.a > dim.b ? "A" : "B",
+      }));
+
+      return {
+        adA: {
+          id: adA.id,
+          primaryText: adA.primaryText,
+          headline: adA.headline,
+          description: adA.description,
+          ctaButton: adA.ctaButton,
+          estimatedCostUsd: adA.estimatedCostUsd,
+        },
+        adB: {
+          id: adB.id,
+          primaryText: adB.primaryText,
+          headline: adB.headline,
+          description: adB.description,
+          ctaButton: adB.ctaButton,
+          estimatedCostUsd: adB.estimatedCostUsd,
+        },
+        metrics: {
+          adA: { ctr: ctrA, conversionRate: conversionRateA, estimatedCpc: estimatedCpcA },
+          adB: { ctr: ctrB, conversionRate: conversionRateB, estimatedCpc: estimatedCpcB },
+        },
+        winner: {
+          label: winner,
+          adId: winner === "A" ? adA.id : winner === "B" ? adB.id : null,
+          confidencePct: winner === "tie" ? 50 : confidencePct,
+          scoreGap,
+        },
+        dimensions,
+      };
+    }),
+
+    explainScore: protectedProcedure.input(z.object({
+      adId: z.number(),
+    })).mutation(async ({ input }) => {
+      const ad = await getAdById(input.adId);
+      if (!ad) throw new Error("Ad not found");
+      const evaluation = await getEvaluationByAdId(input.adId);
+      if (!evaluation) throw new Error("Evaluation not found");
+
+      const response = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a senior advertising creative director and performance marketing expert. You evaluate ad copy with precision and give specific, actionable feedback. You cite exact words and phrases from the ad. You are direct, not diplomatic.",
+          },
+          {
+            role: "user",
+            content: `Explain this ad evaluation in detail and provide one specific rewrite.
+
+AD COPY:
+Headline: ${ad.headline}
+Body: ${ad.primaryText}
+Description: ${ad.description || ""}
+CTA: ${ad.ctaButton}
+
+SCORES:
+Clarity: ${evaluation.scoreClarity}/10
+Value Proposition: ${evaluation.scoreValueProp}/10
+CTA Strength: ${evaluation.scoreCta}/10
+Brand Voice: ${evaluation.scoreBrandVoice}/10
+Emotional Resonance: ${evaluation.scoreEmotionalResonance}/10
+Overall: ${evaluation.weightedScore}/10
+
+Return JSON with this exact schema:
+{
+  "verdict": "string (1 sentence overall judgment, direct and specific)",
+  "strengths": ["string (2-3 specific things that worked, cite exact words)"],
+  "weaknesses": ["string (2-3 specific things that failed, cite exact words)"],
+  "lowestDimension": "string (name of the lowest-scoring dimension)",
+  "lowestDimensionExplanation": "string (2 sentences explaining exactly why it scored low)",
+  "rewriteSuggestion": {
+    "field": "headline | primaryText | ctaButton",
+    "original": "string",
+    "rewrite": "string",
+    "expectedScoreGain": "number"
+  }
+}`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "score_explainer",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                verdict: { type: "string" },
+                strengths: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 3 },
+                weaknesses: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 3 },
+                lowestDimension: { type: "string" },
+                lowestDimensionExplanation: { type: "string" },
+                rewriteSuggestion: {
+                  type: "object",
+                  properties: {
+                    field: { type: "string", enum: ["headline", "primaryText", "ctaButton"] },
+                    original: { type: "string" },
+                    rewrite: { type: "string" },
+                    expectedScoreGain: { type: "number" },
+                  },
+                  required: ["field", "original", "rewrite", "expectedScoreGain"],
+                  additionalProperties: false,
+                },
+              },
+              required: [
+                "verdict",
+                "strengths",
+                "weaknesses",
+                "lowestDimension",
+                "lowestDimensionExplanation",
+                "rewriteSuggestion",
+              ],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const raw = response.choices[0]?.message?.content;
+      const parsed = JSON.parse(typeof raw === "string" ? raw : "{}");
+      return {
+        ...parsed,
+        weightedScore: evaluation.weightedScore,
+        confidenceScore: (evaluation as any).confidenceScore ?? null,
+        improvementSuggestion: evaluation.improvementSuggestion ?? null,
+      };
+    }),
+
+    applyRewrite: protectedProcedure.input(z.object({
+      adId: z.number(),
+      field: z.enum(["headline", "primaryText", "ctaButton"]),
+      newValue: z.string().min(1),
+    })).mutation(async ({ input }) => {
+      const ad = await getAdById(input.adId);
+      if (!ad) throw new Error("Ad not found");
+      const campaign = await getCampaignById(ad.campaignId);
+      if (!campaign) throw new Error("Campaign not found");
+      const previousEvaluation = await getEvaluationByAdId(ad.id);
+      if (!previousEvaluation) throw new Error("Evaluation not found");
+
+      await updateAdFields(ad.id, { [input.field]: input.newValue } as Partial<typeof ad>);
+      const updatedAd = await getAdById(ad.id);
+      if (!updatedAd) throw new Error("Updated ad not found");
+
+      const reevaluation = await evaluateAdCopy(
+        {
+          primaryText: updatedAd.primaryText,
+          headline: updatedAd.headline,
+          description: updatedAd.description || "",
+          ctaButton: updatedAd.ctaButton,
+        },
+        campaign
+      );
+      const evalCost = estimateCost(reevaluation.promptTokens, reevaluation.completionTokens);
+
+      await updateLatestEvaluationByAdId(ad.id, {
+        scoreClarity: reevaluation.scoreClarity,
+        scoreValueProp: reevaluation.scoreValueProp,
+        scoreCta: reevaluation.scoreCta,
+        scoreBrandVoice: reevaluation.scoreBrandVoice,
+        scoreEmotionalResonance: reevaluation.scoreEmotionalResonance,
+        weightedScore: reevaluation.weightedScore,
+        rationaleClarity: reevaluation.rationaleClarity,
+        rationaleValueProp: reevaluation.rationaleValueProp,
+        rationaleCta: reevaluation.rationaleCta,
+        rationaleBrandVoice: reevaluation.rationaleBrandVoice,
+        rationaleEmotionalResonance: reevaluation.rationaleEmotionalResonance,
+        weakestDimension: reevaluation.weakestDimension,
+        improvementSuggestion: reevaluation.improvementSuggestion,
+        emotionalArcData: reevaluation.emotionalArcData,
+        promptTokens: reevaluation.promptTokens,
+        completionTokens: reevaluation.completionTokens,
+        estimatedCostUsd: evalCost,
+      });
+
+      const isPublishable = reevaluation.weightedScore >= campaign.currentQualityThreshold;
+      await updateAdStatus(ad.id, isPublishable ? "approved" : "rejected", reevaluation.weightedScore, isPublishable);
+
+      const oldScore = previousEvaluation.weightedScore;
+      const newScore = reevaluation.weightedScore;
+      return {
+        oldScore,
+        newScore,
+        improvement: newScore - oldScore,
+      };
+    }),
+
+    generateIntelligenceBrief: protectedProcedure.input(z.object({
+      campaignId: z.number(),
+    })).mutation(async ({ input }) => {
+      const campaign = await getCampaignById(input.campaignId);
+      if (!campaign) throw new Error("Campaign not found");
+
+      const allAds = await getAdsByCampaign(input.campaignId);
+      const approvedAds = allAds.filter((ad) => ad.status === "approved" && ad.isPublishable);
+      if (approvedAds.length === 0) {
+        throw new Error("No approved ads available for intelligence brief");
+      }
+
+      const evaluationsByAdId = new Map<number, Awaited<ReturnType<typeof getEvaluationByAdId>>>();
+      await Promise.all(
+        approvedAds.map(async (ad) => {
+          const evaluation = await getEvaluationByAdId(ad.id);
+          evaluationsByAdId.set(ad.id, evaluation);
+        })
+      );
+
+      const inferFormat = (text: string) => {
+        const value = text.toLowerCase();
+        if (value.includes("?")) return "Question-led";
+        if (value.includes("you") && value.includes("your")) return "Direct address";
+        if (value.includes("because") || value.includes("so that")) return "Problem→Solution";
+        if (value.includes("students") || value.includes("parents")) return "Audience-specific narrative";
+        return "Benefit-led";
+      };
+
+      const inferEmotionalHook = (headline: string, primaryText: string) => {
+        const value = `${headline} ${primaryText}`.toLowerCase();
+        if (value.includes("score") || value.includes("admissions")) return "Achievement anxiety";
+        if (value.includes("fall behind") || value.includes("miss")) return "Fear of missing out";
+        if (value.includes("confidence") || value.includes("support")) return "Reassurance";
+        if (value.includes("win") || value.includes("top")) return "Aspiration";
+        return "Outcome certainty";
+      };
+
+      const inferTone = (text: string) => {
+        const value = text.toLowerCase();
+        if (value.includes("now") || value.includes("today") || value.includes("before")) return "urgent";
+        if (value.includes("together") || value.includes("support")) return "friendly";
+        if (value.includes("proven") || value.includes("strategy")) return "professional";
+        if (value.includes("imagine") || value.includes("unlock")) return "empowering";
+        return campaign.tone;
+      };
+
+      const rows = approvedAds
+        .map((ad) => {
+          const evaluation = evaluationsByAdId.get(ad.id);
+          if (!evaluation) return null;
+          return {
+            adId: ad.id,
+            headline: ad.headline,
+            ctaButton: ad.ctaButton,
+            score: evaluation.weightedScore,
+            tone: inferTone(ad.primaryText),
+            format: inferFormat(ad.primaryText),
+            emotionalHook: inferEmotionalHook(ad.headline, ad.primaryText),
+            dimensions: {
+              clarity: evaluation.scoreClarity,
+              valueProp: evaluation.scoreValueProp,
+              cta: evaluation.scoreCta,
+              brandVoice: evaluation.scoreBrandVoice,
+              emotionalResonance: evaluation.scoreEmotionalResonance,
+            },
+          };
+        })
+        .filter((row): row is NonNullable<typeof row> => !!row)
+        .sort((a, b) => b.score - a.score);
+
+      if (rows.length === 0) {
+        throw new Error("No evaluation data available for approved ads");
+      }
+
+      const top3 = rows.slice(0, 3).map((row) => ({
+        tone: row.tone,
+        format: row.format,
+        emotionalHook: row.emotionalHook,
+        headline: row.headline,
+        score: Number(row.score.toFixed(2)),
+      }));
+      const bottom3 = [...rows].reverse().slice(0, 3).map((row) => ({
+        tone: row.tone,
+        format: row.format,
+        emotionalHook: row.emotionalHook,
+        headline: row.headline,
+        score: Number(row.score.toFixed(2)),
+      }));
+
+      const groupAverage = (items: typeof rows, key: "tone" | "format") => {
+        const totals = new Map<string, { sum: number; count: number }>();
+        for (const item of items) {
+          const label = item[key];
+          const current = totals.get(label) || { sum: 0, count: 0 };
+          current.sum += item.score;
+          current.count += 1;
+          totals.set(label, current);
+        }
+        return Array.from(totals.entries())
+          .map(([label, value]) => ({
+            label,
+            avgScore: Number((value.sum / value.count).toFixed(2)),
+          }))
+          .sort((a, b) => b.avgScore - a.avgScore);
+      };
+
+      const avgScoreByTone = groupAverage(rows, "tone");
+      const avgScoreByFormat = groupAverage(rows, "format");
+
+      const topHalf = rows.slice(0, Math.max(1, Math.ceil(rows.length / 2)));
+      const ctaCounts = new Map<string, number>();
+      for (const item of topHalf) {
+        ctaCounts.set(item.ctaButton, (ctaCounts.get(item.ctaButton) || 0) + 1);
+      }
+      const mostCommonWinningCtas = Array.from(ctaCounts.entries())
+        .map(([cta, count]) => ({ cta, count }))
+        .sort((a, b) => b.count - a.count);
+
+      const dimensionAverages = {
+        clarity: rows.reduce((sum, row) => sum + row.dimensions.clarity, 0) / rows.length,
+        valueProp: rows.reduce((sum, row) => sum + row.dimensions.valueProp, 0) / rows.length,
+        cta: rows.reduce((sum, row) => sum + row.dimensions.cta, 0) / rows.length,
+        brandVoice: rows.reduce((sum, row) => sum + row.dimensions.brandVoice, 0) / rows.length,
+        emotionalResonance: rows.reduce((sum, row) => sum + row.dimensions.emotionalResonance, 0) / rows.length,
+      };
+      const dimensionEntries = Object.entries(dimensionAverages).map(([dimension, score]) => ({
+        dimension,
+        avgScore: Number(score.toFixed(2)),
+      })).sort((a, b) => b.avgScore - a.avgScore);
+
+      const summary = {
+        campaignId: input.campaignId,
+        approvedAds: rows.length,
+        avgScore: Number((rows.reduce((sum, row) => sum + row.score, 0) / rows.length).toFixed(2)),
+        top3,
+        bottom3,
+        avgScoreByTone,
+        avgScoreByFormat,
+        mostCommonWinningCtas,
+        dimensionBreakdown: {
+          highest: dimensionEntries[0],
+          lowest: dimensionEntries[dimensionEntries.length - 1],
+          all: dimensionEntries,
+        },
+      };
+
+      const response = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a senior performance marketing strategist at a top agency. You analyze ad campaign data and write sharp, actionable strategic briefs. Be specific, cite the actual data, and give concrete recommendations. Write in a confident, direct tone. No fluff. Maximum 250 words.",
+          },
+          {
+            role: "user",
+            content: `Here is the performance data for this ad campaign:\n${JSON.stringify(summary, null, 2)}\n\nWrite a Campaign Intelligence Brief with exactly these sections:\n1. WHAT'S WORKING (2-3 sentences on patterns in top performers)\n2. WHAT'S FAILING (2-3 sentences on patterns in low performers)\n3. AUDIENCE INSIGHT (1-2 sentences on what this data reveals about the audience)\n4. TOP 3 RECOMMENDATIONS (numbered list, each one specific and actionable)\n5. PREDICTED NEXT BATCH SCORE (your prediction for average score if recommendations are followed)`,
+          },
+        ],
+      });
+
+      const rawBrief = response.choices[0]?.message?.content;
+      const brief = (typeof rawBrief === "string" ? rawBrief : "").trim() || "Unable to generate intelligence brief.";
+      return {
+        brief,
+        generatedAt: new Date(),
+        topTone: avgScoreByTone[0]?.label || campaign.tone,
+        topFormat: avgScoreByFormat[0]?.label || "Benefit-led",
+        avgScore: summary.avgScore,
+      };
+    }),
+
     // Full generate + evaluate + self-heal pipeline
     generateAndEvaluate: protectedProcedure.input(z.object({
       campaignId: z.number(),
@@ -436,52 +981,36 @@ export const appRouter = router({
       parentAdId: z.number().optional(),
       maxIterations: z.number().min(1).max(5).default(3),
     })).mutation(async ({ ctx, input }) => {
-      const pipelineStart = Date.now();
-      // Use cached campaign to avoid repeated DB round-trips in the self-healing loop
-      const campaign = await getCampaignCached(input.campaignId);
+      return runGenerateAndEvaluatePipeline({
+        userId: ctx.user.id,
+        input,
+      });
+    }),
+
+    // Get full campaign analytics
+    // ─── Bulk × 5 Generation ────────────────────────────────────────────────
+    bulkGenerate: protectedProcedure.input(z.object({
+      campaignId: z.number(),
+      count: z.number().min(2).max(10).default(5),
+      mode: z.enum(["standard", "creative_spark"]).default("standard"),
+    })).mutation(async ({ ctx, input }) => {
+      const campaign = await getCampaignById(input.campaignId);
       if (!campaign) throw new Error("Campaign not found");
-
-      let bestAdId: number | null = null;
-      let bestScore = 0;
-      let iterationNumber = 1;
-      const results: Array<{ adId: number; score: number; iteration: number; generationMs: number; evaluationMs: number }> = [];
-
-      for (let i = 0; i < input.maxIterations; i++) {
-        iterationNumber = i + 1;
-
-        // Get previous evaluation for self-healing
-        let targetDimension: string | undefined;
-        let improvementSuggestion: string | undefined;
-        if (i > 0 && bestAdId) {
-          const prevEval = await getEvaluationByAdId(bestAdId);
-          targetDimension = prevEval?.weakestDimension || undefined;
-          improvementSuggestion = prevEval?.improvementSuggestion || undefined;
-        }
-
-        // ── LATENCY OPTIMIZATION: run generate + evaluate concurrently ──────────
-        // We save the ad first (status=evaluating), then fire both LLM calls in
-        // parallel. This shaves ~1-2s off every iteration.
-        const genStart = Date.now();
-        const generated = await generateAdCopy({
-          audienceSegment: campaign.audienceSegment,
-          product: campaign.product,
-          campaignGoal: campaign.campaignGoal,
-          tone: campaign.tone,
-          brandVoiceNotes: campaign.brandVoiceNotes,
-          mode: i > 0 ? "self_healing" : input.mode,
-          targetDimension,
-          competitorAd: input.competitorAd,
-          improvementSuggestion,
-          iterationNumber,
-        });
-        const generationMs = Date.now() - genStart;
-
-        const genCost = estimateCost(generated.promptTokens, generated.completionTokens);
-
-        // Save ad and start evaluation in parallel
-        const evalStart = Date.now();
-        const [adId, evaluation]: [number, Awaited<ReturnType<typeof evaluateAdCopy>>] = await Promise.all([
-          createAd({
+      // Run `count` pipelines in parallel — each generates + evaluates independently
+      const pipelines = Array.from({ length: input.count }, (_, idx) =>
+        (async () => {
+          const pipelineMode = idx === 0 ? input.mode : (idx === input.count - 1 ? "creative_spark" : input.mode);
+          const generated = await generateAdCopy({
+            audienceSegment: campaign.audienceSegment,
+            product: campaign.product,
+            campaignGoal: campaign.campaignGoal,
+            tone: campaign.tone,
+            brandVoiceNotes: campaign.brandVoiceNotes,
+            mode: pipelineMode,
+            iterationNumber: idx + 1,
+          });
+          const genCost = (generated.promptTokens * 0.000003) + (generated.completionTokens * 0.000015);
+          const adId = await createAd({
             campaignId: input.campaignId,
             userId: ctx.user.id,
             primaryText: generated.primaryText,
@@ -489,27 +1018,20 @@ export const appRouter = router({
             description: generated.description,
             ctaButton: generated.ctaButton,
             imagePrompt: generated.imagePrompt,
-            generationMode: i > 0 ? "self_healing" : input.mode,
-            iterationNumber,
-            parentAdId: input.parentAdId || bestAdId || undefined,
+            generationMode: pipelineMode as "standard" | "creative_spark" | "adversarial" | "self_healing",
+            iterationNumber: idx + 1,
             promptTokens: generated.promptTokens,
             completionTokens: generated.completionTokens,
             estimatedCostUsd: genCost,
             status: "evaluating",
-          }),
-          evaluateAdCopy(
+          });
+          const evaluation = await evaluateAdCopy(
             { primaryText: generated.primaryText, headline: generated.headline, description: generated.description, ctaButton: generated.ctaButton },
             campaign
-          ),
-        ]);
-        const evaluationMs = Date.now() - evalStart;
-
-        const evalCost = estimateCost(evaluation.promptTokens, evaluation.completionTokens);
-        const isPublishable = evaluation.weightedScore >= campaign.currentQualityThreshold;
-
-        // Save evaluation and update ad status in parallel (critical path)
-        await Promise.all([
-          createEvaluation({
+          );
+          const evalCost = (evaluation.promptTokens * 0.000003) + (evaluation.completionTokens * 0.000015);
+          const isPublishable = evaluation.weightedScore >= campaign.currentQualityThreshold;
+          await createEvaluation({
             adId,
             campaignId: input.campaignId,
             scoreClarity: evaluation.scoreClarity,
@@ -525,278 +1047,38 @@ export const appRouter = router({
             rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
             weakestDimension: evaluation.weakestDimension,
             improvementSuggestion: evaluation.improvementSuggestion,
-            confidenceScore: evaluation.confidenceScore ?? 0.8,
             emotionalArcData: evaluation.emotionalArcData,
             promptTokens: evaluation.promptTokens,
             completionTokens: evaluation.completionTokens,
             estimatedCostUsd: evalCost,
-          }),
-          updateAdStatus(adId, isPublishable ? "approved" : "rejected", evaluation.weightedScore, isPublishable),
-        ]);
-
-        // Fire-and-forget non-critical writes (iteration log + stats) to avoid blocking the response
-        const totalTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
-        void Promise.all([
-          updateCampaignStats(input.campaignId, totalTokens, genCost + evalCost),
-          ...(i > 0 && bestAdId ? [createIterationLog({
-            campaignId: input.campaignId,
-            adId,
-            parentAdId: bestAdId,
-            iterationNumber,
-            triggerReason: `Score ${bestScore.toFixed(1)} below threshold ${campaign.currentQualityThreshold}`,
-            targetDimension,
-            scoreBefore: bestScore,
-            scoreAfter: evaluation.weightedScore,
-            improvement: evaluation.weightedScore - bestScore,
-            strategyUsed: "self_healing_targeted",
-          })] : []),
-        ]).catch(() => { /* non-critical, swallow */ });
-
-        results.push({ adId, score: evaluation.weightedScore, iteration: iterationNumber, generationMs, evaluationMs });
-
-        if (evaluation.weightedScore > bestScore) {
-          bestScore = evaluation.weightedScore;
-          bestAdId = adId;
-        }
-
-        // Stop if publishable
-        if (isPublishable) break;
-      }
-
-      // Quality ratchet: if best score is well above threshold, raise the bar
-      if (bestScore >= campaign.currentQualityThreshold + 1.5) {
-        const newThreshold = Math.min(campaign.currentQualityThreshold + 0.25, 9.5);
-        await ratchetQualityThreshold(input.campaignId, newThreshold);
-      }
-
-      const totalMs = Date.now() - pipelineStart;
-      return {
-        bestAdId,
-        bestScore,
-        totalIterations: iterationNumber,
-        results,
-        isPublishable: bestScore >= campaign.currentQualityThreshold,
-        qualityRatchetApplied: bestScore >= campaign.currentQualityThreshold + 1.5,
-        // Latency telemetry (Nerdy cares about this above all else)
-        latency: {
-          totalMs,
-          avgGenerationMs: results.length > 0 ? Math.round(results.reduce((s, r) => s + (r.generationMs ?? 0), 0) / results.length) : 0,
-          avgEvaluationMs: results.length > 0 ? Math.round(results.reduce((s, r) => s + (r.evaluationMs ?? 0), 0) / results.length) : 0,
-        },
-      };
-    }),
-
-    // Get full campaign analytics
-    // ─── Bulk × 5 Generation ────────────────────────────────────────────────
-    bulkGenerate: protectedProcedure.input(z.object({
-      campaignId: z.number(),
-      count: z.number().min(1).max(50).default(10),
-      mode: z.enum(["standard", "creative_spark"]).default("standard"),
-    })).mutation(async ({ ctx, input }) => {
-      const campaignRaw = await getCampaignById(input.campaignId);
-      if (!campaignRaw) throw new Error("Campaign not found");
-      const campaign = campaignRaw;
-
-      // Build variety matrix for all ads upfront
-      const varietyMatrix = buildVarietyMatrix(input.count);
-
-      // ── Helper: run one ad through generate → evaluate → remediate loop ──────
-      async function runAdPipeline(idx: number, initialMode: string): Promise<{
-        adId: number; finalAdId: number; score: number; isPublishable: boolean;
-        mode: string; totalCost: number; remediationRounds: number;
-        weakestDimension: string | null; varietyLabel: string;
-      }> {
-        const MAX_REMEDIATION = 3;
-        let currentMode = initialMode;
-        let parentAdId: number | undefined;
-        let bestScore = 0;
-        let bestAdId = 0;
-        let remediationRounds = 0;
-        let weakestDimension: string | null = null;
-        let improvementSuggestion: string | undefined;
-        let totalCost = 0;
-        // Get this ad's unique variety assignment
-        const variety = varietyMatrix[idx];
-
-        for (let attempt = 0; attempt <= MAX_REMEDIATION; attempt++) {
-          const iterMode = attempt === 0 ? currentMode : "self_healing";
-          // Inject variety instructions into the generation prompt
-          const varietyInstruction = attempt === 0 ? [
-            `TONE DIRECTIVE: ${variety.tone.instruction}`,
-            `FORMAT DIRECTIVE: ${variety.format.instruction}`,
-            `EMOTIONAL HOOK: ${variety.emotionalHook.instruction}`,
-            `AUDIENCE ANGLE: ${variety.audienceAngle.instruction}`,
-            `VARIETY SIGNATURE: This ad must feel distinctly "${variety.tone.label} / ${variety.format.label}" — different from every other ad in this batch.`,
-          ].join("\n") : undefined;
-          const generated = await generateAdCopy({
-            audienceSegment: campaign.audienceSegment,
-            product: campaign.product,
-            campaignGoal: campaign.campaignGoal,
-            tone: variety.tone.id, // Use variety tone, not campaign default
-            brandVoiceNotes: varietyInstruction || campaign.brandVoiceNotes,
-            mode: iterMode,
-            targetDimension: weakestDimension || undefined,
-            improvementSuggestion,
-            iterationNumber: idx + 1 + attempt,
-          });
-          const genCost = estimateCost(generated.promptTokens, generated.completionTokens);
-          const adId = await createAd({
-            campaignId: input.campaignId,
-            userId: ctx.user.id,
-            primaryText: generated.primaryText,
-            headline: generated.headline,
-            description: generated.description,
-            ctaButton: generated.ctaButton,
-            imagePrompt: generated.imagePrompt,
-            generationMode: iterMode as "standard" | "creative_spark" | "adversarial" | "self_healing",
-            iterationNumber: idx + 1 + attempt,
-            parentAdId,
-            promptTokens: generated.promptTokens,
-            completionTokens: generated.completionTokens,
-            estimatedCostUsd: genCost,
-            status: "evaluating",
-          });
-          const evaluation = await evaluateAdCopy(
-            { primaryText: generated.primaryText, headline: generated.headline, description: generated.description, ctaButton: generated.ctaButton },
-            campaign
-          );
-          const evalCost = estimateCost(evaluation.promptTokens, evaluation.completionTokens);
-          const isPublishable = evaluation.weightedScore >= campaign.currentQualityThreshold;
-          await createEvaluation({
-            adId, campaignId: input.campaignId,
-            scoreClarity: evaluation.scoreClarity, scoreValueProp: evaluation.scoreValueProp,
-            scoreCta: evaluation.scoreCta, scoreBrandVoice: evaluation.scoreBrandVoice,
-            scoreEmotionalResonance: evaluation.scoreEmotionalResonance,
-            weightedScore: evaluation.weightedScore,
-            rationaleClarity: evaluation.rationaleClarity, rationaleValueProp: evaluation.rationaleValueProp,
-            rationaleCta: evaluation.rationaleCta, rationaleBrandVoice: evaluation.rationaleBrandVoice,
-            rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
-            weakestDimension: evaluation.weakestDimension, improvementSuggestion: evaluation.improvementSuggestion,
-            confidenceScore: evaluation.confidenceScore ?? 0.8,
-            emotionalArcData: evaluation.emotionalArcData,
-            promptTokens: evaluation.promptTokens, completionTokens: evaluation.completionTokens,
-            estimatedCostUsd: evalCost,
           });
           await updateAdStatus(adId, isPublishable ? "approved" : "rejected", evaluation.weightedScore, isPublishable);
-          const iterTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
-          await updateCampaignStats(input.campaignId, iterTokens, genCost + evalCost);
-          totalCost += genCost + evalCost;
-
-          // Log remediation iterations
-          if (attempt > 0 && bestAdId) {
-            await createIterationLog({
-              campaignId: input.campaignId, adId, parentAdId: bestAdId,
-              iterationNumber: idx + 1 + attempt,
-              triggerReason: `Bulk remediation: score ${bestScore.toFixed(1)} below threshold ${campaign.currentQualityThreshold}`,
-              targetDimension: weakestDimension || "overall",
-              scoreBefore: bestScore, scoreAfter: evaluation.weightedScore,
-              improvement: evaluation.weightedScore - bestScore,
-              strategyUsed: "bulk_remediation",
-            });
-            remediationRounds++;
-          }
-
-          if (evaluation.weightedScore > bestScore) {
-            bestScore = evaluation.weightedScore;
-            bestAdId = adId;
-          }
-          if (isPublishable) break;
-          // Prepare for next remediation round
-          weakestDimension = evaluation.weakestDimension;
-          improvementSuggestion = evaluation.improvementSuggestion || undefined;
-          parentAdId = adId;
-        }
-        return {
-          adId: bestAdId, finalAdId: bestAdId, score: bestScore,
-          isPublishable: bestScore >= campaign.currentQualityThreshold,
-          mode: initialMode, totalCost, remediationRounds,
-          weakestDimension, varietyLabel: variety.varietyLabel,
-        };
-      }
-
-      // ── Run all pipelines in parallel batches of 10 to avoid DB overload ─────
-      const BATCH_SIZE = 10;
-      const allResults: Awaited<ReturnType<typeof runAdPipeline>>[] = [];
-      for (let batchStart = 0; batchStart < input.count; batchStart += BATCH_SIZE) {
-        const batchEnd = Math.min(batchStart + BATCH_SIZE, input.count);
-        const batchPipelines = Array.from({ length: batchEnd - batchStart }, (_, i) => {
-          const idx = batchStart + i;
-          // Variety matrix handles tone/format diversity — use creative_spark for last ad as bonus
-          const mode = idx === input.count - 1 ? "creative_spark" : input.mode;
-          return runAdPipeline(idx, mode);
-        });
-        const batchResults = await Promise.all(batchPipelines);
-        allResults.push(...batchResults);
-      }
-
-      // Sort by score descending
-      allResults.sort((a, b) => b.score - a.score);
-      const winner = allResults[0];
-      const approvedCount = allResults.filter(r => r.isPublishable).length;
-      const remediatedCount = allResults.filter(r => r.remediationRounds > 0).length;
-
+          const totalTokens = generated.promptTokens + generated.completionTokens + evaluation.promptTokens + evaluation.completionTokens;
+          await updateCampaignStats(input.campaignId, totalTokens, genCost + evalCost);
+          return { adId, score: evaluation.weightedScore, isPublishable, mode: pipelineMode, totalCost: genCost + evalCost };
+        })()
+      );
+      const results = await Promise.all(pipelines);
+      // Sort by score descending — winner is index 0
+      results.sort((a, b) => b.score - a.score);
+      const winner = results[0];
       // Quality ratchet: if winner is well above threshold, raise the bar
-      let qualityRatchetApplied = false;
       if (winner.score >= campaign.currentQualityThreshold + 1.5) {
         const newThreshold = Math.min(campaign.currentQualityThreshold + 0.25, 9.5);
         await ratchetQualityThreshold(input.campaignId, newThreshold);
-        qualityRatchetApplied = true;
       }
-
-      // Build variety distribution summary for the UI
-      const toneDistribution: Record<string, number> = {};
-      const formatDistribution: Record<string, number> = {};
-      varietyMatrix.slice(0, allResults.length).forEach(v => {
-        toneDistribution[v.tone.label] = (toneDistribution[v.tone.label] || 0) + 1;
-        formatDistribution[v.format.label] = (formatDistribution[v.format.label] || 0) + 1;
-      });
-
       return {
-        results: allResults,
-        winnerId: winner.finalAdId,
+        results,
+        winnerId: winner.adId,
         winnerScore: winner.score,
-        totalAdsGenerated: allResults.length,
-        approvedCount,
-        remediatedCount,
-        qualityRatchetApplied,
-        // Variety stats for the UI
-        varietyStats: {
-          uniqueTones: Object.keys(toneDistribution).length,
-          uniqueFormats: Object.keys(formatDistribution).length,
-          toneDistribution,
-          formatDistribution,
-          diversityScore: Math.round((Object.keys(toneDistribution).length / TONES.length + Object.keys(formatDistribution).length / FORMATS.length) / 2 * 100),
-        },
+        totalAdsGenerated: results.length,
+        approvedCount: results.filter(r => r.isPublishable).length,
+        qualityRatchetApplied: winner.score >= campaign.currentQualityThreshold + 1.5,
       };
     }),
-    // Smart Prompt Expansion: takes a vague brief and returns 8 distinct creative angles
-    expandPrompt: protectedProcedure.input(z.object({
-      campaignId: z.number(),
-      vaguePrompt: z.string().min(3).max(500),
-    })).mutation(async ({ input }) => {
-      const campaign = await getCampaignCached(input.campaignId);
-      if (!campaign) throw new Error("Campaign not found");
-      const angles = await expandPrompt(input.vaguePrompt, {
-        audienceSegment: campaign.audienceSegment,
-        product: campaign.product,
-        campaignGoal: campaign.campaignGoal,
-        tone: campaign.tone,
-      });
-      return { angles };
-    }),
-
-    // Return the variety matrix constants so the UI can show what's coming
-    getVarietyMatrix: publicProcedure.query(() => ({
-      tones: TONES.map(t => ({ id: t.id, label: t.label })),
-      formats: FORMATS.map(f => ({ id: f.id, label: f.label })),
-      emotionalHooks: EMOTIONAL_HOOKS.map(h => ({ id: h.id, label: h.label })),
-      audienceAngles: AUDIENCE_ANGLES.map(a => ({ id: a.id, label: a.label })),
-    })),
-
     getCampaignAnalytics: protectedProcedure.input(z.object({ campaignId: z.number() })).query(async ({ input }) => {
-      const analyticsStart = Date.now();
       const [campaign, allAds, allEvaluations, iterationLogs] = await Promise.all([
-        getCampaignCached(input.campaignId),
+        getCampaignById(input.campaignId),
         getAdsByCampaign(input.campaignId),
         getEvaluationsByCampaign(input.campaignId),
         getIterationLogsByCampaign(input.campaignId),
@@ -823,12 +1105,22 @@ export const appRouter = router({
         emotionalResonance: allEvaluations.reduce((s, e) => s + e.scoreEmotionalResonance, 0) / allEvaluations.length,
       } : null;
 
-      // Latency stats from ad token data (proxy for LLM call duration)
-      // We estimate avg generation time from token counts (avg ~50 tokens/s for this model)
-      const avgPromptTokens = allAds.length > 0 ? allAds.reduce((s, a) => s + a.promptTokens, 0) / allAds.length : 0;
-      const avgCompletionTokens = allAds.length > 0 ? allAds.reduce((s, a) => s + a.completionTokens, 0) / allAds.length : 0;
-      const estimatedAvgGenMs = Math.round((avgPromptTokens + avgCompletionTokens) / 50 * 1000);
-      const analyticsMs = Date.now() - analyticsStart;
+      const generationTimes = allAds
+        .map((ad) => ad.generationMs)
+        .filter((value): value is number => typeof value === "number" && value >= 0)
+        .sort((a, b) => a - b);
+
+      const latencyHistogram = [
+        { bucket: "0-1s", minMs: 0, maxMs: 1000 },
+        { bucket: "1-1.5s", minMs: 1000, maxMs: 1500 },
+        { bucket: "1.5-2s", minMs: 1500, maxMs: 2000 },
+        { bucket: "2-2.5s", minMs: 2000, maxMs: 2500 },
+        { bucket: "2.5-3s", minMs: 2500, maxMs: 3000 },
+        { bucket: "3s+", minMs: 3000, maxMs: Number.POSITIVE_INFINITY },
+      ].map((bucket) => ({
+        bucket: bucket.bucket,
+        count: generationTimes.filter((value) => value >= bucket.minMs && value < bucket.maxMs).length,
+      }));
 
       return {
         campaign,
@@ -839,16 +1131,173 @@ export const appRouter = router({
         avgScores,
         totalCost,
         costPerApprovedAd,
+        latency: {
+          p50: getPercentile(generationTimes, 50),
+          p95: getPercentile(generationTimes, 95),
+          p99: getPercentile(generationTimes, 99),
+          histogram: latencyHistogram,
+          samples: generationTimes.length,
+        },
         iterationLogs,
         currentThreshold: campaign?.currentQualityThreshold || 7.0,
-        // Latency telemetry
-        latency: {
-          analyticsQueryMs: analyticsMs,
-          estimatedAvgGenMs,
-          avgPromptTokens: Math.round(avgPromptTokens),
-          avgCompletionTokens: Math.round(avgCompletionTokens),
-        },
       };
+    }),
+
+    // ─── Split by Audience ────────────────────────────────────────────────────
+    splitByAudience: protectedProcedure.input(z.object({
+      adId: z.number(),
+      campaignId: z.number(),
+    })).mutation(async ({ input }) => {
+      const [sourceAd, campaign] = await Promise.all([
+        getAdById(input.adId),
+        getCampaignById(input.campaignId),
+      ]);
+      if (!sourceAd) throw new Error("Source ad not found");
+      if (!campaign) throw new Error("Campaign not found");
+
+      const PERSONAS = [
+        { id: "anxious_parent",    name: "Anxious Parent",            description: "Driven by fear of their child falling behind, responds to urgency and reassurance" },
+        { id: "budget_parent",     name: "Budget-Conscious Parent",   description: "Price-sensitive, needs ROI justification, responds to value framing" },
+        { id: "high_achiever",     name: "High-Achieving Student",    description: "Competitive, goal-oriented, responds to achievement and ranking language" },
+        { id: "skeptical_parent",  name: "Skeptical Parent",          description: "Tried tutoring before without results, needs proof and differentiation" },
+        { id: "lastminute_parent", name: "Last-Minute Parent",        description: "Deadline pressure (SAT in 3 weeks), responds to speed and guaranteed results" },
+      ] as const;
+
+      const systemPrompt = `You are an expert direct-response copywriter. Rewrite the provided ad copy specifically for the target persona. Keep the same core offer and CTA intent. Change the language, emotional hooks, and framing to resonate with this specific person. Return JSON only.`;
+
+      const variants = await Promise.all(
+        PERSONAS.map(async (persona) => {
+          const userPrompt = `TARGET PERSONA: ${persona.name}
+Persona description: ${persona.description}
+
+ORIGINAL AD:
+Headline: "${sourceAd.headline}"
+Primary text: "${sourceAd.primaryText}"
+Description: "${sourceAd.description}"
+CTA: "${sourceAd.ctaButton}"
+
+Product: ${campaign.product}
+Campaign goal: ${campaign.campaignGoal}
+
+Rewrite this ad for the target persona. Keep the core offer but change language, hooks, and framing.`;
+
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "audience_variant",
+                strict: true,
+                schema: {
+                  type: "object",
+                  properties: {
+                    headline:         { type: "string" },
+                    primaryText:      { type: "string" },
+                    description:      { type: "string" },
+                    ctaButton:        { type: "string" },
+                    personaRationale: { type: "string" },
+                  },
+                  required: ["headline", "primaryText", "description", "ctaButton", "personaRationale"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          });
+
+          const raw = response.choices[0]?.message?.content;
+          const copy = JSON.parse(typeof raw === "string" ? raw : "{}") as {
+            headline: string; primaryText: string; description: string;
+            ctaButton: string; personaRationale: string;
+          };
+
+          const evaluation = await evaluateAdCopy(
+            { primaryText: copy.primaryText, headline: copy.headline, description: copy.description, ctaButton: copy.ctaButton },
+            campaign
+          );
+
+          return {
+            persona:          persona.name,
+            personaId:        persona.id,
+            headline:         copy.headline,
+            primaryText:      copy.primaryText,
+            description:      copy.description,
+            ctaButton:        copy.ctaButton,
+            personaRationale: copy.personaRationale,
+            score:            evaluation.weightedScore,
+            confidenceScore:  Math.round((evaluation.weightedScore / 10) * 100),
+          };
+        })
+      );
+
+      return variants.sort((a, b) => b.score - a.score);
+    }),
+
+    approveAudienceVariant: protectedProcedure.input(z.object({
+      campaignId: z.number(),
+      parentAdId: z.number(),
+      headline:    z.string(),
+      primaryText: z.string(),
+      description: z.string(),
+      ctaButton:   z.string(),
+      persona:     z.string(),
+    })).mutation(async ({ ctx, input }) => {
+      const campaign = await getCampaignById(input.campaignId);
+      if (!campaign) throw new Error("Campaign not found");
+
+      const evaluation = await evaluateAdCopy(
+        { primaryText: input.primaryText, headline: input.headline, description: input.description, ctaButton: input.ctaButton },
+        campaign
+      );
+      const isPublishable = evaluation.weightedScore >= campaign.currentQualityThreshold;
+      const evalCost = estimateCost(evaluation.promptTokens, evaluation.completionTokens);
+
+      const adId = await createAd({
+        campaignId:      input.campaignId,
+        userId:          ctx.user.id,
+        primaryText:     input.primaryText,
+        headline:        input.headline,
+        description:     input.description,
+        ctaButton:       input.ctaButton,
+        imagePrompt:     "",
+        generationMode:  "standard",
+        iterationNumber: 1,
+        parentAdId:      input.parentAdId,
+        promptTokens:    0,
+        completionTokens: evaluation.completionTokens,
+        generationMs:    0,
+        estimatedCostUsd: evalCost,
+        status:          isPublishable ? "approved" : "rejected",
+      });
+
+      await createEvaluation({
+        adId,
+        campaignId:                input.campaignId,
+        scoreClarity:              evaluation.scoreClarity,
+        scoreValueProp:            evaluation.scoreValueProp,
+        scoreCta:                  evaluation.scoreCta,
+        scoreBrandVoice:           evaluation.scoreBrandVoice,
+        scoreEmotionalResonance:   evaluation.scoreEmotionalResonance,
+        weightedScore:             evaluation.weightedScore,
+        rationaleClarity:          evaluation.rationaleClarity,
+        rationaleValueProp:        evaluation.rationaleValueProp,
+        rationaleCta:              evaluation.rationaleCta,
+        rationaleBrandVoice:       evaluation.rationaleBrandVoice,
+        rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
+        weakestDimension:          evaluation.weakestDimension,
+        improvementSuggestion:     evaluation.improvementSuggestion,
+        emotionalArcData:          evaluation.emotionalArcData,
+        promptTokens:              evaluation.promptTokens,
+        completionTokens:          evaluation.completionTokens,
+        estimatedCostUsd:          evalCost,
+      });
+
+      await updateAdStatus(adId, isPublishable ? "approved" : "rejected", evaluation.weightedScore, isPublishable);
+      await updateCampaignStats(input.campaignId, evaluation.promptTokens + evaluation.completionTokens, evalCost);
+
+      return { adId, score: evaluation.weightedScore, isPublishable };
     }),
   }),
 
@@ -924,7 +1373,6 @@ export const appRouter = router({
           rationaleCta: evaluation.rationaleCta, rationaleBrandVoice: evaluation.rationaleBrandVoice,
           rationaleEmotionalResonance: evaluation.rationaleEmotionalResonance,
           weakestDimension: evaluation.weakestDimension, improvementSuggestion: evaluation.improvementSuggestion,
-          confidenceScore: evaluation.confidenceScore ?? 0.8,
           emotionalArcData: evaluation.emotionalArcData,
           promptTokens: evaluation.promptTokens, completionTokens: evaluation.completionTokens, estimatedCostUsd: evalCost,
         });

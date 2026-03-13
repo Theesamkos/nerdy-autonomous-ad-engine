@@ -118,6 +118,21 @@ export async function ratchetQualityThreshold(campaignId: number, newThreshold: 
   await db.update(campaigns).set({ currentQualityThreshold: newThreshold }).where(eq(campaigns.id, campaignId));
 }
 
+export async function updateCampaignAutopilot(
+  campaignId: number,
+  data: { autopilotEnabled?: boolean; autopilotFrequencyHours?: number; autopilotLastRunAt?: Date; autopilotTotalRuns?: number }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(campaigns).set(data).where(eq(campaigns.id, campaignId));
+}
+
+export async function getAutopilotEnabledCampaigns(): Promise<Campaign[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(campaigns).where(eq(campaigns.autopilotEnabled, true));
+}
+
 // ─── Ads ──────────────────────────────────────────────────────────────────────
 export async function createAd(data: InsertAd): Promise<number> {
   const db = await getDb();
@@ -148,6 +163,15 @@ export async function updateAdStatus(adId: number, status: Ad["status"], quality
   await db.update(ads).set(updateData).where(eq(ads.id, adId));
 }
 
+export async function updateAdFields(
+  adId: number,
+  fields: Partial<Pick<Ad, "headline" | "primaryText" | "ctaButton" | "description">>
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(ads).set(fields).where(eq(ads.id, adId));
+}
+
 // ─── Evaluations ──────────────────────────────────────────────────────────────
 export async function createEvaluation(data: InsertEvaluation): Promise<number> {
   const db = await getDb();
@@ -161,6 +185,21 @@ export async function getEvaluationByAdId(adId: number) {
   if (!db) return undefined;
   const result = await db.select().from(evaluations).where(eq(evaluations.adId, adId)).orderBy(desc(evaluations.createdAt)).limit(1);
   return result[0];
+}
+
+export async function updateLatestEvaluationByAdId(
+  adId: number,
+  data: Partial<typeof evaluations.$inferInsert>
+) {
+  const db = await getDb();
+  if (!db) return;
+  const latest = await db.select({ id: evaluations.id })
+    .from(evaluations)
+    .where(eq(evaluations.adId, adId))
+    .orderBy(desc(evaluations.createdAt))
+    .limit(1);
+  if (!latest[0]) return;
+  await db.update(evaluations).set(data).where(eq(evaluations.id, latest[0].id));
 }
 
 export async function getEvaluationsByCampaign(campaignId: number) {

@@ -51,6 +51,8 @@ export default function PerformanceTracker() {
   const qualityTrend   = analytics?.qualityTrend || [];
   const iterationLogs  = analytics?.iterationLogs || [];
   const avgScores      = analytics?.avgScores;
+  const latency        = analytics?.latency;
+  const latencyBuckets = latency?.histogram || [];
 
   const costQualityData = ads?.filter((a: any) => a.qualityScore && a.estimatedCostUsd > 0).map((a: any) => ({
     cost:    parseFloat(a.estimatedCostUsd.toFixed(6)),
@@ -69,82 +71,16 @@ export default function PerformanceTracker() {
   const emotionalArc  = (selectedAdData?.evaluation?.emotionalArcData as any[]) || [];
   const approvedAds   = ads?.filter((a: any) => a.status === "approved") || [];
 
-  const exportJSON = () => {
-    if (!ads || ads.length === 0) { return; }
-    const report = {
-      exportedAt: new Date().toISOString(),
-      campaign: {
-        id: campaign?.id,
-        name: campaign?.name,
-        audienceSegment: campaign?.audienceSegment,
-        product: campaign?.product,
-        campaignGoal: campaign?.campaignGoal,
-        currentQualityThreshold: campaign?.currentQualityThreshold,
-        totalTokensUsed: campaign?.totalTokensUsed,
-        totalCostUsd: campaign?.totalCostUsd,
-      },
-      summary: {
-        totalAds: analytics?.totalAds || 0,
-        approvedAds: analytics?.approvedAds || 0,
-        rejectedAds: analytics?.rejectedAds || 0,
-        approvalRate: analytics?.totalAds ? Math.round(((analytics.approvedAds || 0) / analytics.totalAds) * 100) : 0,
-        averageScore: analytics?.avgScores ? Object.values(analytics.avgScores).reduce((s: number, v) => s + (v as number), 0) / 5 : 0,
-        averageConfidence: ads.reduce((sum: number, a: any) => sum + (a.evaluation?.confidenceScore ?? 0.8), 0) / (ads.length || 1),
-        totalIterationCycles: analytics?.iterationLogs?.length || 0,
-        totalCostUsd: analytics?.totalCost || 0,
-        costPerApprovedAd: analytics?.costPerApprovedAd || 0,
-      },
-      dimensionWeights: {
-        clarity: campaign?.weightClarity,
-        valueProp: campaign?.weightValueProp,
-        cta: campaign?.weightCta,
-        brandVoice: campaign?.weightBrandVoice,
-        emotionalResonance: campaign?.weightEmotionalResonance,
-      },
-      ads: ads.map((a: any) => ({
-        id: a.id,
-        status: a.status,
-        qualityScore: a.qualityScore,
-        generationMode: a.generationMode,
-        copy: {
-          primaryText: a.primaryText,
-          headline: a.headline,
-          description: a.description,
-          ctaButton: a.ctaButton,
-        },
-        evaluation: a.evaluation ? {
-          scoreClarity: a.evaluation.scoreClarity,
-          scoreValueProp: a.evaluation.scoreValueProp,
-          scoreCta: a.evaluation.scoreCta,
-          scoreBrandVoice: a.evaluation.scoreBrandVoice,
-          scoreEmotionalResonance: a.evaluation.scoreEmotionalResonance,
-          weightedScore: a.evaluation.weightedScore,
-          confidenceScore: a.evaluation.confidenceScore ?? 0.8,
-          weakestDimension: a.evaluation.weakestDimension,
-          improvementSuggestion: a.evaluation.improvementSuggestion,
-          rationale: {
-            clarity: a.evaluation.rationaleClarity,
-            valueProp: a.evaluation.rationaleValueProp,
-            cta: a.evaluation.rationaleCta,
-            brandVoice: a.evaluation.rationaleBrandVoice,
-            emotionalResonance: a.evaluation.rationaleEmotionalResonance,
-          },
-        } : null,
-        tokenUsage: {
-          promptTokens: a.promptTokens,
-          completionTokens: a.completionTokens,
-          estimatedCostUsd: a.estimatedCostUsd,
-        },
-        createdAt: new Date(a.createdAt).toISOString(),
-      })),
-    };
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const el = document.createElement("a");
-    el.href = url;
-    el.download = `${campaign?.name || "campaign"}-evaluation-report-${new Date().toISOString().slice(0, 10)}.json`;
-    el.click();
-    URL.revokeObjectURL(url);
+  const formatLatency = (ms?: number | null) => {
+    if (typeof ms !== "number") return "—";
+    return `${(ms / 1000).toFixed(2)}s`;
+  };
+
+  const getLatencyColor = (ms?: number | null) => {
+    if (typeof ms !== "number") return "rgba(100,116,139,0.5)";
+    if (ms < 2000) return "#34d399";
+    if (ms <= 4000) return "#facc15";
+    return "#f87171";
   };
 
   const exportCSV = () => {
@@ -203,24 +139,14 @@ export default function PerformanceTracker() {
                     Full-spectrum performance intelligence. Quality trends, cost efficiency, dimension breakdown, and emotional resonance arc.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={exportJSON}
-                    disabled={!ads || ads.length === 0}
-                    className="btn-secondary flex items-center gap-2 disabled:opacity-30"
-                    title="Export full evaluation report as JSON">
-                    <Download size={13} />
-                    <span className="hidden sm:inline">Export JSON</span>
-                  </button>
-                  <button
-                    onClick={exportCSV}
-                    disabled={!ads || ads.length === 0}
-                    className="btn-secondary flex items-center gap-2 disabled:opacity-30"
-                    title="Export all ads to CSV">
-                    <Download size={13} />
-                    <span className="hidden sm:inline">Export CSV</span>
-                  </button>
-                </div>
+                <button
+                  onClick={exportCSV}
+                  disabled={!ads || ads.length === 0}
+                  className="btn-secondary flex items-center gap-2 flex-shrink-0 disabled:opacity-30"
+                  title="Export all ads to CSV">
+                  <Download size={13} />
+                  <span className="hidden sm:inline">Export CSV</span>
+                </button>
               </div>
             </div>
           </div>
@@ -245,29 +171,51 @@ export default function PerformanceTracker() {
           ))}
         </motion.div>
 
-        {/* ⚡ Latency Telemetry Row — Nerdy cares about this above all else */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-          className="ops-card p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap size={13} style={{ color: "#fbbf24" }} />
-            <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>Latency Telemetry</span>
-            <span className="ml-auto font-mono text-[9px] px-2 py-0.5 rounded" style={{ background: "rgba(251,191,36,0.08)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)" }}>NERDY PRIORITY #1</span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Est. Avg Gen Time",  value: analytics?.latency ? analytics.latency.estimatedAvgGenMs + "ms" : "—",  sub: "per ad (LLM proxy)",      color: "#fbbf24" },
-              { label: "Analytics Query",    value: analytics?.latency ? analytics.latency.analyticsQueryMs + "ms" : "—",   sub: "DB + aggregation",       color: "#34d399" },
-              { label: "Avg Prompt Tokens",  value: analytics?.latency ? analytics.latency.avgPromptTokens + " tok" : "—",  sub: "input per generation",   color: "#60a5fa" },
-              { label: "Avg Output Tokens",  value: analytics?.latency ? analytics.latency.avgCompletionTokens + " tok" : "—", sub: "output per generation", color: "#a78bfa" },
-            ].map(({ label, value, sub, color }) => (
-              <div key={label}>
-                <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "rgba(100,116,139,0.5)" }}>{label}</div>
-                <div className="font-display font-bold text-xl" style={{ color, letterSpacing: "-0.03em" }}>{value}</div>
-                <div className="font-mono text-[9px] mt-0.5" style={{ color: "rgba(100,116,139,0.35)" }}>{sub}</div>
+        {/* Latency observability */}
+        {latency && latency.samples > 0 && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+            className="ops-card p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Zap size={13} style={{ color: "#22d3ee" }} />
+              <div className="section-label">Latency Observability</div>
+              <div className="ml-auto font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+                {latency.samples} samples
               </div>
-            ))}
-          </div>
-        </motion.div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+              {[
+                { label: "P50", value: latency.p50 },
+                { label: "P95", value: latency.p95 },
+                { label: "P99", value: latency.p99 },
+              ].map((item) => (
+                <div key={item.label} className="rounded-lg p-4" style={{ background: "rgba(2,11,24,0.65)", border: "1px solid rgba(34,211,238,0.08)" }}>
+                  <div className="font-mono text-[9px] tracking-widest uppercase mb-2" style={{ color: "rgba(100,116,139,0.5)" }}>
+                    {item.label}
+                  </div>
+                  <div className="font-display font-bold text-2xl" style={{ color: getLatencyColor(item.value), letterSpacing: "-0.03em" }}>
+                    {formatLatency(item.value)}
+                  </div>
+                  <div className="font-mono text-[9px] mt-1" style={{ color: "rgba(100,116,139,0.45)" }}>
+                    {typeof item.value === "number"
+                      ? (item.value < 2000 ? "Healthy" : item.value <= 4000 ? "Watch" : "Critical")
+                      : "No data"}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={latencyBuckets}>
+                <CartesianGrid strokeDasharray="2 4" stroke="rgba(34,211,238,0.05)" />
+                <XAxis dataKey="bucket" tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 9, fontFamily: "JetBrains Mono" }} />
+                <YAxis allowDecimals={false} tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 9, fontFamily: "JetBrains Mono" }} />
+                <Tooltip {...TT} formatter={(val: number) => [val, "Ads"]} />
+                <Bar dataKey="count" fill="#22d3ee" fillOpacity={0.9} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </motion.div>
+        )}
 
         {/* Quality Trend */}
         {qualityTrend.length > 0 && (
