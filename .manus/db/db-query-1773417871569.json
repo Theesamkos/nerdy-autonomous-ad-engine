@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `campaigns` ADD COLUMN IF NOT EXISTS `autopilotEnabled` boolean NOT NULL DEFAULT false;\nALTER TABLE `campaigns` ADD COLUMN IF NOT EXISTS `autopilotFrequencyHours` int NOT NULL DEFAULT 24;\nALTER TABLE `campaigns` ADD COLUMN IF NOT EXISTS `autopilotLastRunAt` timestamp NULL;\nALTER TABLE `campaigns` ADD COLUMN IF NOT EXISTS `autopilotTotalRuns` int NOT NULL DEFAULT 0;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user cRqaaCAnwvHpXvv.a355cd60a74b --database 5Zhvxiu6fz2msfFd9Aepcy --execute ALTER TABLE `campaigns` ADD COLUMN IF NOT EXISTS `autopilotEnabled` boolean NOT NULL DEFAULT false;\nALTER TABLE `campaigns` ADD COLUMN IF NOT EXISTS `autopilotFrequencyHours` int NOT NULL DEFAULT 24;\nALTER TABLE `campaigns` ADD COLUMN IF NOT EXISTS `autopilotLastRunAt` timestamp NULL;\nALTER TABLE `campaigns` ADD COLUMN IF NOT EXISTS `autopilotTotalRuns` int NOT NULL DEFAULT 0;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2072
+}

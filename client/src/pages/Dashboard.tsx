@@ -172,6 +172,14 @@ export default function Dashboard() {
                           <div className="flex-1 min-w-0">
                             <div className="font-display font-semibold text-sm truncate mb-1" style={{ color: "#e2e8f0" }}>
                               {c.name}
+                              {c.autopilotEnabled && (
+                                <span
+                                  className="ml-2 font-mono text-[9px] px-1.5 py-0.5 rounded align-middle"
+                                  style={{ color: "#22d3ee", border: "1px solid rgba(34,211,238,0.25)", background: "rgba(34,211,238,0.08)" }}
+                                >
+                                  🤖 AUTO
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-3">
                               <span className="tag-ops tag-teal text-[9px]">{(c.campaignGoal || "MULTI").toUpperCase()}</span>

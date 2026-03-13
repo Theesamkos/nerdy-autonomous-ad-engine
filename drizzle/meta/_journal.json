@@ -29,6 +29,20 @@
       "when": 1773294771658,
       "tag": "0003_bizarre_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1773375921359,
+      "tag": "0004_minor_wrecker",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1741824000000,
+      "tag": "0005_autopilot",
+      "breakpoints": true
     }
   ]
 }

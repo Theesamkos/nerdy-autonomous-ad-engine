@@ -49,6 +49,11 @@ export const campaigns = mysqlTable("campaigns", {
   totalTokensUsed: int("totalTokensUsed").default(0).notNull(),
   totalCostUsd: float("totalCostUsd").default(0).notNull(),
   status: mysqlEnum("status", ["active", "paused", "completed"]).default("active").notNull(),
+  // Autopilot
+  autopilotEnabled: boolean("autopilotEnabled").default(false).notNull(),
+  autopilotFrequencyHours: int("autopilotFrequencyHours").default(24).notNull(),
+  autopilotLastRunAt: timestamp("autopilotLastRunAt"),
+  autopilotTotalRuns: int("autopilotTotalRuns").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -77,6 +82,7 @@ export const ads = mysqlTable("ads", {
   parentAdId: int("parentAdId"),
   promptTokens: int("promptTokens").default(0).notNull(),
   completionTokens: int("completionTokens").default(0).notNull(),
+  generationMs: int("generationMs"),
   estimatedCostUsd: float("estimatedCostUsd").default(0).notNull(),
   // Aggregate quality score (cached from latest evaluation)
   qualityScore: float("qualityScore"),
