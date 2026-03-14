@@ -77,7 +77,7 @@ export default function PerformanceTracker() {
   };
 
   const getLatencyColor = (ms?: number | null) => {
-    if (typeof ms !== "number") return "rgba(100,116,139,0.5)";
+    if (typeof ms !== "number") return "#94a3b8";
     if (ms < 2000) return "#34d399";
     if (ms <= 4000) return "#facc15";
     return "#f87171";
@@ -135,7 +135,7 @@ export default function PerformanceTracker() {
                   <h1 className="font-display font-bold text-2xl tracking-tight" style={{ color: "#f8fafc", letterSpacing: "-0.02em" }}>
                     Analytics & Intelligence
                   </h1>
-                  <p className="font-mono text-[10px] mt-1.5 max-w-xl" style={{ color: "rgba(100,116,139,0.5)" }}>
+                  <p className="font-mono text-xs mt-1.5 max-w-xl" style={{ color: "#94a3b8" }}>
                     Full-spectrum performance intelligence. Quality trends, cost efficiency, dimension breakdown, and emotional resonance arc.
                   </p>
                 </div>
@@ -164,7 +164,7 @@ export default function PerformanceTracker() {
             <div key={label} className="ops-card p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Icon size={13} style={{ color }} />
-                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>{label}</span>
+                <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>{label}</span>
               </div>
               <div className="font-display font-bold text-2xl" style={{ color: "#f8fafc", letterSpacing: "-0.03em" }}>{value}</div>
             </div>
@@ -178,7 +178,7 @@ export default function PerformanceTracker() {
             <div className="flex items-center gap-2 mb-5">
               <Zap size={13} style={{ color: "#22d3ee" }} />
               <div className="section-label">Latency Observability</div>
-              <div className="ml-auto font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+              <div className="ml-auto font-mono text-xs" style={{ color: "#94a3b8" }}>
                 {latency.samples} samples
               </div>
             </div>
@@ -190,13 +190,13 @@ export default function PerformanceTracker() {
                 { label: "P99", value: latency.p99 },
               ].map((item) => (
                 <div key={item.label} className="rounded-lg p-4" style={{ background: "rgba(2,11,24,0.65)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                  <div className="font-mono text-[9px] tracking-widest uppercase mb-2" style={{ color: "rgba(100,116,139,0.5)" }}>
+                  <div className="font-mono text-xs tracking-widest uppercase mb-2" style={{ color: "#94a3b8" }}>
                     {item.label}
                   </div>
                   <div className="font-display font-bold text-2xl" style={{ color: getLatencyColor(item.value), letterSpacing: "-0.03em" }}>
                     {formatLatency(item.value)}
                   </div>
-                  <div className="font-mono text-[9px] mt-1" style={{ color: "rgba(100,116,139,0.45)" }}>
+                  <div className="font-mono text-xs mt-1" style={{ color: "#94a3b8" }}>
                     {typeof item.value === "number"
                       ? (item.value < 2000 ? "Healthy" : item.value <= 4000 ? "Watch" : "Critical")
                       : "No data"}
@@ -208,8 +208,8 @@ export default function PerformanceTracker() {
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={latencyBuckets}>
                 <CartesianGrid strokeDasharray="2 4" stroke="rgba(34,211,238,0.05)" />
-                <XAxis dataKey="bucket" tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 9, fontFamily: "JetBrains Mono" }} />
-                <YAxis allowDecimals={false} tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 9, fontFamily: "JetBrains Mono" }} />
+                <XAxis dataKey="bucket" tick={{ fill: "#94a3b8", fontSize: 9, fontFamily: "JetBrains Mono" }} />
+                <YAxis allowDecimals={false} tick={{ fill: "#94a3b8", fontSize: 9, fontFamily: "JetBrains Mono" }} />
                 <Tooltip {...TT} formatter={(val: number) => [val, "Ads"]} />
                 <Bar dataKey="count" fill="#22d3ee" fillOpacity={0.9} radius={[3, 3, 0, 0]} />
               </BarChart>
@@ -224,7 +224,7 @@ export default function PerformanceTracker() {
             <div className="flex items-center gap-2 mb-5">
               <Activity size={13} style={{ color: "#22d3ee" }} />
               <div className="section-label">Quality Trend & Ratchet</div>
-              <div className="ml-auto font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+              <div className="ml-auto font-mono text-xs" style={{ color: "#94a3b8" }}>
                 {qualityTrend.length} evaluations
               </div>
             </div>
@@ -237,8 +237,8 @@ export default function PerformanceTracker() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="2 4" stroke="rgba(34,211,238,0.05)" />
-                <XAxis dataKey="index" tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 9, fontFamily: "JetBrains Mono" }} />
-                <YAxis domain={[0, 10]} tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 9, fontFamily: "JetBrains Mono" }} />
+                <XAxis dataKey="index" tick={{ fill: "#94a3b8", fontSize: 9, fontFamily: "JetBrains Mono" }} />
+                <YAxis domain={[0, 10]} tick={{ fill: "#94a3b8", fontSize: 9, fontFamily: "JetBrains Mono" }} />
                 <Tooltip {...TT} formatter={(val: number) => [val.toFixed(2), "Score"]} />
                 <ReferenceLine y={campaign?.currentQualityThreshold || 7} stroke="#34d399" strokeDasharray="4 4" strokeOpacity={0.5} />
                 <Area type="monotone" dataKey="score" stroke="#22d3ee" strokeWidth={1.5} fill="url(#qualGrad)" dot={false} />
@@ -248,8 +248,8 @@ export default function PerformanceTracker() {
             {/* Ratchet progress */}
             <div className="mt-5 rounded-lg p-4" style={{ background: "rgba(52,211,153,0.05)", border: "1px solid rgba(52,211,153,0.12)" }}>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-mono text-[10px] tracking-widest uppercase" style={{ color: "#34d399" }}>Quality Ratchet</span>
-                <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>
+                <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#34d399" }}>Quality Ratchet</span>
+                <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                   {(campaign?.currentQualityThreshold || 7).toFixed(1)} / 9.5
                 </span>
               </div>
@@ -278,8 +278,8 @@ export default function PerformanceTracker() {
               <ResponsiveContainer width="100%" height={180}>
                 <ScatterChart>
                   <CartesianGrid strokeDasharray="2 4" stroke="rgba(34,211,238,0.05)" />
-                  <XAxis dataKey="cost"    name="Cost ($)"  tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 9, fontFamily: "JetBrains Mono" }} />
-                  <YAxis dataKey="quality" name="Quality" domain={[0, 10]} tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 9, fontFamily: "JetBrains Mono" }} />
+                  <XAxis dataKey="cost"    name="Cost ($)"  tick={{ fill: "#94a3b8", fontSize: 9, fontFamily: "JetBrains Mono" }} />
+                  <YAxis dataKey="quality" name="Quality" domain={[0, 10]} tick={{ fill: "#94a3b8", fontSize: 9, fontFamily: "JetBrains Mono" }} />
                   <ZAxis range={[30, 30]} />
                   <Tooltip {...TT} cursor={{ strokeDasharray: "3 3" }}
                     formatter={(val: number, name: string) => [name === "cost" ? "$" + val.toFixed(6) : val.toFixed(2), name === "cost" ? "Cost" : "Quality"]} />
@@ -312,9 +312,9 @@ export default function PerformanceTracker() {
               <div className="mt-4 space-y-2">
                 {Object.entries(avgScores).map(([key, val]) => (
                   <div key={key} className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: DIM_COLORS[key] || "rgba(100,116,139,0.4)" }} />
-                    <span className="font-mono text-[10px] flex-1" style={{ color: "rgba(100,116,139,0.6)" }}>{DIM_LABELS[key] || key}</span>
-                    <span className="font-mono text-[10px] font-bold" style={{ color: "#f8fafc" }}>{typeof val === "number" ? val.toFixed(2) : "—"}</span>
+                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: DIM_COLORS[key] || "#94a3b8" }} />
+                    <span className="font-mono text-xs flex-1" style={{ color: "rgba(100,116,139,0.6)" }}>{DIM_LABELS[key] || key}</span>
+                    <span className="font-mono text-xs font-bold" style={{ color: "#f8fafc" }}>{typeof val === "number" ? val.toFixed(2) : "—"}</span>
                     <div className="w-14 h-1 rounded-full overflow-hidden" style={{ background: "rgba(34,211,238,0.06)" }}>
                       <div className="h-full rounded-full" style={{ width: `${((typeof val === "number" ? val : 0) / 10) * 100}%`, background: DIM_COLORS[key] || "#22d3ee" }} />
                     </div>
@@ -338,11 +338,11 @@ export default function PerformanceTracker() {
               <div className="flex gap-2 flex-wrap mb-5">
                 {approvedAds.slice(0, 6).map((ad: any) => (
                   <button key={ad.id} onClick={() => setSelectedAdId(ad.id === selectedAdId ? null : ad.id)}
-                    className="font-mono text-[10px] px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
+                    className="font-mono text-xs px-3 py-1.5 rounded-lg uppercase tracking-wider transition-all"
                     style={{
                       background: selectedAdId === ad.id ? "rgba(248,113,113,0.08)" : "rgba(8,24,48,0.5)",
                       border: `1px solid ${selectedAdId === ad.id ? "rgba(248,113,113,0.3)" : "rgba(34,211,238,0.08)"}`,
-                      color: selectedAdId === ad.id ? "#f87171" : "rgba(100,116,139,0.5)",
+                      color: selectedAdId === ad.id ? "#f87171" : "#94a3b8",
                     }}>
                     Ad #{ad.id}
                   </button>
@@ -353,7 +353,7 @@ export default function PerformanceTracker() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="rounded-lg p-4" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                      <div className="font-mono text-[9px] tracking-widest uppercase mb-3" style={{ color: "rgba(100,116,139,0.4)" }}>Intensity Arc</div>
+                      <div className="font-mono text-xs tracking-widest uppercase mb-3" style={{ color: "#94a3b8" }}>Intensity Arc</div>
                       <ResponsiveContainer width="100%" height={140}>
                         <AreaChart data={emotionalArc}>
                           <defs>
@@ -363,20 +363,20 @@ export default function PerformanceTracker() {
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="2 4" stroke="rgba(34,211,238,0.04)" />
-                          <XAxis dataKey="segment" tick={{ fill: "rgba(100,116,139,0.4)", fontSize: 8, fontFamily: "JetBrains Mono" }} />
-                          <YAxis domain={[0, 10]} tick={{ fill: "rgba(100,116,139,0.4)", fontSize: 8, fontFamily: "JetBrains Mono" }} />
+                          <XAxis dataKey="segment" tick={{ fill: "#94a3b8", fontSize: 8, fontFamily: "JetBrains Mono" }} />
+                          <YAxis domain={[0, 10]} tick={{ fill: "#94a3b8", fontSize: 8, fontFamily: "JetBrains Mono" }} />
                           <Tooltip {...TT} formatter={(val: number) => [val.toFixed(1), "Intensity"]} />
                           <Area type="monotone" dataKey="intensity" stroke="#f87171" fill="url(#emotGrad)" strokeWidth={1.5} dot={{ fill: "#f87171", r: 3 }} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
                     <div className="rounded-lg p-4" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                      <div className="font-mono text-[9px] tracking-widest uppercase mb-3" style={{ color: "rgba(100,116,139,0.4)" }}>Valence (-1 to +1)</div>
+                      <div className="font-mono text-xs tracking-widest uppercase mb-3" style={{ color: "#94a3b8" }}>Valence (-1 to +1)</div>
                       <ResponsiveContainer width="100%" height={140}>
                         <BarChart data={emotionalArc}>
                           <CartesianGrid strokeDasharray="2 4" stroke="rgba(34,211,238,0.04)" />
-                          <XAxis dataKey="segment" tick={{ fill: "rgba(100,116,139,0.4)", fontSize: 8, fontFamily: "JetBrains Mono" }} />
-                          <YAxis domain={[-1, 1]} tick={{ fill: "rgba(100,116,139,0.4)", fontSize: 8, fontFamily: "JetBrains Mono" }} />
+                          <XAxis dataKey="segment" tick={{ fill: "#94a3b8", fontSize: 8, fontFamily: "JetBrains Mono" }} />
+                          <YAxis domain={[-1, 1]} tick={{ fill: "#94a3b8", fontSize: 8, fontFamily: "JetBrains Mono" }} />
                           <Tooltip {...TT} formatter={(val: number) => [val.toFixed(2), "Valence"]} />
                           <Bar dataKey="valence" fill="#34d399" radius={[2, 2, 0, 0]} />
                         </BarChart>
@@ -387,18 +387,18 @@ export default function PerformanceTracker() {
                     {emotionalArc.map((seg: any, i: number) => (
                       <div key={i} className="flex items-start gap-3 p-3 rounded-lg"
                         style={{ background: "rgba(2,11,24,0.5)", border: "1px solid rgba(34,211,238,0.04)" }}>
-                        <div className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center font-mono text-[9px]"
+                        <div className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center font-mono text-xs"
                           style={{ border: "1px solid rgba(248,113,113,0.3)", color: "#f87171" }}>{i + 1}</div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-mono text-[10px] italic leading-relaxed" style={{ color: "rgba(148,163,184,0.55)" }}>
+                          <p className="font-mono text-xs italic leading-relaxed" style={{ color: "rgba(148,163,184,0.55)" }}>
                             "{seg.text}"
                           </p>
                           <div className="flex items-center gap-3 mt-1.5">
-                            <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+                            <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                               Intensity: <span style={{ color: "#f87171" }}>{seg.intensity?.toFixed(1)}</span>
                             </span>
-                            <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.4)" }}>
-                              Valence: <span style={{ color: seg.valence > 0 ? "#34d399" : seg.valence < 0 ? "#f87171" : "rgba(100,116,139,0.5)" }}>
+                            <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
+                              Valence: <span style={{ color: seg.valence > 0 ? "#34d399" : seg.valence < 0 ? "#f87171" : "#94a3b8" }}>
                                 {seg.valence?.toFixed(2)}
                               </span>
                             </span>
@@ -412,16 +412,16 @@ export default function PerformanceTracker() {
                 <div className="flex items-center gap-3 py-10 justify-center">
                   <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
                     style={{ borderColor: "rgba(248,113,113,0.2)", borderTopColor: "#f87171" }} />
-                  <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>Loading emotional arc...</span>
+                  <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>Loading emotional arc...</span>
                 </div>
               ) : (
-                <div className="font-mono text-[10px] text-center py-10" style={{ color: "rgba(100,116,139,0.4)" }}>
+                <div className="font-mono text-xs text-center py-10" style={{ color: "#94a3b8" }}>
                   Select an approved ad above to visualize its emotional journey.
                 </div>
               )}
             </>
           ) : (
-            <div className="font-mono text-[10px] text-center py-10" style={{ color: "rgba(100,116,139,0.4)" }}>
+            <div className="font-mono text-xs text-center py-10" style={{ color: "#94a3b8" }}>
               Generate and approve ads to unlock emotional resonance analysis.
             </div>
           )}
@@ -437,10 +437,10 @@ export default function PerformanceTracker() {
             </div>
             <div className="space-y-1">
               {iterationData.map((log: any, i: number) => (
-                <div key={i} className="flex items-center gap-4 p-3 rounded-lg font-mono text-[10px]"
+                <div key={i} className="flex items-center gap-4 p-3 rounded-lg font-mono text-xs"
                   style={{ background: "rgba(2,11,24,0.5)", border: "1px solid rgba(34,211,238,0.04)" }}>
-                  <span className="w-12 flex-shrink-0" style={{ color: "rgba(100,116,139,0.4)" }}>Iter {log.iter}</span>
-                  <span className="flex-1 truncate" style={{ color: "rgba(100,116,139,0.5)" }}>{log.strategy}</span>
+                  <span className="w-12 flex-shrink-0" style={{ color: "#94a3b8" }}>Iter {log.iter}</span>
+                  <span className="flex-1 truncate" style={{ color: "#94a3b8" }}>{log.strategy}</span>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span style={{ color: "#f87171" }}>{log.before.toFixed(1)}</span>
                     <span style={{ color: "rgba(100,116,139,0.3)" }}>→</span>

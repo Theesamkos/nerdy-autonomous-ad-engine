@@ -119,16 +119,16 @@ export default function CampaignBuilder() {
                     }}>
                     {done
                       ? <CheckCircle2 size={12} style={{ color: "#34d399" }} />
-                      : <Icon size={12} style={{ color: active ? "#22d3ee" : "rgba(100,116,139,0.4)" }} />
+                      : <Icon size={12} style={{ color: active ? "#22d3ee" : "#94a3b8" }} />
                     }
                   </div>
                   <div className="text-left min-w-0 hidden sm:block">
-                    <div className="font-mono text-[9px] tracking-widest uppercase"
-                      style={{ color: done ? "#34d399" : active ? "#22d3ee" : "rgba(100,116,139,0.4)" }}>
+                    <div className="font-mono text-xs tracking-widest uppercase"
+                      style={{ color: done ? "#34d399" : active ? "#22d3ee" : "#94a3b8" }}>
                       {code}
                     </div>
                     <div className="font-mono text-[11px] truncate"
-                      style={{ color: done ? "rgba(148,163,184,0.6)" : active ? "#e2e8f0" : "rgba(100,116,139,0.4)" }}>
+                      style={{ color: done ? "rgba(148,163,184,0.6)" : active ? "#e2e8f0" : "#94a3b8" }}>
                       {label}
                     </div>
                   </div>
@@ -178,12 +178,12 @@ export default function CampaignBuilder() {
                         border: `1px solid ${form.campaignGoal === value ? "rgba(34,211,238,0.25)" : "rgba(34,211,238,0.06)"}`,
                         boxShadow: form.campaignGoal === value ? "inset 0 -2px 0 rgba(34,211,238,0.4)" : "none",
                       }}>
-                      <div className="font-mono text-[10px] font-bold uppercase tracking-wider mb-1"
-                        style={{ color: form.campaignGoal === value ? "#22d3ee" : "rgba(100,116,139,0.5)" }}>
+                      <div className="font-mono text-xs font-bold uppercase tracking-wider mb-1"
+                        style={{ color: form.campaignGoal === value ? "#22d3ee" : "#94a3b8" }}>
                         {label}
                       </div>
-                      <div className="font-mono text-[9px] leading-relaxed"
-                        style={{ color: "rgba(100,116,139,0.4)" }}>
+                      <div className="font-mono text-xs leading-relaxed"
+                        style={{ color: "#94a3b8" }}>
                         {desc}
                       </div>
                     </button>
@@ -211,7 +211,7 @@ export default function CampaignBuilder() {
                   onChange={e => setForm(f => ({ ...f, audienceSegment: e.target.value }))}
                   className="ops-input min-h-[120px] resize-none"
                 />
-                <p className="font-mono text-[10px] mt-2" style={{ color: "rgba(100,116,139,0.45)" }}>
+                <p className="font-mono text-xs mt-2" style={{ color: "#94a3b8" }}>
                   Be specific. The AI uses this to craft resonant, targeted messaging.
                 </p>
               </div>
@@ -227,7 +227,7 @@ export default function CampaignBuilder() {
                   ].map((tip, i) => (
                     <div key={i} className="flex items-start gap-2.5">
                       <div className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0" style={{ background: "rgba(34,211,238,0.4)" }} />
-                      <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.55)" }}>{tip}</span>
+                      <span className="font-mono text-xs" style={{ color: "rgba(100,116,139,0.55)" }}>{tip}</span>
                     </div>
                   ))}
                 </div>
@@ -268,7 +268,7 @@ export default function CampaignBuilder() {
                           style={{ color: form.tone === value ? "#22d3ee" : "rgba(148,163,184,0.6)" }}>
                           {label}
                         </div>
-                        <div className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.45)" }}>{desc}</div>
+                        <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>{desc}</div>
                       </div>
                       {form.tone === value && <CheckCircle2 size={13} style={{ color: "#22d3ee", flexShrink: 0 }} />}
                     </button>
@@ -278,7 +278,7 @@ export default function CampaignBuilder() {
 
               <div>
                 <label className="ops-label">
-                  Brand Voice Notes <span className="normal-case font-normal" style={{ color: "rgba(100,116,139,0.4)" }}>(optional)</span>
+                  Brand Voice Notes <span className="normal-case font-normal" style={{ color: "#94a3b8" }}>(optional)</span>
                 </label>
                 <textarea
                   placeholder="e.g. We never use fear-based messaging. We celebrate student wins. We're the expert friend, not the corporate tutor."

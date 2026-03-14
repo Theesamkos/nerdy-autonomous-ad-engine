@@ -27,7 +27,7 @@ export default function Dashboard() {
           <div className="flex flex-col items-center gap-3">
             <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
               style={{ borderColor: "rgba(34,211,238,0.15)", borderTopColor: "#22d3ee" }} />
-            <span className="font-mono text-[10px] tracking-widest" style={{ color: "#94a3b8" }}>LOADING</span>
+            <span className="font-mono text-xs tracking-widest" style={{ color: "#94a3b8" }}>LOADING</span>
           </div>
         </div>
       </AppLayout>
@@ -75,7 +75,7 @@ export default function Dashboard() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="status-live">Mission Control</span>
-              <span className="font-mono text-[9px] tracking-widest" style={{ color: "rgba(34,211,238,0.65)" }}>
+              <span className="font-mono text-xs tracking-widest" style={{ color: "rgba(34,211,238,0.65)" }}>
                 · {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
@@ -108,7 +108,7 @@ export default function Dashboard() {
                   style={{ background: s.color + "12", border: "1px solid " + s.color + "22" }}>
                   <s.icon size={14} style={{ color: s.color }} />
                 </div>
-                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>{s.sub}</span>
+                <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>{s.sub}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="font-display font-bold" style={{ fontSize: "2rem", color: "#f8fafc", letterSpacing: "-0.04em", lineHeight: 1 }}>
@@ -118,7 +118,7 @@ export default function Dashboard() {
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: avgHealthColor, boxShadow: `0 0 6px ${avgHealthColor}99` }} />
                 )}
               </div>
-              <div className="font-mono text-[10px] tracking-wider uppercase mt-1.5" style={{ color: "rgba(100,116,139,0.55)" }}>
+              <div className="font-mono text-xs tracking-wider uppercase mt-1.5" style={{ color: "rgba(100,116,139,0.55)" }}>
                 {s.label}
               </div>
             </motion.div>
@@ -193,7 +193,7 @@ export default function Dashboard() {
                               {c.name}
                               {c.autopilotEnabled && (
                                 <span
-                                  className="ml-2 font-mono text-[9px] px-1.5 py-0.5 rounded align-middle"
+                                  className="ml-2 font-mono text-xs px-1.5 py-0.5 rounded align-middle"
                                   style={{ color: "#22d3ee", border: "1px solid rgba(34,211,238,0.45)", background: "rgba(34,211,238,0.12)" }}
                                 >
                                   🤖 AUTO
@@ -202,8 +202,8 @@ export default function Dashboard() {
                             </div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="tag-ops tag-teal text-[9px]">{(c.campaignGoal || "MULTI").toUpperCase()}</span>
-                              <span className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>
+                              <span className="tag-ops tag-teal text-xs">{(c.campaignGoal || "MULTI").toUpperCase()}</span>
+                              <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                                 {c.totalAdsGenerated || 0} ads generated
                               </span>
                               {(() => {
@@ -232,7 +232,7 @@ export default function Dashboard() {
                               <div className="font-mono font-bold text-sm" style={{ color: "#22d3ee" }}>
                                 {(c.currentQualityThreshold || 0).toFixed(1)}
                               </div>
-                              <div className="font-mono text-[9px] tracking-wider" style={{ color: "#94a3b8" }}>THRESHOLD</div>
+                              <div className="font-mono text-xs tracking-wider" style={{ color: "#94a3b8" }}>THRESHOLD</div>
                             </div>
                             <ArrowRight size={13} style={{ color: "rgba(34,211,238,0.5)" }}
                               className="group-hover:translate-x-0.5 transition-transform" />
@@ -271,7 +271,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-display font-semibold text-xs" style={{ color: "#e2e8f0" }}>{a.label}</div>
-                        <div className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>{a.sub}</div>
+                        <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>{a.sub}</div>
                       </div>
                       <ArrowRight size={11} style={{ color: "#64748b" }}
                         className="group-hover:translate-x-0.5 transition-transform" />
@@ -300,7 +300,7 @@ export default function Dashboard() {
                     <span className="font-mono text-[11px]" style={{ color: "rgba(148,163,184,0.6)" }}>{s.label}</span>
                     <div className="flex items-center gap-1.5">
                       <s.icon size={11} style={{ color: s.color }} />
-                      <span className="font-mono text-[10px]" style={{ color: s.color, letterSpacing: "0.05em" }}>{s.status}</span>
+                      <span className="font-mono text-xs" style={{ color: s.color, letterSpacing: "0.05em" }}>{s.status}</span>
                     </div>
                   </div>
                 ))}

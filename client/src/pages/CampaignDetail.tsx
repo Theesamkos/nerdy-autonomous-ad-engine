@@ -167,14 +167,14 @@ function AdCard({
           <div className="flex-shrink-0 mt-0.5">
             {ad.isPublishable
               ? <CheckCircle2 size={16} style={{ color: "#34d399" }} />
-              : <XCircle size={16} style={{ color: "rgba(100,116,139,0.4)" }} />
+              : <XCircle size={16} style={{ color: "#94a3b8" }} />
             }
           </div>
 
           {/* Ad content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.4)" }}>#{ad.id}</span>
+              <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>#{ad.id}</span>
               <span className="tag-ops" style={{
                 color: modeColor,
                 border: `1px solid ${modeColor}30`,
@@ -198,40 +198,40 @@ function AdCard({
                 <span className="tag-ops tag-gold">{ad.ctaButton}</span>
               </div>
               {ad.description && (
-                <p className="font-mono text-[10px] mt-2" style={{ color: "rgba(100,116,139,0.5)" }}>{ad.description}</p>
+                <p className="font-mono text-xs mt-2" style={{ color: "#94a3b8" }}>{ad.description}</p>
               )}
             </div>
 
             <div className="flex items-center gap-3">
-              <button onClick={onCopy} className="flex items-center gap-1.5 font-mono text-[10px] transition-colors"
-                style={{ color: copied ? "#34d399" : "rgba(100,116,139,0.5)" }}>
+              <button onClick={onCopy} className="flex items-center gap-1.5 font-mono text-xs transition-colors"
+                style={{ color: copied ? "#34d399" : "#94a3b8" }}>
                 {copied ? <Check size={11} /> : <Copy size={11} />}
                 {copied ? "Copied" : "Copy"}
               </button>
-              <button onClick={onTogglePreview} className="flex items-center gap-1.5 font-mono text-[10px] transition-colors"
-                style={{ color: showPreview ? "#22d3ee" : "rgba(100,116,139,0.5)" }}>
+              <button onClick={onTogglePreview} className="flex items-center gap-1.5 font-mono text-xs transition-colors"
+                style={{ color: showPreview ? "#22d3ee" : "#94a3b8" }}>
                 <Smartphone size={11} />
                 {showPreview ? "Hide Preview" : "Ad Preview"}
               </button>
               {ad.status === "approved" && onABTestClick && (
-                <button onClick={() => onABTestClick(ad.id)} className="flex items-center gap-1.5 font-mono text-[10px] transition-colors"
+                <button onClick={() => onABTestClick(ad.id)} className="flex items-center gap-1.5 font-mono text-xs transition-colors"
                   style={{
-                    color: isABPrimary ? "#f59e0b" : isABTarget ? "#22d3ee" : "rgba(100,116,139,0.5)",
+                    color: isABPrimary ? "#f59e0b" : isABTarget ? "#22d3ee" : "#94a3b8",
                   }}>
                   <BarChart3 size={11} />
                   {isABPrimary ? "A/B Base" : isABSelecting ? "Compare Here" : "A/B Test"}
                 </button>
               )}
               {ad.status === "approved" && onSplitClick && (
-                <button onClick={() => onSplitClick(ad.id)} className="flex items-center gap-1.5 font-mono text-[10px] transition-colors"
-                  style={{ color: "rgba(100,116,139,0.5)" }}
+                <button onClick={() => onSplitClick(ad.id)} className="flex items-center gap-1.5 font-mono text-xs transition-colors"
+                  style={{ color: "#94a3b8" }}
                   onMouseEnter={e => (e.currentTarget.style.color = "#a78bfa")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(100,116,139,0.5)")}>
+                  onMouseLeave={e => (e.currentTarget.style.color = "#94a3b8")}>
                   <Users size={11} />
                   Split Audience
                 </button>
               )}
-              <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.35)" }}>
+              <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                 {ad.promptTokens + ad.completionTokens} tokens · ${ad.estimatedCostUsd.toFixed(6)}
               </span>
             </div>
@@ -261,7 +261,7 @@ function AdCard({
               </button>
             )}
             <button onClick={onToggle} className="p-1.5 rounded-lg transition-colors"
-              style={{ color: "rgba(100,116,139,0.4)", background: "rgba(34,211,238,0.04)" }}>
+              style={{ color: "#94a3b8", background: "rgba(34,211,238,0.04)" }}>
               {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           </div>
@@ -317,8 +317,8 @@ function AdCard({
                 ].map(({ key, score, rationale }) => (
                   <div key={key}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.6)" }}>{DIM_LABELS[key]}</span>
-                      <span className="font-mono text-[10px] font-bold" style={{ color: DIM_COLORS[key] }}>{score.toFixed(1)}</span>
+                      <span className="font-mono text-xs" style={{ color: "rgba(100,116,139,0.6)" }}>{DIM_LABELS[key]}</span>
+                      <span className="font-mono text-xs font-bold" style={{ color: DIM_COLORS[key] }}>{score.toFixed(1)}</span>
                     </div>
                     <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(34,211,238,0.06)" }}>
                       <motion.div initial={{ width: 0 }} animate={{ width: `${score * 10}%` }}
@@ -326,7 +326,7 @@ function AdCard({
                         style={{ background: DIM_COLORS[key] }} />
                     </div>
                     {rationale && (
-                      <p className="font-mono text-[9px] mt-1 leading-relaxed" style={{ color: "rgba(100,116,139,0.4)" }}>{rationale}</p>
+                      <p className="font-mono text-xs mt-1 leading-relaxed" style={{ color: "#94a3b8" }}>{rationale}</p>
                     )}
                   </div>
                 ))}
@@ -380,7 +380,7 @@ function AdCard({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="rounded-lg p-3"
                           style={{ border: "1px solid rgba(248,113,113,0.35)", background: "rgba(248,113,113,0.05)" }}>
-                          <div className="font-mono text-[10px] mb-1" style={{ color: "#f87171" }}>
+                          <div className="font-mono text-xs mb-1" style={{ color: "#f87171" }}>
                             BEFORE ({explanation.rewriteSuggestion.field})
                           </div>
                           <p className="text-[12px] leading-relaxed" style={{ color: "rgba(226,232,240,0.85)" }}>
@@ -389,7 +389,7 @@ function AdCard({
                         </div>
                         <div className="rounded-lg p-3"
                           style={{ border: "1px solid rgba(52,211,153,0.35)", background: "rgba(52,211,153,0.05)" }}>
-                          <div className="font-mono text-[10px] mb-1" style={{ color: "#34d399" }}>
+                          <div className="font-mono text-xs mb-1" style={{ color: "#34d399" }}>
                             AFTER ({explanation.rewriteSuggestion.field})
                           </div>
                           <p className="text-[12px] leading-relaxed" style={{ color: "rgba(226,232,240,0.9)" }}>
@@ -400,7 +400,7 @@ function AdCard({
                       <button
                         onClick={onApplyRewrite}
                         disabled={isApplyingRewrite}
-                        className="mt-3 px-3 py-1.5 rounded-lg font-mono text-[10px] transition-all disabled:opacity-40"
+                        className="mt-3 px-3 py-1.5 rounded-lg font-mono text-xs transition-all disabled:opacity-40"
                         style={{ border: "1px solid rgba(34,211,238,0.25)", color: "#22d3ee", background: "rgba(34,211,238,0.06)" }}>
                         Apply This Rewrite
                       </button>
@@ -413,7 +413,7 @@ function AdCard({
                 <div className="md:col-span-2 rounded-lg p-4"
                   style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.15)" }}>
                   <div className="section-label mb-1.5" style={{ color: "#f59e0b" }}>Improvement Suggestion</div>
-                  <p className="font-mono text-[10px] leading-relaxed" style={{ color: "rgba(148,163,184,0.6)" }}>
+                  <p className="font-mono text-xs leading-relaxed" style={{ color: "rgba(148,163,184,0.6)" }}>
                     {evaluation.improvementSuggestion}
                   </p>
                 </div>
@@ -466,11 +466,11 @@ function getFirstSentence(text: string): string {
 }
 
 function countColor(value: string, limit: number | null): string {
-  if (!limit) return "rgba(100,116,139,0.45)";
+  if (!limit) return "#94a3b8";
   const ratio = value.length / limit;
   if (ratio >= 1) return "#f87171";
   if (ratio >= 0.8) return "#f59e0b";
-  return "rgba(100,116,139,0.45)";
+  return "#94a3b8";
 }
 
 function ReadyToLaunchPanel({ ad }: { ad: any }) {
@@ -580,14 +580,14 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
     return (
       <UiTooltip>
         <TooltipTrigger asChild>
-          <button className="inline-flex items-center gap-1 font-mono text-[9px] px-2 py-1 rounded"
+          <button className="inline-flex items-center gap-1 font-mono text-xs px-2 py-1 rounded"
             style={{ color: "rgba(100,116,139,0.6)", border: "1px solid rgba(34,211,238,0.15)" }}>
             <Info size={10} />
             Platform Limits
           </button>
         </TooltipTrigger>
         <TooltipContent side="left" sideOffset={8}
-          className="max-w-xs font-mono text-[10px]"
+          className="max-w-xs font-mono text-xs"
           style={{ background: "rgba(2,11,24,0.98)", color: "rgba(226,232,240,0.9)", border: "1px solid rgba(34,211,238,0.2)" }}>
           <div className="space-y-1">
             {lines[platform].map((line) => (
@@ -605,7 +605,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
         <div key={field.key} className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>
+              <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 {field.label}
               </span>
               {field.limit && (
@@ -613,7 +613,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
                   {field.value.length}/{field.limit}
                 </span>
               )}
-              <span className="font-mono text-[8px]" style={{ color: "rgba(100,116,139,0.4)" }}>{field.note}</span>
+              <span className="font-mono text-[8px]" style={{ color: "#94a3b8" }}>{field.note}</span>
             </div>
             <p className="font-mono text-[11px] leading-relaxed break-words" style={{ color: "rgba(226,232,240,0.8)" }}>
               {field.value}
@@ -621,7 +621,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
           </div>
           <button
             onClick={() => copyField(field.label, field.value)}
-            className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded font-mono text-[9px] transition-all"
+            className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded font-mono text-xs transition-all"
             style={{
               background: copiedField === field.label ? "rgba(52,211,153,0.15)" : "rgba(34,211,238,0.06)",
               border: `1px solid ${copiedField === field.label ? "rgba(52,211,153,0.3)" : "rgba(34,211,238,0.15)"}`,
@@ -641,21 +641,21 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
       <div className="flex items-center gap-2 px-4 py-3"
         style={{ borderBottom: "1px solid rgba(52,211,153,0.12)", background: "rgba(52,211,153,0.06)" }}>
         <Rocket size={12} style={{ color: "#34d399" }} />
-        <span className="font-mono text-[10px] font-bold tracking-widest uppercase" style={{ color: "#34d399" }}>Ready to Launch</span>
-        <span className="font-mono text-[9px] ml-auto" style={{ color: "rgba(52,211,153,0.5)" }}>Platform-ready creative pack</span>
+        <span className="font-mono text-xs font-bold tracking-widest uppercase" style={{ color: "#34d399" }}>Ready to Launch</span>
+        <span className="font-mono text-xs ml-auto" style={{ color: "rgba(52,211,153,0.5)" }}>Platform-ready creative pack</span>
       </div>
       <div className="p-4">
         <Tabs defaultValue="meta">
           <TabsList className="h-8 p-1" style={{ background: "rgba(34,211,238,0.08)" }}>
-            <TabsTrigger value="meta" className="h-6 text-[10px] font-mono">Meta</TabsTrigger>
-            <TabsTrigger value="google" className="h-6 text-[10px] font-mono">Google Ads</TabsTrigger>
-            <TabsTrigger value="linkedin" className="h-6 text-[10px] font-mono">LinkedIn</TabsTrigger>
-            <TabsTrigger value="tiktok" className="h-6 text-[10px] font-mono">TikTok</TabsTrigger>
+            <TabsTrigger value="meta" className="h-6 text-xs font-mono">Meta</TabsTrigger>
+            <TabsTrigger value="google" className="h-6 text-xs font-mono">Google Ads</TabsTrigger>
+            <TabsTrigger value="linkedin" className="h-6 text-xs font-mono">LinkedIn</TabsTrigger>
+            <TabsTrigger value="tiktok" className="h-6 text-xs font-mono">TikTok</TabsTrigger>
           </TabsList>
 
           <TabsContent value="meta" className="mt-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Facebook / Instagram
               </span>
               {renderLimitsTooltip("meta")}
@@ -666,7 +666,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
                 href={adsManagerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-[10px] font-bold transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs font-bold transition-all"
                 style={{
                   background: "rgba(52,211,153,0.1)",
                   border: "1px solid rgba(52,211,153,0.3)",
@@ -680,7 +680,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
 
           <TabsContent value="google" className="mt-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Google Ads Responsive Search
               </span>
               {renderLimitsTooltip("google")}
@@ -690,7 +690,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
 
           <TabsContent value="linkedin" className="mt-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 LinkedIn Sponsored Content
               </span>
               {renderLimitsTooltip("linkedin")}
@@ -700,7 +700,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
 
           <TabsContent value="tiktok" className="mt-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>
+              <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 TikTok In-Feed
               </span>
               {renderLimitsTooltip("tiktok")}
@@ -708,7 +708,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
             {renderFields("tiktok")}
           </TabsContent>
         </Tabs>
-        <p className="font-mono text-[9px] mt-3" style={{ color: "rgba(100,116,139,0.4)" }}>
+        <p className="font-mono text-xs mt-3" style={{ color: "#94a3b8" }}>
           Copy each field directly into your chosen platform workflow.
         </p>
       </div>
@@ -1172,7 +1172,7 @@ export default function CampaignDetail() {
           <div className="flex flex-col items-center gap-3">
             <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
               style={{ borderColor: "rgba(34,211,238,0.15)", borderTopColor: "#22d3ee" }} />
-            <span className="font-mono text-[10px] tracking-widest" style={{ color: "rgba(100,116,139,0.5)" }}>LOADING</span>
+            <span className="font-mono text-xs tracking-widest" style={{ color: "#94a3b8" }}>LOADING</span>
           </div>
         </div>
       </AppLayout>
@@ -1319,7 +1319,7 @@ export default function CampaignDetail() {
             </button>
             {showThresholdEditor && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "rgba(2,11,24,0.8)", border: "1px solid rgba(52,211,153,0.3)" }}>
-                <span className="font-mono text-[10px] text-emerald-400">SET:</span>
+                <span className="font-mono text-xs text-emerald-400">SET:</span>
                 <input
                   type="range" min="1.0" max="9.9" step="0.1"
                   value={thresholdInput || campaign.currentQualityThreshold}
@@ -1330,7 +1330,7 @@ export default function CampaignDetail() {
                 <button
                   onClick={() => updateThresholdMutation.mutate({ campaignId, threshold: parseFloat(thresholdInput) })}
                   disabled={updateThresholdMutation.isPending}
-                  className="px-2 py-0.5 rounded text-[10px] font-mono font-bold"
+                  className="px-2 py-0.5 rounded text-xs font-mono font-bold"
                   style={{ background: "rgba(52,211,153,0.2)", color: "#34d399", border: "1px solid rgba(52,211,153,0.3)" }}>
                   {updateThresholdMutation.isPending ? "..." : "Apply"}
                 </button>
@@ -1353,7 +1353,7 @@ export default function CampaignDetail() {
                 onCheckedChange={handleToggleAutopilot}
                 className="data-[state=checked]:bg-emerald-500/80 data-[state=unchecked]:bg-slate-600/60 [&[data-state=checked]>span]:shadow-[0_0_8px_#22d3ee]"
               />
-              <span className="font-mono text-[10px]"
+              <span className="font-mono text-xs"
                 style={{ color: optimisticAutopilotEnabled ? "#34d399" : "rgba(148,163,184,0.55)" }}>
                 {optimisticAutopilotEnabled ? "ACTIVE — runs every 24h" : "OFF"}
               </span>
@@ -1373,7 +1373,7 @@ export default function CampaignDetail() {
             <div key={label} className="ops-card p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Icon size={13} style={{ color }} />
-                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>{label}</span>
+                <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>{label}</span>
               </div>
               <div className="font-display font-bold text-2xl" style={{ color: "#f8fafc", letterSpacing: "-0.03em" }}>{value}</div>
             </div>
@@ -1435,12 +1435,12 @@ export default function CampaignDetail() {
                   <div className="font-mono font-semibold text-sm tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
                     Autopilot Status
                   </div>
-                  <div className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>
+                  <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                     ACTIVE — runs every {autopilotStatus?.frequencyHours || 24}h
                   </div>
                 </div>
               </div>
-              <ChevronDown size={13} style={{ color: "rgba(100,116,139,0.4)", transform: showAutopilot ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+              <ChevronDown size={13} style={{ color: "#94a3b8", transform: showAutopilot ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
             </button>
 
             <AnimatePresence>
@@ -1455,25 +1455,25 @@ export default function CampaignDetail() {
                   <div className="p-5 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                       <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>NEXT RUN IN</div>
+                        <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>NEXT RUN IN</div>
                         <div className="font-mono text-[12px] font-bold" style={{ color: "#22d3ee" }}>{formatNextRunCountdown(autopilotStatus?.nextRunAt)}</div>
                       </div>
                       <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>LAST RUN</div>
+                        <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>LAST RUN</div>
                         <div className="font-mono text-[12px] font-bold" style={{ color: "#e2e8f0" }}>{formatRelativeTime(autopilotStatus?.lastRunAt)}</div>
                       </div>
                       <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>TOTAL RUNS</div>
+                        <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>TOTAL RUNS</div>
                         <div className="font-mono text-[12px] font-bold" style={{ color: "#34d399" }}>{autopilotStatus?.totalRuns || 0}</div>
                       </div>
                       <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>ADS GENERATED</div>
+                        <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>ADS GENERATED</div>
                         <div className="font-mono text-[12px] font-bold" style={{ color: "#f59e0b" }}>{(autopilotStatus?.totalRuns || 0) * 10}</div>
                       </div>
                     </div>
 
                     <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.6)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                      <div className="font-mono text-[9px] tracking-widest uppercase mb-2" style={{ color: "#94a3b8" }}>
+                      <div className="font-mono text-xs tracking-widest uppercase mb-2" style={{ color: "#94a3b8" }}>
                         Recent Autopilot Runs
                       </div>
                       <div className="space-y-1.5">
@@ -1486,7 +1486,7 @@ export default function CampaignDetail() {
                               winnerScore: 0,
                             }))
                         ).slice(0, 3).map((entry, idx) => (
-                          <div key={`run-${idx}`} className="flex items-center justify-between font-mono text-[10px]">
+                          <div key={`run-${idx}`} className="flex items-center justify-between font-mono text-xs">
                             <span style={{ color: "rgba(148,163,184,0.7)" }}>{formatRelativeTime(entry.at)}</span>
                             <span style={{ color: "rgba(148,163,184,0.7)" }}>
                               {entry.generated} ads · {entry.approved} approved
@@ -1497,7 +1497,7 @@ export default function CampaignDetail() {
                           </div>
                         ))}
                         {(autopilotStatus?.totalRuns || 0) === 0 && autopilotRunLog.length === 0 && (
-                          <div className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>
+                          <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                             No runs yet.
                           </div>
                         )}
@@ -1530,19 +1530,19 @@ export default function CampaignDetail() {
                 <div className="font-mono font-semibold text-sm tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
                   Generation Engine
                 </div>
-                <div className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>
+                <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                   generate → evaluate → self-heal → approve
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>Max iter:</span>
+              <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>Max iter:</span>
               {[1, 2, 3].map(n => (
                 <button key={n} onClick={() => setMaxIterations(n)}
                   className="w-7 h-7 font-mono text-[11px] font-bold rounded transition-all"
                   style={{
                     background: maxIterations === n ? "rgba(34,211,238,0.1)" : "transparent",
-                    color: maxIterations === n ? "#22d3ee" : "rgba(100,116,139,0.4)",
+                    color: maxIterations === n ? "#22d3ee" : "#94a3b8",
                     border: `1px solid ${maxIterations === n ? "rgba(34,211,238,0.3)" : "rgba(34,211,238,0.08)"}`,
                   }}>
                   {n}
@@ -1558,7 +1558,7 @@ export default function CampaignDetail() {
                   <div className="terminal-dot" style={{ background: "#f87171" }} />
                   <div className="terminal-dot" style={{ background: "#f59e0b" }} />
                   <div className="terminal-dot" style={{ background: "#34d399" }} />
-                  <span className="font-mono text-[9px] ml-2" style={{ color: "rgba(34,211,238,0.7)" }}>
+                  <span className="font-mono text-xs ml-2" style={{ color: "rgba(34,211,238,0.7)" }}>
                     adengine — bulk × 5 pipeline
                   </span>
                 </div>
@@ -1604,24 +1604,24 @@ export default function CampaignDetail() {
                       style={{ background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.15)" }}>
                     <Trophy size={14} style={{ color: "#f59e0b", flexShrink: 0 }} />
                     <div className="flex-1 min-w-0">
-                      <span className="font-mono text-[10px] font-bold" style={{ color: "#f59e0b" }}>BULK COMPLETE</span>
-                      <span className="font-mono text-[10px] ml-2" style={{ color: "rgba(148,163,184,0.7)" }}>
+                      <span className="font-mono text-xs font-bold" style={{ color: "#f59e0b" }}>BULK COMPLETE</span>
+                      <span className="font-mono text-xs ml-2" style={{ color: "rgba(148,163,184,0.7)" }}>
                         {bulkResult.approvedCount}/{bulkResult.totalAdsGenerated} approved · Winner: {bulkResult.winnerScore.toFixed(1)}/10
                       </span>
                     </div>
                     <button onClick={handleGenerateBrief}
                       disabled={intelligenceBriefMutation.isPending}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-[10px] transition-all disabled:opacity-40"
+                      className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
                       style={{ border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", background: "rgba(245,158,11,0.08)" }}>
                       <Brain size={11} />
                       Intelligence Brief
                     </button>
                     <button onClick={() => setBulkResult(null)}
-                      className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.4)" }}>✕</button>
+                      className="font-mono text-xs" style={{ color: "#94a3b8" }}>✕</button>
                     </div>
 
                     {intelligenceBriefMutation.isPending && (
-                      <div className="px-4 py-3 rounded-lg font-mono text-[10px]"
+                      <div className="px-4 py-3 rounded-lg font-mono text-xs"
                         style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", color: "#f59e0b" }}>
                         Analyzing campaign patterns...
                       </div>
@@ -1639,23 +1639,23 @@ export default function CampaignDetail() {
                           <div className="flex items-start gap-3 mb-4">
                             <Brain size={14} style={{ color: "#f59e0b", marginTop: 1 }} />
                             <div className="flex-1 min-w-0">
-                              <div className="font-mono text-[10px] tracking-widest uppercase" style={{ color: "#fbbf24" }}>
+                              <div className="font-mono text-xs tracking-widest uppercase" style={{ color: "#fbbf24" }}>
                                 CAMPAIGN INTELLIGENCE BRIEF
                               </div>
-                              <div className="font-mono text-[9px] mt-1" style={{ color: "rgba(148,163,184,0.6)" }}>
+                              <div className="font-mono text-xs mt-1" style={{ color: "rgba(148,163,184,0.6)" }}>
                                 Generated {new Date(intelligenceBrief.generatedAt).toLocaleString()} · Top tone: {intelligenceBrief.topTone} · Top format: {intelligenceBrief.topFormat} · Avg score: {intelligenceBrief.avgScore.toFixed(2)}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <button onClick={handleGenerateBrief}
                                 disabled={intelligenceBriefMutation.isPending}
-                                className="flex items-center gap-1 px-2 py-1 rounded font-mono text-[10px] transition-all disabled:opacity-40"
+                                className="flex items-center gap-1 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
                                 style={{ border: "1px solid rgba(245,158,11,0.25)", color: "#f59e0b", background: "rgba(245,158,11,0.07)" }}>
                                 <Brain size={10} />
                                 Regenerate Brief
                               </button>
                               <button onClick={handleCopyBrief}
-                                className="flex items-center gap-1 px-2 py-1 rounded font-mono text-[10px] transition-all"
+                                className="flex items-center gap-1 px-2 py-1 rounded font-mono text-xs transition-all"
                                 style={{ border: "1px solid rgba(34,211,238,0.2)", color: "rgba(148,163,184,0.8)", background: "rgba(34,211,238,0.05)" }}>
                                 <Copy size={10} />
                                 Copy Brief
@@ -1687,14 +1687,14 @@ export default function CampaignDetail() {
                   <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: "1px solid rgba(245,158,11,0.1)" }}>
                     <div className="flex items-center gap-2">
                       <Layers size={12} style={{ color: "#f59e0b" }} />
-                      <span className="font-mono font-bold text-[10px] tracking-widest uppercase" style={{ color: "#f59e0b" }}>⚡ Batch Generation Engine</span>
+                      <span className="font-mono font-bold text-xs tracking-widest uppercase" style={{ color: "#f59e0b" }}>⚡ Batch Generation Engine</span>
                     </div>
-                    <span className="font-mono text-[9px]" style={{ color: "#94a3b8" }}>VARIETY MATRIX ACTIVE</span>
+                    <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>VARIETY MATRIX ACTIVE</span>
                   </div>
                   <div className="px-4 py-3 space-y-3">
                     {/* Batch size selector */}
                     <div className="space-y-1.5">
-                      <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>Batch Size</span>
+                      <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>Batch Size</span>
                       <div className="grid grid-cols-4 gap-1.5">
                         {([5, 10, 25, 50] as const).map(n => (
                           <button key={n} onClick={() => setBatchSize(n)}
@@ -1712,7 +1712,7 @@ export default function CampaignDetail() {
                     {/* Batch info row */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="font-mono text-[9px]" style={{ color: "#94a3b8" }}>
+                        <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                           {batchSize} unique tone/format/hook combos
                         </span>
                         {batchSize >= 25 && (
@@ -1721,7 +1721,7 @@ export default function CampaignDetail() {
                           </span>
                         )}
                       </div>
-                      <span className="font-mono text-[9px]" style={{ color: "#94a3b8" }}>
+                      <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                         ~{batchSize <= 5 ? "30s" : batchSize <= 10 ? "60s" : batchSize <= 25 ? "2-3min" : "4-6min"}
                       </span>
                     </div>
@@ -1745,10 +1745,10 @@ export default function CampaignDetail() {
                 <div className="mt-4 rounded-lg p-4"
                   style={{ background: "rgba(2,11,24,0.55)", border: "1px solid rgba(34,211,238,0.1)" }}>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="font-mono text-[10px] tracking-widest uppercase" style={{ color: "#22d3ee" }}>
+                    <div className="font-mono text-xs tracking-widest uppercase" style={{ color: "#22d3ee" }}>
                       Smart Prompt Expansion
                     </div>
-                    <span className="font-mono text-[9px]" style={{ color: "#94a3b8" }}>
+                    <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                       Generate from strategic angles
                     </span>
                   </div>
@@ -1756,7 +1756,7 @@ export default function CampaignDetail() {
                     {expandedAngles.map((angle, i) => (
                       <div key={`${angle.angleName}-${i}`} className="rounded-lg p-3"
                         style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[10px] font-bold mb-2" style={{ color: "#e2e8f0" }}>
+                        <div className="font-mono text-xs font-bold mb-2" style={{ color: "#e2e8f0" }}>
                           {angle.angleName}
                         </div>
                         <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -1764,13 +1764,13 @@ export default function CampaignDetail() {
                           <span className="tag-ops tag-dim">{angle.format}</span>
                           <span className="tag-ops tag-gold">{angle.emotionalHook}</span>
                         </div>
-                        <div className="font-mono text-[9px] mb-2" style={{ color: "#94a3b8" }}>
+                        <div className="font-mono text-xs mb-2" style={{ color: "#94a3b8" }}>
                           Audience: {angle.audienceFraming}
                         </div>
                         <div className="rounded p-2 space-y-1 mb-3"
                           style={{ background: "rgba(34,211,238,0.03)", border: "1px solid rgba(34,211,238,0.06)" }}>
                           <div className="font-display text-sm" style={{ color: "#f8fafc" }}>{angle.exampleHeadline}</div>
-                          <p className="font-mono text-[10px] leading-relaxed" style={{ color: "rgba(148,163,184,0.75)" }}>
+                          <p className="font-mono text-xs leading-relaxed" style={{ color: "rgba(148,163,184,0.75)" }}>
                             {angle.exampleCopy}
                           </p>
                         </div>
@@ -1785,7 +1785,7 @@ export default function CampaignDetail() {
                             });
                           }}
                           disabled={generatingAngleIdx === i}
-                          className="font-mono text-[9px] tracking-widest uppercase px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+                          className="font-mono text-xs tracking-widest uppercase px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
                           style={{
                             border: "1px solid rgba(34,211,238,0.4)",
                             background: "rgba(34,211,238,0.06)",
@@ -1828,13 +1828,13 @@ export default function CampaignDetail() {
                 {WEIGHT_DIMS.map(d => (
                   <div key={d.key} className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full" style={{ background: d.color }} />
-                    <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.5)" }}>{weights[d.key]}%</span>
+                    <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>{weights[d.key]}%</span>
                   </div>
                 ))}
               </div>
               {showWeightTuner
-                ? <ChevronUp size={14} style={{ color: "rgba(100,116,139,0.4)" }} />
-                : <ChevronDown size={14} style={{ color: "rgba(100,116,139,0.4)" }} />
+                ? <ChevronUp size={14} style={{ color: "#94a3b8" }} />
+                : <ChevronDown size={14} style={{ color: "#94a3b8" }} />
               }
             </div>
           </button>
@@ -1845,7 +1845,7 @@ export default function CampaignDetail() {
                 exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
                 className="overflow-hidden" style={{ borderTop: "1px solid rgba(34,211,238,0.07)" }}>
                 <div className="px-6 py-5 space-y-4">
-                  <p className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>
+                  <p className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                     Adjust how much each quality dimension contributes to the overall score. Weights must sum to 100.
                   </p>
                   {WEIGHT_DIMS.map(({ key, label, color }) => (
@@ -1894,8 +1894,8 @@ export default function CampaignDetail() {
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={qualityTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(34,211,238,0.05)" />
-                <XAxis dataKey="index" tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 10, fontFamily: "JetBrains Mono" }} />
-                <YAxis domain={[0, 10]} tick={{ fill: "rgba(100,116,139,0.5)", fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                <XAxis dataKey="index" tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                <YAxis domain={[0, 10]} tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "JetBrains Mono" }} />
                 <Tooltip contentStyle={{ background: "rgba(2,11,24,0.95)", border: "1px solid rgba(34,211,238,0.15)", color: "#e2e8f0", fontFamily: "JetBrains Mono", fontSize: 10 }}
                   formatter={(val: number) => [val.toFixed(2), "Score"]} />
                 <ReferenceLine y={campaign.currentQualityThreshold} stroke="#34d399" strokeDasharray="4 4" strokeWidth={1} />
@@ -1905,11 +1905,11 @@ export default function CampaignDetail() {
             <div className="flex items-center gap-5 mt-3">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-0.5 rounded" style={{ background: "#22d3ee" }} />
-                <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>Quality Score</span>
+                <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>Quality Score</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-0.5 rounded" style={{ background: "#34d399", opacity: 0.6 }} />
-                <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>Threshold</span>
+                <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>Threshold</span>
               </div>
             </div>
           </motion.div>
@@ -1938,8 +1938,8 @@ export default function CampaignDetail() {
                 {Object.entries(avgScores).map(([key, val]) => (
                   <div key={key}>
                     <div className="flex justify-between mb-1.5">
-                      <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.6)" }}>{DIM_LABELS[key]}</span>
-                      <span className="font-mono text-[10px] font-bold" style={{ color: DIM_COLORS[key] }}>{(val as number).toFixed(1)}</span>
+                      <span className="font-mono text-xs" style={{ color: "rgba(100,116,139,0.6)" }}>{DIM_LABELS[key]}</span>
+                      <span className="font-mono text-xs font-bold" style={{ color: DIM_COLORS[key] }}>{(val as number).toFixed(1)}</span>
                     </div>
                     <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(34,211,238,0.06)" }}>
                       <div className="h-full rounded-full" style={{ width: `${(val as number) * 10}%`, background: DIM_COLORS[key] }} />
@@ -1960,7 +1960,7 @@ export default function CampaignDetail() {
               <button
                 onClick={handleCopyAllApprovedAds}
                 disabled={approvedAdCount === 0}
-                className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-[10px] transition-all disabled:opacity-40"
+                className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
                 style={{ border: "1px solid rgba(34,211,238,0.15)", color: "rgba(100,116,139,0.65)", background: "rgba(34,211,238,0.04)" }}>
                 <Copy size={11} />
                 {`Copy All Approved (${approvedAdCount})`}
@@ -1968,7 +1968,7 @@ export default function CampaignDetail() {
               <button
                 onClick={handleDownloadApprovedJson}
                 disabled={approvedAdCount === 0}
-                className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-[10px] transition-all disabled:opacity-40"
+                className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
                 style={{ border: "1px solid rgba(34,211,238,0.15)", color: "rgba(100,116,139,0.65)", background: "rgba(34,211,238,0.04)" }}>
                 <Download size={11} />
                 Download JSON
@@ -1976,18 +1976,18 @@ export default function CampaignDetail() {
               <button
                 onClick={handleDownloadApprovedCsv}
                 disabled={approvedAdCount === 0}
-                className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-[10px] transition-all disabled:opacity-40"
+                className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
                 style={{ border: "1px solid rgba(34,211,238,0.15)", color: "rgba(100,116,139,0.65)", background: "rgba(34,211,238,0.04)" }}>
                 <Download size={11} />
                 Download CSV
               </button>
             </div>
-            <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+            <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
               {ads?.length || 0} total · {ads?.filter((a: any) => a.status === "approved").length || 0} approved
             </span>
           </div>
           {(abPrimaryAdId || simulateABTestMutation.isPending) && (
-            <div className="mb-4 px-4 py-3 rounded-lg font-mono text-[10px] flex items-center gap-2"
+            <div className="mb-4 px-4 py-3 rounded-lg font-mono text-xs flex items-center gap-2"
               style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.22)", color: "rgba(245,158,11,0.95)" }}>
               <BarChart3 size={12} />
               {simulateABTestMutation.isPending
@@ -2014,7 +2014,7 @@ export default function CampaignDetail() {
             <div className="ops-card bracket py-16 text-center">
               <Zap size={24} style={{ color: "rgba(34,211,238,0.2)", margin: "0 auto 1rem" }} />
               <div className="section-label mb-2 text-center">No Ads Generated</div>
-              <p className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+              <p className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                 Use the generation engine above to create your first ad.
               </p>
             </div>
@@ -2029,7 +2029,7 @@ export default function CampaignDetail() {
                 <DialogTitle className="font-display tracking-tight" style={{ color: "#f8fafc" }}>
                   A/B Test Simulator
                 </DialogTitle>
-                <DialogDescription className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.6)" }}>
+                <DialogDescription className="font-mono text-xs" style={{ color: "rgba(100,116,139,0.6)" }}>
                   Predictive performance model based on evaluation dimensions and cost profile.
                 </DialogDescription>
               </DialogHeader>
@@ -2037,7 +2037,7 @@ export default function CampaignDetail() {
               {abResult && (
                 <>
                   <div className="flex items-center gap-3">
-                    <div className="font-mono text-[10px] uppercase tracking-widest px-3 py-1 rounded"
+                    <div className="font-mono text-xs uppercase tracking-widest px-3 py-1 rounded"
                       style={{
                         color: "#f59e0b",
                         border: "1px solid rgba(245,158,11,0.35)",
@@ -2045,7 +2045,7 @@ export default function CampaignDetail() {
                       }}>
                       {abResult.winner.label === "tie" ? "Tie" : `Winner: Ad #${abResult.winner.adId}`}
                     </div>
-                    <div className="font-mono text-[10px]" style={{ color: "rgba(148,163,184,0.7)" }}>
+                    <div className="font-mono text-xs" style={{ color: "rgba(148,163,184,0.7)" }}>
                       Confidence: <span style={{ color: "#f59e0b" }}>
                         <AnimatedMetricValue value={abResult.winner.confidencePct} decimals={0} suffix="%" />
                       </span>
@@ -2064,12 +2064,12 @@ export default function CampaignDetail() {
                             opacity: isLoser ? 0.65 : 1,
                           }}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>Ad #{ad.id}</span>
+                            <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>Ad #{ad.id}</span>
                             {isWinner && <span className="tag-ops tag-gold">WINNER</span>}
                           </div>
                           <p className="text-sm leading-relaxed mb-2" style={{ color: "rgba(226,232,240,0.85)" }}>{ad.primaryText}</p>
                           <div className="font-display font-bold text-sm" style={{ color: "#f8fafc" }}>{ad.headline}</div>
-                          {ad.description && <p className="font-mono text-[10px] mt-1" style={{ color: "rgba(100,116,139,0.55)" }}>{ad.description}</p>}
+                          {ad.description && <p className="font-mono text-xs mt-1" style={{ color: "rgba(100,116,139,0.55)" }}>{ad.description}</p>}
                         </div>
                       );
                     })}
@@ -2101,7 +2101,7 @@ export default function CampaignDetail() {
                     ].map((metric) => (
                       <div key={metric.label} className="rounded-lg p-4"
                         style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[9px] tracking-widest uppercase mb-2" style={{ color: "rgba(100,116,139,0.5)" }}>
+                        <div className="font-mono text-xs tracking-widest uppercase mb-2" style={{ color: "#94a3b8" }}>
                           {metric.label}
                         </div>
                         <div className="flex items-center justify-between font-mono text-[11px]">
@@ -2137,19 +2137,19 @@ export default function CampaignDetail() {
                       <Table>
                         <TableHeader>
                           <TableRow className="border-white/10 hover:bg-transparent">
-                            <TableHead className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.6)" }}>Dimension</TableHead>
-                            <TableHead className="font-mono text-[10px] text-right" style={{ color: "rgba(100,116,139,0.6)" }}>Ad A</TableHead>
-                            <TableHead className="font-mono text-[10px] text-right" style={{ color: "rgba(100,116,139,0.6)" }}>Ad B</TableHead>
-                            <TableHead className="font-mono text-[10px] text-right" style={{ color: "rgba(100,116,139,0.6)" }}>Leader</TableHead>
+                            <TableHead className="font-mono text-xs" style={{ color: "rgba(100,116,139,0.6)" }}>Dimension</TableHead>
+                            <TableHead className="font-mono text-xs text-right" style={{ color: "rgba(100,116,139,0.6)" }}>Ad A</TableHead>
+                            <TableHead className="font-mono text-xs text-right" style={{ color: "rgba(100,116,139,0.6)" }}>Ad B</TableHead>
+                            <TableHead className="font-mono text-xs text-right" style={{ color: "rgba(100,116,139,0.6)" }}>Leader</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {abResult.dimensions.map((dim: any) => (
                             <TableRow key={dim.key} className="border-white/5 hover:bg-white/[0.01]">
-                              <TableCell className="font-mono text-[10px]" style={{ color: "rgba(226,232,240,0.8)" }}>{dim.label}</TableCell>
-                              <TableCell className="font-mono text-[10px] text-right" style={{ color: "rgba(226,232,240,0.8)" }}>{dim.a.toFixed(2)}</TableCell>
-                              <TableCell className="font-mono text-[10px] text-right" style={{ color: "rgba(226,232,240,0.8)" }}>{dim.b.toFixed(2)}</TableCell>
-                              <TableCell className="font-mono text-[10px] text-right"
+                              <TableCell className="font-mono text-xs" style={{ color: "rgba(226,232,240,0.8)" }}>{dim.label}</TableCell>
+                              <TableCell className="font-mono text-xs text-right" style={{ color: "rgba(226,232,240,0.8)" }}>{dim.a.toFixed(2)}</TableCell>
+                              <TableCell className="font-mono text-xs text-right" style={{ color: "rgba(226,232,240,0.8)" }}>{dim.b.toFixed(2)}</TableCell>
+                              <TableCell className="font-mono text-xs text-right"
                                 style={{ color: dim.leader === "tie" ? "rgba(100,116,139,0.6)" : "#f59e0b" }}>
                                 {dim.leader === "tie" ? "Tie" : dim.leader === "A" ? `Ad #${abResult.adA.id}` : `Ad #${abResult.adB.id}`}
                               </TableCell>
@@ -2175,7 +2175,7 @@ export default function CampaignDetail() {
                   <Users size={16} style={{ color: "#a78bfa" }} />
                   AUDIENCE SPLIT
                 </DialogTitle>
-                <DialogDescription className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.6)" }}>
+                <DialogDescription className="font-mono text-xs" style={{ color: "rgba(100,116,139,0.6)" }}>
                   5 variants rewritten in parallel for each audience persona — "{splitSourceHeadline}"
                 </DialogDescription>
               </DialogHeader>
@@ -2214,7 +2214,7 @@ export default function CampaignDetail() {
                           onMouseLeave={e => (e.currentTarget.style.borderColor = `${color}22`)}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-mono text-[9px] font-bold tracking-widest px-2 py-0.5 rounded"
+                            <span className="font-mono text-xs font-bold tracking-widest px-2 py-0.5 rounded"
                               style={{ color, background: `${color}14`, border: `1px solid ${color}33` }}>
                               {variant.persona.toUpperCase()}
                             </span>
@@ -2232,7 +2232,7 @@ export default function CampaignDetail() {
                             </p>
                           </div>
 
-                          <p className="font-mono text-[9px] italic" style={{ color: "#22d3ee" }}>
+                          <p className="font-mono text-xs italic" style={{ color: "#22d3ee" }}>
                             {variant.personaRationale}
                           </p>
 
@@ -2250,7 +2250,7 @@ export default function CampaignDetail() {
                               });
                             }}
                             disabled={approveVariantMutation.isPending}
-                            className="mt-auto w-full py-2 rounded font-mono font-bold text-[10px] tracking-widest uppercase transition-all disabled:opacity-40"
+                            className="mt-auto w-full py-2 rounded font-mono font-bold text-xs tracking-widest uppercase transition-all disabled:opacity-40"
                             style={{
                               background: `${color}12`,
                               border: `1px solid ${color}44`,

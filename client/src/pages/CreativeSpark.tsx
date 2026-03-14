@@ -19,12 +19,12 @@ function SparkCard({ idea, index, color, onToggleSave }: { idea: any; index: num
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Zap size={12} style={{ color }} />
-          <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.4)" }}>
+          <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>
             Spark {String(index + 1).padStart(2, "0")}
           </span>
         </div>
         <button onClick={onToggleSave} className="transition-colors"
-          style={{ color: idea.isSaved ? color : "rgba(100,116,139,0.35)" }}>
+          style={{ color: idea.isSaved ? color : "#94a3b8" }}>
           {idea.isSaved
             ? <BookmarkCheck size={14} style={{ color }} />
             : <Bookmark size={14} />
@@ -34,7 +34,7 @@ function SparkCard({ idea, index, color, onToggleSave }: { idea: any; index: num
 
       {/* Angle badge */}
       {idea.angle && (
-        <div className="inline-flex items-center gap-1 px-2 py-0.5 mb-3 rounded font-mono text-[9px] uppercase tracking-wider"
+        <div className="inline-flex items-center gap-1 px-2 py-0.5 mb-3 rounded font-mono text-xs uppercase tracking-wider"
           style={{ borderColor: `${color}30`, border: `1px solid ${color}30`, color }}>
           {idea.angle}
         </div>
@@ -46,20 +46,20 @@ function SparkCard({ idea, index, color, onToggleSave }: { idea: any; index: num
       </h3>
 
       {/* Hook */}
-      <p className="font-mono text-[10px] leading-relaxed italic mb-4" style={{ color: "rgba(148,163,184,0.55)" }}>
+      <p className="font-mono text-xs leading-relaxed italic mb-4" style={{ color: "rgba(148,163,184,0.55)" }}>
         "{idea.hook}"
       </p>
 
       {/* Wildness meter */}
       <div className="flex items-center gap-2">
-        <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.4)" }}>Wildness</span>
+        <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>Wildness</span>
         <div className="flex gap-0.5 flex-1">
           {Array.from({ length: 10 }).map((_, j) => (
             <div key={j} className="flex-1 h-1 rounded-full"
               style={{ background: j < (idea.wildFactor || 0) ? color : "rgba(34,211,238,0.06)" }} />
           ))}
         </div>
-        <span className="font-mono text-[9px] font-bold" style={{ color }}>{idea.wildFactor}/10</span>
+        <span className="font-mono text-xs font-bold" style={{ color }}>{idea.wildFactor}/10</span>
       </div>
     </motion.div>
   );
@@ -100,7 +100,7 @@ export default function CreativeSpark() {
               <h1 className="font-display font-bold text-2xl tracking-tight" style={{ color: "#f8fafc", letterSpacing: "-0.02em" }}>
                 Unconstrained Ideation
               </h1>
-              <p className="font-mono text-[10px] mt-1.5 max-w-xl" style={{ color: "rgba(100,116,139,0.5)" }}>
+              <p className="font-mono text-xs mt-1.5 max-w-xl" style={{ color: "#94a3b8" }}>
                 The engine removes all guardrails and generates wild, unexpected, boundary-pushing ad concepts. Raw creative fuel.
               </p>
             </div>
@@ -120,7 +120,7 @@ export default function CreativeSpark() {
                   style={{
                     background: count === n ? "rgba(34,211,238,0.08)" : "rgba(8,24,48,0.5)",
                     border: `1px solid ${count === n ? "rgba(34,211,238,0.25)" : "rgba(34,211,238,0.06)"}`,
-                    color: count === n ? "#22d3ee" : "rgba(100,116,139,0.5)",
+                    color: count === n ? "#22d3ee" : "#94a3b8",
                   }}>
                   {n} Ideas
                 </button>
@@ -158,7 +158,7 @@ export default function CreativeSpark() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Sparkles size={13} style={{ color: "rgba(100,116,139,0.4)" }} />
+                <Sparkles size={13} style={{ color: "#94a3b8" }} />
                 <div className="section-label">
                   {savedIdeas.length > 0 ? "More Sparks" : "Generated Sparks"} ({unsavedIdeas.length})
                 </div>
@@ -190,7 +190,7 @@ export default function CreativeSpark() {
               ))}
             </div>
             <div className="section-label mb-2 text-center">No Sparks Yet</div>
-            <p className="font-mono text-[10px] max-w-xs mx-auto" style={{ color: "rgba(100,116,139,0.4)" }}>
+            <p className="font-mono text-xs max-w-xs mx-auto" style={{ color: "#94a3b8" }}>
               Hit "Generate Creative Sparks" to ignite the unconstrained ideation engine. Expect the unexpected.
             </p>
           </motion.div>
@@ -212,7 +212,7 @@ export default function CreativeSpark() {
               <div className="font-mono text-[11px]" style={{ color: "rgba(148,163,184,0.6)" }}>
                 Igniting unconstrained ideation engine...
               </div>
-              <div className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+              <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>
                 Removing guardrails. Thinking without limits.
               </div>
             </motion.div>

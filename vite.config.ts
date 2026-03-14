@@ -150,7 +150,40 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+/**
+ * Replaces analytics placeholders safely.
+ * - If vars are missing, strips the analytics script tag entirely
+ * - If vars exist, substitutes them to avoid unresolved placeholder warnings
+ */
+function vitePluginAnalyticsFallback(): Plugin {
+  return {
+    name: "analytics-env-fallback",
+    transformIndexHtml(html) {
+      const endpoint = process.env.VITE_ANALYTICS_ENDPOINT;
+      const websiteId = process.env.VITE_ANALYTICS_WEBSITE_ID;
+
+      const analyticsScriptRegex =
+        /<script[\s\S]*?src="%VITE_ANALYTICS_ENDPOINT%\/umami"[\s\S]*?data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"[\s\S]*?<\/script>/m;
+
+      if (!endpoint || !websiteId) {
+        return html.replace(analyticsScriptRegex, "");
+      }
+
+      return html
+        .replaceAll("%VITE_ANALYTICS_ENDPOINT%", endpoint)
+        .replaceAll("%VITE_ANALYTICS_WEBSITE_ID%", websiteId);
+    },
+  };
+}
+
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginAnalyticsFallback(),
+  vitePluginManusDebugCollector(),
+];
 
 export default defineConfig({
   plugins,
@@ -167,6 +200,38 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("/node_modules/")) return undefined;
+
+          const nodeModulesIndex = id.lastIndexOf("/node_modules/");
+          const packagePath = id.slice(nodeModulesIndex + "/node_modules/".length);
+          const packageParts = packagePath.split("/");
+          const packageName = packagePath.startsWith("@")
+            ? `${packageParts[0]}-${packageParts[1]}`
+            : packageParts[0];
+
+          if (id.includes("/@shikijs/langs/dist/")) {
+            const langChunk = path.basename(id).replace(/\.[^.]+$/, "");
+            return `vendor-shiki-${langChunk}`;
+          }
+          if (id.includes("/@shikijs/themes/dist/")) {
+            const themeChunk = path.basename(id).replace(/\.[^.]+$/, "");
+            return `vendor-shiki-theme-${themeChunk}`;
+          }
+          if (id.includes("/@shikijs/engine-")) return "vendor-shiki-engine";
+          if (id.includes("/react/") || id.includes("/react-dom/")) return "vendor-react";
+          if (id.includes("/@trpc/") || id.includes("/@tanstack/react-query/")) return "vendor-trpc";
+          if (id.includes("/recharts/") || id.includes("/framer-motion/")) return "vendor-charts-motion";
+          if (id.includes("/streamdown/") || id.includes("/mermaid/")) return "vendor-markdown";
+          if (id.includes("/lucide-react/")) return "vendor-icons";
+          if (id.includes("/@radix-ui/")) return "vendor-radix";
+          return `vendor-${packageName}`;
+        },
+      },
+    },
   },
   server: {
     host: true,

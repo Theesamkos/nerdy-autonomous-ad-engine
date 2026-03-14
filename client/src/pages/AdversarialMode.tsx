@@ -46,7 +46,7 @@ export default function AdversarialMode() {
               <h1 className="font-display font-bold text-2xl tracking-tight" style={{ color: "#f8fafc", letterSpacing: "-0.02em" }}>
                 Competitive Intelligence
               </h1>
-              <p className="font-mono text-[10px] mt-1.5 max-w-xl" style={{ color: "rgba(100,116,139,0.5)" }}>
+              <p className="font-mono text-xs mt-1.5 max-w-xl" style={{ color: "#94a3b8" }}>
                 Pit your AI-generated ads against real competitor ads. The engine analyzes both, scores across 5 dimensions, and iteratively improves until yours wins.
               </p>
             </div>
@@ -64,7 +64,7 @@ export default function AdversarialMode() {
             <div key={label} className="ops-card p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Icon size={13} style={{ color }} />
-                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>{label}</span>
+                <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>{label}</span>
               </div>
               <div className="font-display font-bold text-2xl" style={{ color: "#f8fafc", letterSpacing: "-0.03em" }}>{value}</div>
             </div>
@@ -106,7 +106,7 @@ export default function AdversarialMode() {
                           style={{
                             background: form.rounds === n ? "rgba(34,211,238,0.08)" : "rgba(8,24,48,0.5)",
                             border: `1px solid ${form.rounds === n ? "rgba(34,211,238,0.25)" : "rgba(34,211,238,0.06)"}`,
-                            color: form.rounds === n ? "#22d3ee" : "rgba(100,116,139,0.5)",
+                            color: form.rounds === n ? "#22d3ee" : "#94a3b8",
                           }}>
                           {n} {n === 1 ? "Round" : "Rounds"}
                         </button>
@@ -161,19 +161,19 @@ export default function AdversarialMode() {
                             {session.winStatus}
                           </span>
                         </div>
-                        <p className="font-mono text-[10px] truncate" style={{ color: "rgba(100,116,139,0.45)" }}>
+                        <p className="font-mono text-xs truncate" style={{ color: "#94a3b8" }}>
                           {(session.competitorAdText || "").slice(0, 80)}...
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 flex-shrink-0">
                       <div className="text-right">
-                        <div className="font-mono text-[9px] mb-0.5" style={{ color: "rgba(100,116,139,0.4)" }}>Rounds</div>
+                        <div className="font-mono text-xs mb-0.5" style={{ color: "#94a3b8" }}>Rounds</div>
                         <div className="font-mono font-bold text-sm" style={{ color: "#f8fafc" }}>{session.roundsCompleted}</div>
                       </div>
                       <button onClick={() => setExpandedId(isExpanded ? null : session.id)}
                         className="p-1.5 rounded-lg transition-colors"
-                        style={{ color: "rgba(100,116,139,0.4)", background: "rgba(34,211,238,0.04)" }}>
+                        style={{ color: "#94a3b8", background: "rgba(34,211,238,0.04)" }}>
                         {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
                     </div>
@@ -188,7 +188,7 @@ export default function AdversarialMode() {
                             <div className="section-label mb-3">Competitor Ad</div>
                             <div className="rounded-lg p-4"
                               style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                              <p className="font-mono text-[10px] leading-relaxed" style={{ color: "rgba(148,163,184,0.6)" }}>
+                              <p className="font-mono text-xs leading-relaxed" style={{ color: "rgba(148,163,184,0.6)" }}>
                                 {session.competitorAdText}
                               </p>
                             </div>
@@ -211,7 +211,7 @@ export default function AdversarialMode() {
           <div className="ops-card bracket py-16 text-center">
             <Swords size={24} style={{ color: "rgba(34,211,238,0.2)", margin: "0 auto 1rem" }} />
             <div className="section-label mb-2 text-center">No Battles Yet</div>
-            <p className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.4)" }}>
+            <p className="font-mono text-xs" style={{ color: "#94a3b8" }}>
               Create a new battle above to pit your AI-generated ads against a competitor.
             </p>
           </div>

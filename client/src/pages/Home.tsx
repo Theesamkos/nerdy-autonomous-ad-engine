@@ -460,7 +460,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-5">
             {["Privacy", "Terms", "Docs"].map(item => (
-              <span key={item} className="font-mono cursor-pointer hover:text-white transition-colors" style={{ fontSize: "0.6rem", color: "rgba(100,116,139,0.5)", letterSpacing: "0.08em" }}>
+              <span key={item} className="font-mono cursor-pointer hover:text-white transition-colors" style={{ fontSize: "0.6rem", color: "#94a3b8", letterSpacing: "0.08em" }}>
                 {item}
               </span>
             ))}

@@ -31,6 +31,7 @@ vi.mock("./db", () => ({
   updateCampaignWeights: vi.fn().mockResolvedValue(undefined),
   updateCampaignStats: vi.fn().mockResolvedValue(undefined),
   ratchetQualityThreshold: vi.fn().mockResolvedValue(undefined),
+  updateCampaignAutopilot: vi.fn().mockResolvedValue(undefined),
   createAd: vi.fn().mockResolvedValue(42),
   getAdById: vi.fn().mockResolvedValue({
     id: 42,
@@ -55,6 +56,7 @@ vi.mock("./db", () => ({
   }),
   getAdsByCampaign: vi.fn().mockResolvedValue([]),
   updateAdStatus: vi.fn().mockResolvedValue(undefined),
+  updateAdFields: vi.fn().mockResolvedValue(undefined),
   createEvaluation: vi.fn().mockResolvedValue(1),
   getEvaluationByAdId: vi.fn().mockResolvedValue({
     id: 1,
@@ -79,6 +81,7 @@ vi.mock("./db", () => ({
     estimatedCostUsd: 0.0002,
     createdAt: new Date(),
   }),
+  updateLatestEvaluationByAdId: vi.fn().mockResolvedValue(undefined),
   getEvaluationsByCampaign: vi.fn().mockResolvedValue([]),
   createIterationLog: vi.fn().mockResolvedValue(1),
   getIterationLogsByCampaign: vi.fn().mockResolvedValue([]),
@@ -213,6 +216,24 @@ describe("campaigns router", () => {
     });
     expect(result).toBeDefined();
   });
+
+  it("autopilot toggle and status are callable", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await caller.campaigns.toggleAutopilot({
+      campaignId: 1,
+      enabled: true,
+      frequencyHours: 24,
+    });
+    const status = await caller.campaigns.getAutopilotStatus({ campaignId: 1 });
+
+    expect(status).toHaveProperty("enabled");
+    expect(status).toHaveProperty("frequencyHours");
+    expect(status).toHaveProperty("lastRunAt");
+    expect(status).toHaveProperty("totalRuns");
+    expect(status).toHaveProperty("nextRunAt");
+  });
 });
 
 describe("ads router", () => {
@@ -258,6 +279,19 @@ describe("ads router", () => {
     expect(result).toHaveProperty("isPublishable");
     expect(result).toHaveProperty("qualityRatchetApplied");
     expect(result.totalIterations).toBe(1);
+  });
+
+  it("bulkGenerate supports higher count for autopilot run-now", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.ads.bulkGenerate({
+      campaignId: 1,
+      count: 10,
+      mode: "standard",
+    });
+    expect(result.totalAdsGenerated).toBe(10);
+    expect(result).toHaveProperty("winnerId");
+    expect(result).toHaveProperty("winnerScore");
   });
 });
 

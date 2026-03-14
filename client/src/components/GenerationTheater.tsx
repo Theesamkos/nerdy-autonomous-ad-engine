@@ -57,7 +57,7 @@ function ScoreBar({ dimension, score, delay }: { dimension: string; score: numbe
       transition={{ delay, duration: 0.35, type: "spring", stiffness: 200 }}
       className="flex items-center gap-2"
     >
-      <span className="font-mono text-[9px] w-28 shrink-0" style={{ color: "rgba(148,163,184,0.6)" }}>
+      <span className="font-mono text-xs w-28 shrink-0" style={{ color: "rgba(148,163,184,0.6)" }}>
         {dimension.toUpperCase()}
       </span>
       <div className="flex-1 h-1.5 rounded-full" style={{ background: "rgba(34,211,238,0.06)" }}>
@@ -70,7 +70,7 @@ function ScoreBar({ dimension, score, delay }: { dimension: string; score: numbe
         />
       </div>
       <motion.span
-        className="font-mono text-[9px] w-6 text-right shrink-0"
+        className="font-mono text-xs w-6 text-right shrink-0"
         style={{ color }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -263,7 +263,7 @@ export default function GenerationTheater({
           animate={{ opacity: [1, 0.3, 1] }}
           transition={{ duration: 1.2, repeat: Infinity }}
         />
-        <span className="font-mono text-[10px] tracking-widest font-bold" style={{ color: "#22d3ee" }}>
+        <span className="font-mono text-xs tracking-widest font-bold" style={{ color: "#22d3ee" }}>
           ● GENERATION PIPELINE — LIVE
         </span>
         <div className="ml-auto flex gap-1.5">
@@ -282,11 +282,11 @@ export default function GenerationTheater({
               initial={{ opacity: 0, x: -6 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.2 }}
-              className="flex items-start gap-2 font-mono text-[10px] leading-5"
+              className="flex items-start gap-2 font-mono text-xs leading-5"
             >
-              <span style={{ color: "rgba(100,116,139,0.5)", flexShrink: 0 }}>{line.ts}</span>
+              <span style={{ color: "#94a3b8", flexShrink: 0 }}>{line.ts}</span>
               <span
-                className="font-bold px-1 rounded text-[9px] shrink-0"
+                className="font-bold px-1 rounded text-xs shrink-0"
                 style={{ color: TAG_COLORS[line.tag], border: `1px solid ${TAG_COLORS[line.tag]}33` }}
               >
                 {line.tag}
@@ -297,7 +297,7 @@ export default function GenerationTheater({
         </AnimatePresence>
         {!complete && !error && (
           <div className="flex items-center gap-2 pt-0.5">
-            <span style={{ color: "rgba(100,116,139,0.4)", fontFamily: "monospace", fontSize: 10 }}>{">"}</span>
+            <span style={{ color: "#94a3b8", fontFamily: "monospace", fontSize: 10 }}>{">"}</span>
             <motion.span
               className="inline-block w-1.5 h-3.5 align-middle"
               style={{ background: "#22d3ee" }}
@@ -322,7 +322,7 @@ export default function GenerationTheater({
               className="rounded p-3"
               style={{ background: "rgba(34,211,238,0.04)", border: "1px solid rgba(34,211,238,0.1)" }}
             >
-              <div className="font-mono text-[9px] tracking-widest mb-2" style={{ color: "rgba(34,211,238,0.5)" }}>
+              <div className="font-mono text-xs tracking-widest mb-2" style={{ color: "rgba(34,211,238,0.5)" }}>
                 LIVE COPY PREVIEW
               </div>
               <div className="font-mono text-[11px] font-bold" style={{ color: "#e2e8f0" }}>
@@ -352,7 +352,7 @@ export default function GenerationTheater({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
-                  className="font-mono text-[9px] mt-1.5 leading-4"
+                  className="font-mono text-xs mt-1.5 leading-4"
                   style={{ color: "rgba(148,163,184,0.6)" }}
                 >
                   {copyComplete.primaryText.slice(0, 120)}{copyComplete.primaryText.length > 120 ? "…" : ""}
@@ -376,7 +376,7 @@ export default function GenerationTheater({
               className="rounded p-3 space-y-2"
               style={{ background: "rgba(245,158,11,0.03)", border: "1px solid rgba(245,158,11,0.1)" }}
             >
-              <div className="font-mono text-[9px] tracking-widest mb-1" style={{ color: "rgba(245,158,11,0.5)" }}>
+              <div className="font-mono text-xs tracking-widest mb-1" style={{ color: "rgba(245,158,11,0.5)" }}>
                 QUALITY EVALUATION
               </div>
               {scores.map((s, i) => (
@@ -407,13 +407,13 @@ export default function GenerationTheater({
                 ? <CheckCircle2 size={14} style={{ color: "#34d399" }} />
                 : <XCircle size={14} style={{ color: "#f87171" }} />}
               <span
-                className="font-mono font-bold text-[10px] tracking-widest"
+                className="font-mono font-bold text-xs tracking-widest"
                 style={{ color: result?.status === "approved" ? "#34d399" : "#f87171" }}
               >
                 {result?.status === "approved" ? "APPROVED — ADDING TO CAMPAIGN" : "BELOW THRESHOLD"}
               </span>
             </div>
-            <div className="flex items-center gap-4 font-mono text-[10px]" style={{ color: "rgba(148,163,184,0.7)" }}>
+            <div className="flex items-center gap-4 font-mono text-xs" style={{ color: "rgba(148,163,184,0.7)" }}>
               <span>
                 Score:{" "}
                 <span className="font-bold" style={{ color: result?.status === "approved" ? "#34d399" : "#f87171" }}>
@@ -433,7 +433,7 @@ export default function GenerationTheater({
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="flex items-center gap-1.5 mt-2 font-mono text-[9px]"
+                className="flex items-center gap-1.5 mt-2 font-mono text-xs"
                 style={{ color: "rgba(52,211,153,0.6)" }}
               >
                 <CheckCircle2 size={10} />
@@ -450,7 +450,7 @@ export default function GenerationTheater({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mx-4 mb-4 flex items-center gap-2 px-3 py-2 rounded font-mono text-[10px]"
+            className="mx-4 mb-4 flex items-center gap-2 px-3 py-2 rounded font-mono text-xs"
             style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171" }}
           >
             <AlertTriangle size={11} />

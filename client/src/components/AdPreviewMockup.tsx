@@ -31,12 +31,12 @@ function FacebookPreview({ primaryText, headline, description, ctaButton, imageP
       {/* FB Top bar */}
       <div className="flex items-center gap-2 px-3 py-2.5" style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
           style={{ background: "linear-gradient(135deg,#22d3ee,#3b82f6)" }}>VT</div>
         <div className="flex-1 min-w-0">
           <div className="font-bold text-[11px] leading-tight" style={{ color: "#111" }}>Varsity Tutors</div>
           <div className="flex items-center gap-1">
-            <span className="text-[9px]" style={{ color: "#6b7280" }}>Sponsored</span>
+            <span className="text-xs" style={{ color: "#6b7280" }}>Sponsored</span>
             <span style={{ color: "#6b7280", fontSize: 8 }}>·</span>
             <svg width="9" height="9" viewBox="0 0 16 16" fill="#6b7280"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm0 14.5A6.5 6.5 0 118 1.5a6.5 6.5 0 010 13z"/><path d="M8 3.5a.75.75 0 01.75.75v4.25l2.5 1.5a.75.75 0 01-.75 1.3l-3-1.75A.75.75 0 017.25 9V4.25A.75.75 0 018 3.5z"/></svg>
           </div>
@@ -55,7 +55,7 @@ function FacebookPreview({ primaryText, headline, description, ctaButton, imageP
       <div className="w-full relative overflow-hidden" style={{ aspectRatio: "1.91/1", background: gradient }}>
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
           {imagePrompt && (
-            <p className="text-[9px] leading-relaxed opacity-60 max-w-[80%]" style={{ color: "#fff", fontStyle: "italic" }}>
+            <p className="text-xs leading-relaxed opacity-60 max-w-[80%]" style={{ color: "#fff", fontStyle: "italic" }}>
               {imagePrompt.length > 80 ? imagePrompt.slice(0, 80) + "…" : imagePrompt}
             </p>
           )}
@@ -72,10 +72,10 @@ function FacebookPreview({ primaryText, headline, description, ctaButton, imageP
         <div className="flex-1 min-w-0 pr-3">
           <div className="font-bold text-[11px] truncate" style={{ color: "#111" }}>{headline}</div>
           {description && (
-            <div className="text-[9px] truncate" style={{ color: "#6b7280" }}>{description}</div>
+            <div className="text-xs truncate" style={{ color: "#6b7280" }}>{description}</div>
           )}
         </div>
-        <button className="flex-shrink-0 px-3 py-1.5 rounded text-[10px] font-bold"
+        <button className="flex-shrink-0 px-3 py-1.5 rounded text-xs font-bold"
           style={{ background: "#e4e6eb", color: "#050505" }}>
           {ctaButton}
         </button>
@@ -88,11 +88,11 @@ function FacebookPreview({ primaryText, headline, description, ctaButton, imageP
             {["👍","❤️","😮"].map((e, i) => (
               <span key={i} className="text-[12px]">{e}</span>
             ))}
-            <span className="text-[9px] ml-1" style={{ color: "#6b7280" }}>1.2K</span>
+            <span className="text-xs ml-1" style={{ color: "#6b7280" }}>1.2K</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[9px]" style={{ color: "#6b7280" }}>48 comments</span>
-            <span className="text-[9px]" style={{ color: "#6b7280" }}>12 shares</span>
+            <span className="text-xs" style={{ color: "#6b7280" }}>48 comments</span>
+            <span className="text-xs" style={{ color: "#6b7280" }}>12 shares</span>
           </div>
         </div>
         <div className="flex items-center justify-around mt-1.5 pt-1.5" style={{ borderTop: "1px solid #e5e7eb" }}>
@@ -101,7 +101,7 @@ function FacebookPreview({ primaryText, headline, description, ctaButton, imageP
             { icon: MessageCircle, label: "Comment" },
             { icon: Share2, label: "Share" },
           ].map(({ icon: Icon, label }) => (
-            <button key={label} className="flex items-center gap-1 px-3 py-1 rounded text-[10px] font-semibold"
+            <button key={label} className="flex items-center gap-1 px-3 py-1 rounded text-xs font-semibold"
               style={{ color: "#6b7280" }}>
               <Icon size={13} /> {label}
             </button>
@@ -118,11 +118,11 @@ function InstagramPreview({ primaryText, headline, description, ctaButton, image
     <div className="w-full rounded-xl overflow-hidden shadow-2xl" style={{ background: "#fff", fontFamily: "-apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}>
       {/* IG Top bar */}
       <div className="flex items-center gap-2 px-3 py-2">
-        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0"
+        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
           style={{ background: "linear-gradient(135deg,#f97316,#ec4899,#8b5cf6)" }}>VT</div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-[11px]" style={{ color: "#111" }}>varsitytutors</div>
-          <div className="text-[9px]" style={{ color: "#8e8e8e" }}>Sponsored</div>
+          <div className="text-xs" style={{ color: "#8e8e8e" }}>Sponsored</div>
         </div>
         <MoreHorizontal size={15} style={{ color: "#111" }} />
       </div>
@@ -131,7 +131,7 @@ function InstagramPreview({ primaryText, headline, description, ctaButton, image
       <div className="w-full relative overflow-hidden" style={{ aspectRatio: "1/1", background: gradient }}>
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
           {imagePrompt && (
-            <p className="text-[9px] leading-relaxed opacity-60 max-w-[80%]" style={{ color: "#fff", fontStyle: "italic" }}>
+            <p className="text-xs leading-relaxed opacity-60 max-w-[80%]" style={{ color: "#fff", fontStyle: "italic" }}>
               {imagePrompt.length > 80 ? imagePrompt.slice(0, 80) + "…" : imagePrompt}
             </p>
           )}
@@ -170,9 +170,9 @@ function InstagramPreview({ primaryText, headline, description, ctaButton, image
         <div className="px-3 py-2 flex items-center justify-between" style={{ background: "#fafafa" }}>
           <div className="min-w-0 flex-1 pr-2">
             <div className="font-semibold text-[11px] truncate" style={{ color: "#111" }}>{headline}</div>
-            {description && <div className="text-[9px] truncate" style={{ color: "#8e8e8e" }}>{description}</div>}
+            {description && <div className="text-xs truncate" style={{ color: "#8e8e8e" }}>{description}</div>}
           </div>
-          <button className="flex-shrink-0 px-3 py-1 rounded-md text-[10px] font-bold text-white"
+          <button className="flex-shrink-0 px-3 py-1 rounded-md text-xs font-bold text-white"
             style={{ background: "#0095f6" }}>
             {ctaButton}
           </button>
@@ -192,10 +192,10 @@ export default function AdPreviewMockup({ primaryText, headline, description, ct
         style={{ background: "rgba(34,211,238,0.04)", border: "1px solid rgba(34,211,238,0.08)" }}>
         {(["facebook", "instagram"] as Platform[]).map(p => (
           <button key={p} onClick={() => setPlatform(p)}
-            className="px-3 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-wider transition-all capitalize"
+            className="px-3 py-1.5 rounded-md font-mono text-xs uppercase tracking-wider transition-all capitalize"
             style={{
               background: platform === p ? "rgba(34,211,238,0.1)" : "transparent",
-              color: platform === p ? "#22d3ee" : "rgba(100,116,139,0.5)",
+              color: platform === p ? "#22d3ee" : "#94a3b8",
               border: platform === p ? "1px solid rgba(34,211,238,0.2)" : "1px solid transparent",
             }}>
             {p}
@@ -249,7 +249,7 @@ export default function AdPreviewMockup({ primaryText, headline, description, ct
                   <span className="font-bold text-[14px]" style={{ color: "#1877f2" }}>facebook</span>
                   <div className="flex gap-2">
                     {["+","🔍","💬"].map((icon, i) => (
-                      <div key={i} className="w-6 h-6 rounded-full flex items-center justify-center text-[10px]"
+                      <div key={i} className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
                         style={{ background: "#e4e6eb" }}>{icon}</div>
                     ))}
                   </div>
@@ -291,7 +291,7 @@ export default function AdPreviewMockup({ primaryText, headline, description, ct
       </div>
 
       {/* Caption */}
-      <p className="font-mono text-[9px] text-center" style={{ color: "rgba(100,116,139,0.35)" }}>
+      <p className="font-mono text-xs text-center" style={{ color: "#94a3b8" }}>
         Ad preview — visual is AI-generated placeholder
       </p>
     </div>
