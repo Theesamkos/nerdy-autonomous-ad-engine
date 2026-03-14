@@ -920,7 +920,7 @@ export default function CampaignDetail() {
   });
 
   // Threshold manual override
-  const [showThresholdEditor, setShowThresholdEditor] = useState(false);
+  const [showThresholdEditor, setShowThresholdEditor] = useState(true);
   const [thresholdInput, setThresholdInput] = useState<string>("");
   const updateThresholdMutation = trpc.campaigns.updateThreshold.useMutation({
     onSuccess: (updated) => {
@@ -1271,7 +1271,7 @@ export default function CampaignDetail() {
 
   return (
     <AppLayout campaignId={campaignId} campaignName={campaign.name}>
-      <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+      <div className="p-8 lg:p-10 w-full space-y-8">
 
         {/* ── Header ── */}
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
@@ -1382,7 +1382,7 @@ export default function CampaignDetail() {
 
         {/* ── Sticky Action Bar ── */}
         <div
-          className="sticky top-0 z-30 flex items-center gap-3 px-6 py-4 rounded-2xl"
+          className="sticky top-0 z-30 flex items-center gap-3 px-8 py-5 rounded-2xl"
           style={{
             background: "rgba(2,8,20,0.92)",
             backdropFilter: "blur(24px)",
@@ -1398,21 +1398,21 @@ export default function CampaignDetail() {
           </div>
           <button
             onClick={() => document.getElementById("generation-engine-panel")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className="btn-primary flex items-center gap-2 text-sm"
+            className="btn-primary flex items-center gap-2 px-5 py-2.5 text-base"
           >
             <Zap size={15} />
             Generate Ad
           </button>
           <button
             onClick={() => document.getElementById("generation-engine-panel")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className="btn-secondary flex items-center gap-2 text-sm"
+            className="btn-secondary flex items-center gap-2 px-5 py-2.5 text-base"
           >
             <Layers size={15} />
             Batch Generate
           </button>
           <button
             onClick={() => toggleAutopilotMutation.mutate({ campaignId, enabled: !optimisticAutopilotEnabled })}
-            className={optimisticAutopilotEnabled ? "btn-primary flex items-center gap-2 text-sm" : "btn-secondary flex items-center gap-2 text-sm"}
+            className={optimisticAutopilotEnabled ? "btn-primary flex items-center gap-2 px-5 py-2.5 text-base" : "btn-secondary flex items-center gap-2 px-5 py-2.5 text-base"}
             disabled={toggleAutopilotMutation.isPending}
           >
             <Cpu size={15} />
@@ -1420,104 +1420,10 @@ export default function CampaignDetail() {
           </button>
         </div>
 
-        {/* ── Autopilot Status ── */}
-        {optimisticAutopilotEnabled && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}
-            className="ops-card overflow-hidden">
-            <button
-              className="w-full flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: showAutopilot ? "1px solid rgba(34,211,238,0.07)" : "none" }}
-              onClick={() => setShowAutopilot(v => !v)}
-            >
-              <div className="flex items-center gap-3">
-                <Bot size={14} style={{ color: "#34d399" }} />
-                <div className="text-left">
-                  <div className="font-mono font-semibold text-sm tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
-                    Autopilot Status
-                  </div>
-                  <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>
-                    ACTIVE — runs every {autopilotStatus?.frequencyHours || 24}h
-                  </div>
-                </div>
-              </div>
-              <ChevronDown size={13} style={{ color: "#94a3b8", transform: showAutopilot ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
-            </button>
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-8 items-start">
 
-            <AnimatePresence>
-              {showAutopilot && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="p-5 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                      <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>NEXT RUN IN</div>
-                        <div className="font-mono text-[12px] font-bold" style={{ color: "#22d3ee" }}>{formatNextRunCountdown(autopilotStatus?.nextRunAt)}</div>
-                      </div>
-                      <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>LAST RUN</div>
-                        <div className="font-mono text-[12px] font-bold" style={{ color: "#e2e8f0" }}>{formatRelativeTime(autopilotStatus?.lastRunAt)}</div>
-                      </div>
-                      <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>TOTAL RUNS</div>
-                        <div className="font-mono text-[12px] font-bold" style={{ color: "#34d399" }}>{autopilotStatus?.totalRuns || 0}</div>
-                      </div>
-                      <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>ADS GENERATED</div>
-                        <div className="font-mono text-[12px] font-bold" style={{ color: "#f59e0b" }}>{(autopilotStatus?.totalRuns || 0) * 10}</div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.6)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                      <div className="font-mono text-xs tracking-widest uppercase mb-2" style={{ color: "#94a3b8" }}>
-                        Recent Autopilot Runs
-                      </div>
-                      <div className="space-y-1.5">
-                        {(autopilotRunLog.length > 0
-                          ? autopilotRunLog
-                          : Array.from({ length: Math.min(3, autopilotStatus?.totalRuns || 0) }).map((_, idx) => ({
-                              at: autopilotStatus?.lastRunAt ? new Date(autopilotStatus.lastRunAt) : new Date(),
-                              generated: 10,
-                              approved: 0,
-                              winnerScore: 0,
-                            }))
-                        ).slice(0, 3).map((entry, idx) => (
-                          <div key={`run-${idx}`} className="flex items-center justify-between font-mono text-xs">
-                            <span style={{ color: "rgba(148,163,184,0.7)" }}>{formatRelativeTime(entry.at)}</span>
-                            <span style={{ color: "rgba(148,163,184,0.7)" }}>
-                              {entry.generated} ads · {entry.approved} approved
-                            </span>
-                            <span style={{ color: "#22d3ee" }}>
-                              {entry.winnerScore > 0 ? `winner ${entry.winnerScore.toFixed(1)}/10` : "completed"}
-                            </span>
-                          </div>
-                        ))}
-                        {(autopilotStatus?.totalRuns || 0) === 0 && autopilotRunLog.length === 0 && (
-                          <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>
-                            No runs yet.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => runAutopilotNowMutation.mutate({ campaignId, count: 10 })}
-                      disabled={runAutopilotNowMutation.isPending}
-                      className="btn-primary text-xs flex items-center gap-1.5 disabled:opacity-40"
-                    >
-                      <Bot size={11} />
-                      {runAutopilotNowMutation.isPending ? "Running..." : "Run Now"}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
+          {/* LEFT COLUMN — main content */}
+          <div className="space-y-6">
 
         {/* ── Generation Engine ── */}
         <motion.div id="generation-engine-panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -1809,217 +1715,325 @@ export default function CampaignDetail() {
           </div>
         </motion.div>
 
-        {/* ── Dimension Weight Tuner ── */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
-          className="ops-card overflow-hidden">
-          <button onClick={() => setShowWeightTuner(!showWeightTuner)}
-            className="w-full flex items-center justify-between px-6 py-4 transition-colors hover:bg-white/[0.015]">
-            <div className="flex items-center gap-3">
-              <SlidersHorizontal size={14} style={{ color: "#f59e0b" }} />
-              <span className="font-mono font-semibold text-sm tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
-                Quality Dimension Weights
-              </span>
-              <span className={`tag-ops ${weightTotal === 100 ? "tag-green" : "tag-red"}`}>
-                {weightTotal}/100
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex gap-3">
-                {WEIGHT_DIMS.map(d => (
-                  <div key={d.key} className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: d.color }} />
-                    <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>{weights[d.key]}%</span>
-                  </div>
-                ))}
+            {/* ── Generated Ads ── */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="section-label">Generated Ads</div>
+                <div className="flex-1 h-px" style={{ background: "rgba(34,211,238,0.06)" }} />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCopyAllApprovedAds}
+                    disabled={approvedAdCount === 0}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
+                    style={{ border: "1px solid rgba(34,211,238,0.15)", color: "rgba(100,116,139,0.65)", background: "rgba(34,211,238,0.04)" }}>
+                    <Copy size={11} />
+                    {`Copy All Approved (${approvedAdCount})`}
+                  </button>
+                  <button
+                    onClick={handleDownloadApprovedJson}
+                    disabled={approvedAdCount === 0}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
+                    style={{ border: "1px solid rgba(34,211,238,0.15)", color: "rgba(100,116,139,0.65)", background: "rgba(34,211,238,0.04)" }}>
+                    <Download size={11} />
+                    Download JSON
+                  </button>
+                  <button
+                    onClick={handleDownloadApprovedCsv}
+                    disabled={approvedAdCount === 0}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
+                    style={{ border: "1px solid rgba(34,211,238,0.15)", color: "rgba(100,116,139,0.65)", background: "rgba(34,211,238,0.04)" }}>
+                    <Download size={11} />
+                    Download CSV
+                  </button>
+                </div>
+                <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
+                  {ads?.length || 0} total · {ads?.filter((a: any) => a.status === "approved").length || 0} approved
+                </span>
               </div>
-              {showWeightTuner
-                ? <ChevronUp size={14} style={{ color: "#94a3b8" }} />
-                : <ChevronDown size={14} style={{ color: "#94a3b8" }} />
-              }
-            </div>
-          </button>
+              {(abPrimaryAdId || simulateABTestMutation.isPending) && (
+                <div className="mb-4 px-4 py-3 rounded-lg font-mono text-xs flex items-center gap-2"
+                  style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.22)", color: "rgba(245,158,11,0.95)" }}>
+                  <BarChart3 size={12} />
+                  {simulateABTestMutation.isPending
+                    ? "Running A/B simulation..."
+                    : `A/B base set to #${abPrimaryAdId}. Click A/B Test on another approved ad to compare.`}
+                </div>
+              )}
 
-          <AnimatePresence>
-            {showWeightTuner && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
-                className="overflow-hidden" style={{ borderTop: "1px solid rgba(34,211,238,0.07)" }}>
-                <div className="px-6 py-5 space-y-4">
-                  <p className="font-mono text-xs" style={{ color: "#94a3b8" }}>
-                    Adjust how much each quality dimension contributes to the overall score. Weights must sum to 100.
-                  </p>
-                  {WEIGHT_DIMS.map(({ key, label, color }) => (
-                    <div key={key}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ background: color }} />
-                          <span className="font-mono text-[11px]" style={{ color: "rgba(148,163,184,0.7)" }}>{label}</span>
-                        </div>
-                        <span className="font-mono text-[11px] font-bold" style={{ color }}>{weights[key]}%</span>
-                      </div>
-                      <input type="range" min={0} max={60} value={weights[key]}
-                        onChange={e => setWeights(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
-                        className="w-full h-0.5 appearance-none cursor-pointer rounded-full"
-                        style={{ background: `linear-gradient(to right, ${color} ${(weights[key] / 60) * 100}%, rgba(34,211,238,0.08) ${(weights[key] / 60) * 100}%)` }}
-                      />
-                    </div>
+              {ads && ads.length > 0 ? (
+                <div className="space-y-3">
+                  {ads.map(ad => (
+                    <AdCardWrapper key={ad.id} ad={ad}
+                      isExpanded={expandedAdId === ad.id}
+                      onToggle={() => setExpandedAdId(expandedAdId === ad.id ? null : ad.id)}
+                      onABTestClick={handleABTestClick}
+                      isABSelecting={!!abPrimaryAdId}
+                      isABPrimary={abPrimaryAdId === ad.id}
+                      isABTarget={!!abPrimaryAdId && abPrimaryAdId !== ad.id && ad.status === "approved"}
+                      onSplitClick={handleSplitClick}
+                    />
                   ))}
-                  <div className="flex items-center justify-between pt-2">
-                    <span className="font-mono text-[11px]" style={{ color: weightTotal === 100 ? "#34d399" : "#f87171" }}>
-                      Total: {weightTotal}/100
-                    </span>
-                    <button onClick={() => {
-                      if (weightTotal !== 100) { toast.error(`Weights must sum to 100 (currently ${weightTotal})`); return; }
-                      updateWeightsMutation.mutate({ campaignId, ...weights });
-                    }} disabled={weightTotal !== 100 || updateWeightsMutation.isPending}
-                      className="btn-primary flex items-center gap-2 text-xs disabled:opacity-30">
-                      {updateWeightsMutation.isPending
-                        ? <><div className="w-3 h-3 rounded-full border border-t-transparent animate-spin"
-                            style={{ borderColor: "rgba(34,211,238,0.3)", borderTopColor: "#22d3ee" }} /> Saving...</>
-                        : <><Save size={12} /> Save Weights</>
-                      }
-                    </button>
+                </div>
+              ) : (
+                <div className="ops-card bracket py-16 text-center">
+                  <Zap size={24} style={{ color: "rgba(34,211,238,0.2)", margin: "0 auto 1rem" }} />
+                  <div className="section-label mb-2 text-center">No Ads Generated</div>
+                  <p className="font-mono text-xs" style={{ color: "#94a3b8" }}>
+                    Use the generation engine above to create your first ad.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+
+          </div>{/* end LEFT COLUMN */}
+
+          {/* RIGHT COLUMN — persistent settings */}
+          <div className="space-y-5 xl:sticky xl:top-6">
+
+            {/* ── Autopilot Status ── */}
+            {optimisticAutopilotEnabled && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}
+                className="ops-card overflow-hidden">
+                <button
+                  className="w-full flex items-center justify-between px-6 py-4"
+                  style={{ borderBottom: showAutopilot ? "1px solid rgba(34,211,238,0.07)" : "none" }}
+                  onClick={() => setShowAutopilot(v => !v)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Bot size={14} style={{ color: "#34d399" }} />
+                    <div className="text-left">
+                      <div className="font-mono font-semibold text-sm tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
+                        Autopilot Status
+                      </div>
+                      <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>
+                        ACTIVE — runs every {autopilotStatus?.frequencyHours || 24}h
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronDown size={13} style={{ color: "#94a3b8", transform: showAutopilot ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+                </button>
+
+                <AnimatePresence>
+                  {showAutopilot && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-5 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                          <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
+                            <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>NEXT RUN IN</div>
+                            <div className="font-mono text-[12px] font-bold" style={{ color: "#22d3ee" }}>{formatNextRunCountdown(autopilotStatus?.nextRunAt)}</div>
+                          </div>
+                          <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
+                            <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>LAST RUN</div>
+                            <div className="font-mono text-[12px] font-bold" style={{ color: "#e2e8f0" }}>{formatRelativeTime(autopilotStatus?.lastRunAt)}</div>
+                          </div>
+                          <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
+                            <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>TOTAL RUNS</div>
+                            <div className="font-mono text-[12px] font-bold" style={{ color: "#34d399" }}>{autopilotStatus?.totalRuns || 0}</div>
+                          </div>
+                          <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
+                            <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>ADS GENERATED</div>
+                            <div className="font-mono text-[12px] font-bold" style={{ color: "#f59e0b" }}>{(autopilotStatus?.totalRuns || 0) * 10}</div>
+                          </div>
+                        </div>
+
+                        <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.6)", border: "1px solid rgba(34,211,238,0.08)" }}>
+                          <div className="font-mono text-xs tracking-widest uppercase mb-2" style={{ color: "#94a3b8" }}>
+                            Recent Autopilot Runs
+                          </div>
+                          <div className="space-y-1.5">
+                            {(autopilotRunLog.length > 0
+                              ? autopilotRunLog
+                              : Array.from({ length: Math.min(3, autopilotStatus?.totalRuns || 0) }).map((_, idx) => ({
+                                  at: autopilotStatus?.lastRunAt ? new Date(autopilotStatus.lastRunAt) : new Date(),
+                                  generated: 10,
+                                  approved: 0,
+                                  winnerScore: 0,
+                                }))
+                            ).slice(0, 3).map((entry, idx) => (
+                              <div key={`run-${idx}`} className="flex items-center justify-between font-mono text-xs">
+                                <span style={{ color: "rgba(148,163,184,0.7)" }}>{formatRelativeTime(entry.at)}</span>
+                                <span style={{ color: "rgba(148,163,184,0.7)" }}>
+                                  {entry.generated} ads · {entry.approved} approved
+                                </span>
+                                <span style={{ color: "#22d3ee" }}>
+                                  {entry.winnerScore > 0 ? `winner ${entry.winnerScore.toFixed(1)}/10` : "completed"}
+                                </span>
+                              </div>
+                            ))}
+                            {(autopilotStatus?.totalRuns || 0) === 0 && autopilotRunLog.length === 0 && (
+                              <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>
+                                No runs yet.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => runAutopilotNowMutation.mutate({ campaignId, count: 10 })}
+                          disabled={runAutopilotNowMutation.isPending}
+                          className="btn-primary text-xs flex items-center gap-1.5 disabled:opacity-40"
+                        >
+                          <Bot size={11} />
+                          {runAutopilotNowMutation.isPending ? "Running..." : "Run Now"}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            {/* ── Dimension Weight Tuner ── */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
+              className="ops-card overflow-hidden">
+              <button onClick={() => setShowWeightTuner(!showWeightTuner)}
+                className="w-full flex items-center justify-between px-6 py-4 transition-colors hover:bg-white/[0.015]">
+                <div className="flex items-center gap-3">
+                  <SlidersHorizontal size={14} style={{ color: "#f59e0b" }} />
+                  <span className="font-mono font-semibold text-sm tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
+                    Quality Dimension Weights
+                  </span>
+                  <span className={`tag-ops ${weightTotal === 100 ? "tag-green" : "tag-red"}`}>
+                    {weightTotal}/100
+                  </span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="hidden md:flex gap-3">
+                    {WEIGHT_DIMS.map(d => (
+                      <div key={d.key} className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: d.color }} />
+                        <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>{weights[d.key]}%</span>
+                      </div>
+                    ))}
+                  </div>
+                  {showWeightTuner
+                    ? <ChevronUp size={14} style={{ color: "#94a3b8" }} />
+                    : <ChevronDown size={14} style={{ color: "#94a3b8" }} />
+                  }
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {showWeightTuner && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
+                    className="overflow-hidden" style={{ borderTop: "1px solid rgba(34,211,238,0.07)" }}>
+                    <div className="px-6 py-5 space-y-4">
+                      <p className="font-mono text-xs" style={{ color: "#94a3b8" }}>
+                        Adjust how much each quality dimension contributes to the overall score. Weights must sum to 100.
+                      </p>
+                      {WEIGHT_DIMS.map(({ key, label, color }) => (
+                        <div key={key}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+                              <span className="font-mono text-[11px]" style={{ color: "rgba(148,163,184,0.7)" }}>{label}</span>
+                            </div>
+                            <span className="font-mono text-[11px] font-bold" style={{ color }}>{weights[key]}%</span>
+                          </div>
+                          <input type="range" min={0} max={60} value={weights[key]}
+                            onChange={e => setWeights(prev => ({ ...prev, [key]: parseInt(e.target.value) }))}
+                            className="w-full h-0.5 appearance-none cursor-pointer rounded-full"
+                            style={{ background: `linear-gradient(to right, ${color} ${(weights[key] / 60) * 100}%, rgba(34,211,238,0.08) ${(weights[key] / 60) * 100}%)` }}
+                          />
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="font-mono text-[11px]" style={{ color: weightTotal === 100 ? "#34d399" : "#f87171" }}>
+                          Total: {weightTotal}/100
+                        </span>
+                        <button onClick={() => {
+                          if (weightTotal !== 100) { toast.error(`Weights must sum to 100 (currently ${weightTotal})`); return; }
+                          updateWeightsMutation.mutate({ campaignId, ...weights });
+                        }} disabled={weightTotal !== 100 || updateWeightsMutation.isPending}
+                          className="btn-primary flex items-center gap-2 text-xs disabled:opacity-30">
+                          {updateWeightsMutation.isPending
+                            ? <><div className="w-3 h-3 rounded-full border border-t-transparent animate-spin"
+                                style={{ borderColor: "rgba(34,211,238,0.3)", borderTopColor: "#22d3ee" }} /> Saving...</>
+                            : <><Save size={12} /> Save Weights</>
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* ── Quality Trend Chart ── */}
+            {qualityTrend.length > 1 && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+                className="ops-card p-6">
+                <div className="section-label mb-4">Quality Trend</div>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={qualityTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(34,211,238,0.05)" />
+                    <XAxis dataKey="index" tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                    <YAxis domain={[0, 10]} tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                    <Tooltip contentStyle={{ background: "rgba(2,11,24,0.95)", border: "1px solid rgba(34,211,238,0.15)", color: "#e2e8f0", fontFamily: "JetBrains Mono", fontSize: 10 }}
+                      formatter={(val: number) => [val.toFixed(2), "Score"]} />
+                    <ReferenceLine y={campaign.currentQualityThreshold} stroke="#34d399" strokeDasharray="4 4" strokeWidth={1} />
+                    <Line type="monotone" dataKey="score" stroke="#22d3ee" strokeWidth={2} dot={{ fill: "#22d3ee", r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="flex items-center gap-5 mt-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 rounded" style={{ background: "#22d3ee" }} />
+                    <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>Quality Score</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 rounded" style={{ background: "#34d399", opacity: 0.6 }} />
+                    <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>Threshold</span>
                   </div>
                 </div>
               </motion.div>
             )}
-          </AnimatePresence>
-        </motion.div>
 
-        {/* ── Quality Trend Chart ── */}
-        {qualityTrend.length > 1 && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-            className="ops-card p-6">
-            <div className="section-label mb-4">Quality Trend</div>
-            <ResponsiveContainer width="100%" height={160}>
-              <LineChart data={qualityTrend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(34,211,238,0.05)" />
-                <XAxis dataKey="index" tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "JetBrains Mono" }} />
-                <YAxis domain={[0, 10]} tick={{ fill: "#94a3b8", fontSize: 10, fontFamily: "JetBrains Mono" }} />
-                <Tooltip contentStyle={{ background: "rgba(2,11,24,0.95)", border: "1px solid rgba(34,211,238,0.15)", color: "#e2e8f0", fontFamily: "JetBrains Mono", fontSize: 10 }}
-                  formatter={(val: number) => [val.toFixed(2), "Score"]} />
-                <ReferenceLine y={campaign.currentQualityThreshold} stroke="#34d399" strokeDasharray="4 4" strokeWidth={1} />
-                <Line type="monotone" dataKey="score" stroke="#22d3ee" strokeWidth={2} dot={{ fill: "#22d3ee", r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
-            <div className="flex items-center gap-5 mt-3">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 rounded" style={{ background: "#22d3ee" }} />
-                <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>Quality Score</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 rounded" style={{ background: "#34d399", opacity: 0.6 }} />
-                <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>Threshold</span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── Average Quality Profile ── */}
-        {avgScores && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-            className="ops-card p-6">
-            <div className="section-label mb-5">Average Quality Profile</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ResponsiveContainer width="100%" height={200}>
-                <RadarChart data={[
-                  { dim: "Clarity",    score: avgScores.clarity },
-                  { dim: "Value Prop", score: avgScores.valueProp },
-                  { dim: "CTA",        score: avgScores.cta },
-                  { dim: "Brand Voice",score: avgScores.brandVoice },
-                  { dim: "Emotional",  score: avgScores.emotionalResonance },
-                ]}>
-                  <PolarGrid stroke="rgba(34,211,238,0.08)" />
-                  <PolarAngleAxis dataKey="dim" tick={{ fill: "rgba(100,116,139,0.6)", fontSize: 10, fontFamily: "JetBrains Mono" }} />
-                  <Radar dataKey="score" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.1} />
-                </RadarChart>
-              </ResponsiveContainer>
-              <div className="space-y-3">
-                {Object.entries(avgScores).map(([key, val]) => (
-                  <div key={key}>
-                    <div className="flex justify-between mb-1.5">
-                      <span className="font-mono text-xs" style={{ color: "rgba(100,116,139,0.6)" }}>{DIM_LABELS[key]}</span>
-                      <span className="font-mono text-xs font-bold" style={{ color: DIM_COLORS[key] }}>{(val as number).toFixed(1)}</span>
-                    </div>
-                    <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(34,211,238,0.06)" }}>
-                      <div className="h-full rounded-full" style={{ width: `${(val as number) * 10}%`, background: DIM_COLORS[key] }} />
-                    </div>
+            {/* ── Average Quality Profile ── */}
+            {avgScores && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+                className="ops-card p-6">
+                <div className="section-label mb-5">Average Quality Profile</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <RadarChart data={[
+                      { dim: "Clarity",    score: avgScores.clarity },
+                      { dim: "Value Prop", score: avgScores.valueProp },
+                      { dim: "CTA",        score: avgScores.cta },
+                      { dim: "Brand Voice",score: avgScores.brandVoice },
+                      { dim: "Emotional",  score: avgScores.emotionalResonance },
+                    ]}>
+                      <PolarGrid stroke="rgba(34,211,238,0.08)" />
+                      <PolarAngleAxis dataKey="dim" tick={{ fill: "rgba(100,116,139,0.6)", fontSize: 10, fontFamily: "JetBrains Mono" }} />
+                      <Radar dataKey="score" stroke="#22d3ee" fill="#22d3ee" fillOpacity={0.1} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-3">
+                    {Object.entries(avgScores).map(([key, val]) => (
+                      <div key={key}>
+                        <div className="flex justify-between mb-1.5">
+                          <span className="font-mono text-xs" style={{ color: "rgba(100,116,139,0.6)" }}>{DIM_LABELS[key]}</span>
+                          <span className="font-mono text-xs font-bold" style={{ color: DIM_COLORS[key] }}>{(val as number).toFixed(1)}</span>
+                        </div>
+                        <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(34,211,238,0.06)" }}>
+                          <div className="h-full rounded-full" style={{ width: `${(val as number) * 10}%`, background: DIM_COLORS[key] }} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
+                </div>
+              </motion.div>
+            )}
 
-        {/* ── Generated Ads ── */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="section-label">Generated Ads</div>
-            <div className="flex-1 h-px" style={{ background: "rgba(34,211,238,0.06)" }} />
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleCopyAllApprovedAds}
-                disabled={approvedAdCount === 0}
-                className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
-                style={{ border: "1px solid rgba(34,211,238,0.15)", color: "rgba(100,116,139,0.65)", background: "rgba(34,211,238,0.04)" }}>
-                <Copy size={11} />
-                {`Copy All Approved (${approvedAdCount})`}
-              </button>
-              <button
-                onClick={handleDownloadApprovedJson}
-                disabled={approvedAdCount === 0}
-                className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
-                style={{ border: "1px solid rgba(34,211,238,0.15)", color: "rgba(100,116,139,0.65)", background: "rgba(34,211,238,0.04)" }}>
-                <Download size={11} />
-                Download JSON
-              </button>
-              <button
-                onClick={handleDownloadApprovedCsv}
-                disabled={approvedAdCount === 0}
-                className="flex items-center gap-1.5 px-2 py-1 rounded font-mono text-xs transition-all disabled:opacity-40"
-                style={{ border: "1px solid rgba(34,211,238,0.15)", color: "rgba(100,116,139,0.65)", background: "rgba(34,211,238,0.04)" }}>
-                <Download size={11} />
-                Download CSV
-              </button>
-            </div>
-            <span className="font-mono text-xs" style={{ color: "#94a3b8" }}>
-              {ads?.length || 0} total · {ads?.filter((a: any) => a.status === "approved").length || 0} approved
-            </span>
-          </div>
-          {(abPrimaryAdId || simulateABTestMutation.isPending) && (
-            <div className="mb-4 px-4 py-3 rounded-lg font-mono text-xs flex items-center gap-2"
-              style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.22)", color: "rgba(245,158,11,0.95)" }}>
-              <BarChart3 size={12} />
-              {simulateABTestMutation.isPending
-                ? "Running A/B simulation..."
-                : `A/B base set to #${abPrimaryAdId}. Click A/B Test on another approved ad to compare.`}
-            </div>
-          )}
+          </div>{/* end RIGHT COLUMN */}
 
-          {ads && ads.length > 0 ? (
-            <div className="space-y-3">
-              {ads.map(ad => (
-                <AdCardWrapper key={ad.id} ad={ad}
-                  isExpanded={expandedAdId === ad.id}
-                  onToggle={() => setExpandedAdId(expandedAdId === ad.id ? null : ad.id)}
-                  onABTestClick={handleABTestClick}
-                  isABSelecting={!!abPrimaryAdId}
-                  isABPrimary={abPrimaryAdId === ad.id}
-                  isABTarget={!!abPrimaryAdId && abPrimaryAdId !== ad.id && ad.status === "approved"}
-                  onSplitClick={handleSplitClick}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="ops-card bracket py-16 text-center">
-              <Zap size={24} style={{ color: "rgba(34,211,238,0.2)", margin: "0 auto 1rem" }} />
-              <div className="section-label mb-2 text-center">No Ads Generated</div>
-              <p className="font-mono text-xs" style={{ color: "#94a3b8" }}>
-                Use the generation engine above to create your first ad.
-              </p>
-            </div>
-          )}
-        </motion.div>
+        </div>{/* end grid */}
 
         <Dialog open={abOpen} onOpenChange={setAbOpen}>
           <DialogContent className="max-w-4xl p-0 overflow-hidden"

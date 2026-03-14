@@ -78,7 +78,7 @@ export default function CampaignBuilder() {
 
   return (
     <AppLayout>
-      <div className="p-6 lg:p-8 max-w-2xl mx-auto">
+      <div className="p-10 lg:p-14 w-full max-w-4xl mx-auto">
 
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
@@ -104,7 +104,7 @@ export default function CampaignBuilder() {
                 <button
                   key={num}
                   onClick={() => done && setStep(num)}
-                  className={`flex-1 flex items-center gap-3 px-4 py-3.5 transition-all ${
+                  className={`flex-1 flex items-center gap-6 px-6 py-5 transition-all ${
                     active ? "cursor-default" : done ? "cursor-pointer hover:bg-white/[0.02]" : "cursor-default opacity-35"
                   } ${i > 0 ? "border-l" : ""}`}
                   style={{
@@ -112,14 +112,14 @@ export default function CampaignBuilder() {
                     borderColor: "rgba(34,211,238,0.07)",
                   }}
                 >
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                  <div className="w-12 h-12 rounded-md flex items-center justify-center flex-shrink-0"
                     style={{
                       background: done ? "rgba(52,211,153,0.1)" : active ? "rgba(34,211,238,0.1)" : "rgba(30,58,92,0.3)",
                       border: `1px solid ${done ? "rgba(52,211,153,0.3)" : active ? "rgba(34,211,238,0.3)" : "rgba(34,211,238,0.08)"}`,
                     }}>
                     {done
-                      ? <CheckCircle2 size={12} style={{ color: "#34d399" }} />
-                      : <Icon size={12} style={{ color: active ? "#22d3ee" : "#94a3b8" }} />
+                      ? <CheckCircle2 size={20} style={{ color: "#34d399" }} />
+                      : <Icon size={20} style={{ color: active ? "#22d3ee" : "#94a3b8" }} />
                     }
                   </div>
                   <div className="text-left min-w-0 hidden sm:block">
@@ -127,7 +127,7 @@ export default function CampaignBuilder() {
                       style={{ color: done ? "#34d399" : active ? "#22d3ee" : "#94a3b8" }}>
                       {code}
                     </div>
-                    <div className="font-mono text-[11px] truncate"
+                    <div className="font-mono text-sm truncate"
                       style={{ color: done ? "rgba(148,163,184,0.6)" : active ? "#e2e8f0" : "#94a3b8" }}>
                       {label}
                     </div>
@@ -144,45 +144,47 @@ export default function CampaignBuilder() {
           {/* Step 1: Brief */}
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
-              className="space-y-6">
+              className="space-y-8">
 
               <div>
-                <label className="ops-label">Campaign Name</label>
+                <label className="ops-label text-sm">Campaign Name</label>
                 <input
                   type="text"
                   placeholder="e.g. SAT Prep Q1 2025 — Parents"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="ops-input"
+                  className="ops-input text-base"
                 />
               </div>
 
               <div>
-                <label className="ops-label">Product / Service</label>
+                <label className="ops-label text-sm">Product / Service</label>
                 <textarea
                   placeholder="e.g. 1-on-1 SAT tutoring with expert tutors. Personalized study plans, live sessions, score guarantees."
                   value={form.product}
                   onChange={e => setForm(f => ({ ...f, product: e.target.value }))}
-                  className="ops-input min-h-[100px] resize-none"
+                  className="ops-input text-base resize-none"
+                  rows={5}
                 />
               </div>
 
               <div>
-                <label className="ops-label mb-3">Campaign Goal</label>
+                <label className="ops-label text-sm mb-3">Campaign Goal</label>
                 <div className="grid grid-cols-3 gap-3">
                   {GOALS.map(({ value, label, desc }) => (
                     <button key={value} onClick={() => setForm(f => ({ ...f, campaignGoal: value }))}
-                      className="p-4 rounded-lg text-left transition-all"
+                      className="rounded-lg text-left transition-all"
                       style={{
+                        padding: "20px 16px",
                         background: form.campaignGoal === value ? "rgba(34,211,238,0.07)" : "rgba(8,24,48,0.5)",
                         border: `1px solid ${form.campaignGoal === value ? "rgba(34,211,238,0.25)" : "rgba(34,211,238,0.06)"}`,
                         boxShadow: form.campaignGoal === value ? "inset 0 -2px 0 rgba(34,211,238,0.4)" : "none",
                       }}>
-                      <div className="font-mono text-xs font-bold uppercase tracking-wider mb-1"
+                      <div className="font-mono text-base font-semibold uppercase tracking-wider mb-1"
                         style={{ color: form.campaignGoal === value ? "#22d3ee" : "#94a3b8" }}>
                         {label}
                       </div>
-                      <div className="font-mono text-xs leading-relaxed"
+                      <div className="font-mono text-sm leading-relaxed"
                         style={{ color: "#94a3b8" }}>
                         {desc}
                       </div>
@@ -192,7 +194,7 @@ export default function CampaignBuilder() {
               </div>
 
               <button onClick={() => setStep(2)} disabled={!form.name || !form.product}
-                className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
+                className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
                 Continue to Audience <ArrowRight size={14} />
               </button>
             </motion.div>
@@ -201,15 +203,16 @@ export default function CampaignBuilder() {
           {/* Step 2: Audience */}
           {step === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
-              className="space-y-6">
+              className="space-y-8">
 
               <div>
-                <label className="ops-label">Target Audience</label>
+                <label className="ops-label text-sm">Target Audience</label>
                 <textarea
                   placeholder="e.g. Parents of high school juniors/seniors (ages 35-55), anxious about college admissions, household income $75k+, have tried other test prep, comparing options."
                   value={form.audienceSegment}
                   onChange={e => setForm(f => ({ ...f, audienceSegment: e.target.value }))}
-                  className="ops-input min-h-[120px] resize-none"
+                  className="ops-input text-base resize-none"
+                  rows={5}
                 />
                 <p className="font-mono text-xs mt-2" style={{ color: "#94a3b8" }}>
                   Be specific. The AI uses this to craft resonant, targeted messaging.
@@ -233,13 +236,13 @@ export default function CampaignBuilder() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button onClick={() => setStep(1)} className="btn-secondary flex-1 flex items-center justify-center gap-2">
-                  <ArrowLeft size={13} /> Back
-                </button>
+              <div className="flex flex-col gap-3">
                 <button onClick={() => setStep(3)} disabled={!form.audienceSegment}
-                  className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
+                  className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
                   Continue to Voice <ArrowRight size={14} />
+                </button>
+                <button onClick={() => setStep(1)} className="btn-secondary w-full py-3 text-sm flex items-center justify-center gap-2">
+                  <ArrowLeft size={13} /> Back
                 </button>
               </div>
             </motion.div>
@@ -248,15 +251,16 @@ export default function CampaignBuilder() {
           {/* Step 3: Voice */}
           {step === 3 && (
             <motion.div key="step3" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
-              className="ops-card p-8 space-y-6">
+              className="ops-card p-8 space-y-8">
 
               <div>
-                <label className="ops-label mb-3">Brand Tone</label>
+                <label className="ops-label text-sm mb-3">Brand Tone</label>
                 <div className="space-y-2">
                   {TONES.map(({ value, label, desc }) => (
                     <button key={value} onClick={() => setForm(f => ({ ...f, tone: value }))}
-                      className="w-full flex items-center gap-4 px-4 py-3.5 rounded-lg text-left transition-all"
+                      className="w-full flex items-center gap-4 rounded-lg text-left transition-all"
                       style={{
+                        padding: "20px 16px",
                         background: form.tone === value ? "rgba(34,211,238,0.06)" : "rgba(8,24,48,0.4)",
                         border: `1px solid ${form.tone === value ? "rgba(34,211,238,0.22)" : "rgba(34,211,238,0.06)"}`,
                         borderLeft: `3px solid ${form.tone === value ? "#22d3ee" : "transparent"}`,
@@ -264,11 +268,11 @@ export default function CampaignBuilder() {
                       <div className="w-2 h-2 rounded-full flex-shrink-0"
                         style={{ background: form.tone === value ? "#22d3ee" : "rgba(100,116,139,0.3)" }} />
                       <div className="flex-1 min-w-0">
-                        <div className="font-mono text-[11px] font-bold uppercase tracking-wider"
+                        <div className="font-mono text-base font-semibold uppercase tracking-wider"
                           style={{ color: form.tone === value ? "#22d3ee" : "rgba(148,163,184,0.6)" }}>
                           {label}
                         </div>
-                        <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>{desc}</div>
+                        <div className="font-mono text-sm" style={{ color: "#94a3b8" }}>{desc}</div>
                       </div>
                       {form.tone === value && <CheckCircle2 size={13} style={{ color: "#22d3ee", flexShrink: 0 }} />}
                     </button>
@@ -277,14 +281,15 @@ export default function CampaignBuilder() {
               </div>
 
               <div>
-                <label className="ops-label">
+                <label className="ops-label text-sm">
                   Brand Voice Notes <span className="normal-case font-normal" style={{ color: "#94a3b8" }}>(optional)</span>
                 </label>
                 <textarea
                   placeholder="e.g. We never use fear-based messaging. We celebrate student wins. We're the expert friend, not the corporate tutor."
                   value={form.brandVoiceNotes}
                   onChange={e => setForm(f => ({ ...f, brandVoiceNotes: e.target.value }))}
-                  className="ops-input min-h-[90px] resize-none"
+                  className="ops-input text-base resize-none"
+                  rows={5}
                 />
               </div>
 
@@ -306,12 +311,9 @@ export default function CampaignBuilder() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button onClick={() => setStep(2)} className="btn-secondary flex-1 flex items-center justify-center gap-2">
-                  <ArrowLeft size={13} /> Back
-                </button>
+              <div className="flex flex-col gap-3">
                 <button onClick={() => createCampaign.mutate(form)} disabled={createCampaign.isPending}
-                  className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50">
+                  className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 disabled:opacity-50">
                   {createCampaign.isPending ? (
                     <>
                       <div className="w-3 h-3 rounded-full border border-t-transparent animate-spin"
@@ -321,6 +323,9 @@ export default function CampaignBuilder() {
                   ) : (
                     <><Zap size={13} /> Launch Campaign</>
                   )}
+                </button>
+                <button onClick={() => setStep(2)} className="btn-secondary w-full py-3 text-sm flex items-center justify-center gap-2">
+                  <ArrowLeft size={13} /> Back
                 </button>
               </div>
             </motion.div>

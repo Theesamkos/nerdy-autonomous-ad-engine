@@ -68,7 +68,7 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-8">
+      <div className="p-6 lg:p-8 w-full space-y-8">
 
         {/* ── Header ── */}
         <motion.div {...fadeUp(0)} className="flex items-end justify-between gap-4 flex-wrap">
@@ -102,7 +102,8 @@ export default function Dashboard() {
             { label: "Avg Quality",   value: avgThreshold.toFixed(1),        icon: TrendingUp, color: "#34d399", sub: "avg threshold" },
             { label: "Total Spend",   value: "$" + totalCost.toFixed(3),     icon: Flame,      color: "#f59e0b", sub: "USD" },
           ].map((s, i) => (
-            <motion.div key={s.label} {...fadeUp(0.06 + i * 0.05)} className="ops-card p-5">
+            <motion.div key={s.label} {...fadeUp(0.06 + i * 0.05)} className="ops-card"
+              style={{ minHeight: "140px", padding: "28px 28px" }}>
               <div className="flex items-start justify-between mb-4">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: s.color + "12", border: "1px solid " + s.color + "22" }}>
@@ -111,14 +112,14 @@ export default function Dashboard() {
                 <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "#94a3b8" }}>{s.sub}</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="font-display font-bold" style={{ fontSize: "2rem", color: "#f8fafc", letterSpacing: "-0.04em", lineHeight: 1 }}>
+                <div className="font-display font-bold" style={{ fontSize: "3rem", color: "#f8fafc", letterSpacing: "-0.04em", lineHeight: 1 }}>
                   {s.value}
                 </div>
                 {s.label === "Avg Quality" && avgThreshold > 0 && (
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: avgHealthColor, boxShadow: `0 0 6px ${avgHealthColor}99` }} />
                 )}
               </div>
-              <div className="font-mono text-xs tracking-wider uppercase mt-1.5" style={{ color: "rgba(100,116,139,0.55)" }}>
+              <div className="font-mono tracking-wider uppercase mt-1.5" style={{ fontSize: "0.75rem", color: "rgba(100,116,139,0.55)" }}>
                 {s.label}
               </div>
             </motion.div>
@@ -126,10 +127,10 @@ export default function Dashboard() {
         </motion.div>
 
         {/* ── Main Grid ── */}
-        <div className="grid lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
 
-          {/* Campaigns List — 3 cols */}
-          <motion.div {...fadeUp(0.12)} className="lg:col-span-3">
+          {/* Campaigns List */}
+          <motion.div {...fadeUp(0.12)}>
             <div className="ops-card overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4"
                 style={{ borderBottom: "1px solid rgba(34,211,238,0.07)" }}>
@@ -170,8 +171,8 @@ export default function Dashboard() {
                   {campaigns.map((c, i) => (
                     <motion.div key={c.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.04 }}>
                       <Link href={"/campaigns/" + c.id}>
-                        <div className="flex items-center gap-4 px-6 py-4 cursor-pointer transition-all hover:bg-white/[0.015] group"
-                          style={{ borderBottom: "1px solid rgba(34,211,238,0.04)" }}>
+                        <div className="flex items-center gap-4 cursor-pointer transition-all hover:bg-white/[0.015] group"
+                          style={{ minHeight: "72px", padding: "20px 28px", borderBottom: "1px solid rgba(34,211,238,0.04)" }}>
                           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                             style={{ background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.12)" }}>
                             <Brain size={14} style={{ color: "#22d3ee" }} />
@@ -189,7 +190,7 @@ export default function Dashboard() {
                                 : { background: "rgba(100,116,139,0.3)" };
                               return <div className="w-2 h-2 rounded-full flex-shrink-0" style={dotStyle} />;
                             })()}
-                            <div className="font-display font-semibold text-sm truncate" style={{ color: "#e2e8f0" }}>
+                            <div className="font-display truncate" style={{ fontSize: "1.1rem", fontWeight: 600, color: "#e2e8f0" }}>
                               {c.name}
                               {c.autopilotEnabled && (
                                 <span
@@ -246,8 +247,8 @@ export default function Dashboard() {
             </div>
           </motion.div>
 
-          {/* Right Column — 2 cols */}
-          <div className="lg:col-span-2 space-y-5">
+          {/* Right Column */}
+          <div className="space-y-5">
 
             {/* Quick Actions */}
             <motion.div {...fadeUp(0.16)} className="ops-card overflow-hidden">
@@ -264,14 +265,15 @@ export default function Dashboard() {
                   { href: "/performance",    icon: BarChart3, label: "Performance",    sub: "Analytics",         color: "#34d399" },
                 ].map(a => (
                   <Link key={a.href} href={a.href}>
-                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all hover:bg-white/[0.025] group">
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    <div className="flex items-center gap-3 rounded-lg cursor-pointer transition-all hover:bg-white/[0.025] group"
+                      style={{ padding: "16px 20px" }}>
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{ background: a.color + "10", border: "1px solid " + a.color + "1a" }}>
-                        <a.icon size={13} style={{ color: a.color }} />
+                        <a.icon size={20} style={{ color: a.color }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-display font-semibold text-xs" style={{ color: "#e2e8f0" }}>{a.label}</div>
-                        <div className="font-mono text-xs" style={{ color: "#94a3b8" }}>{a.sub}</div>
+                        <div className="font-display" style={{ fontSize: "0.95rem", fontWeight: 600, color: "#e2e8f0" }}>{a.label}</div>
+                        <div className="font-mono" style={{ fontSize: "0.75rem", color: "#94a3b8" }}>{a.sub}</div>
                       </div>
                       <ArrowRight size={11} style={{ color: "#64748b" }}
                         className="group-hover:translate-x-0.5 transition-transform" />
