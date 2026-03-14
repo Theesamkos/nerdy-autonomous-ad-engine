@@ -56,8 +56,8 @@
   --purple:      #a78bfa;
   --blue:        #60a5fa;
   --text:        #e2e8f0;
-  --text2:       #64748b;
-  --text3:       #334155;
+  --text2:       #94a3b8;
+  --text3:       #64748b;
   --border-dim:  rgba(34,211,238,0.20);
   --border-mid:  rgba(34,211,238,0.32);
   --border-bright: rgba(34,211,238,0.30);
@@ -81,7 +81,7 @@ body {
   background: var(--bg-deep);
   color: var(--text);
   font-family: "Inter", system-ui, sans-serif;
-  line-height: 1.5;
+  line-height: 1.65;
   overflow-x: hidden;
   min-height: 100vh;
 }
@@ -153,9 +153,9 @@ body {
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line { stroke: rgba(34,211,238,0.06) !important; }
 .recharts-text {
-  fill: var(--text2) !important;
+  fill: #94a3b8 !important;
   font-family: "JetBrains Mono", monospace !important;
-  font-size: 10px !important;
+  font-size: 12px !important;
 }
 .recharts-tooltip-wrapper { outline: none; }
 .recharts-default-tooltip {
@@ -328,7 +328,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
   .section-label {
     font-family: "JetBrains Mono", monospace;
-    font-size: 0.62rem;
+    font-size: 0.82rem;
     font-weight: 600;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -343,7 +343,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
   .data-label {
     font-family: "JetBrains Mono", monospace;
-    font-size: 0.58rem;
+    font-size: 0.72rem;
     font-weight: 400;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -474,7 +474,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
   .ops-label {
     font-family: "JetBrains Mono", monospace;
-    font-size: 0.62rem;
+    font-size: 0.82rem;
     font-weight: 600;
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -489,7 +489,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     align-items: center;
     gap: 6px;
     font-family: "JetBrains Mono", monospace;
-    font-size: 9px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -512,7 +512,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     gap: 4px;
     padding: 2px 7px;
     font-family: "JetBrains Mono", monospace;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.10em;
     text-transform: uppercase;
@@ -596,7 +596,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     background: rgba(2,11,24,0.92);
     border: 1px solid var(--border-dim);
     font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.75;
     position: relative;
     overflow: hidden;
@@ -625,10 +625,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
     gap: 10px;
     margin-bottom: 3px;
   }
-  .log-ts   { color: var(--text3); flex-shrink: 0; font-size: 10px; min-width: 52px; }
+  .log-ts   { color: var(--text3); flex-shrink: 0; font-size: 12px; min-width: 52px; }
   .log-type {
     flex-shrink: 0;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 700;
     padding: 1px 5px;
     letter-spacing: 0.06em;
@@ -642,7 +642,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .log-type-heal { background: rgba(248,113,113,0.12); color: var(--red); }
   .log-type-pass { background: rgba(52,211,153,0.12);  color: var(--green); font-weight: 700; }
   .log-type-warn { background: rgba(245,158,11,0.12);  color: var(--gold); }
-  .log-msg  { color: var(--text2); flex: 1; }
+  .log-msg  { color: var(--text); flex: 1; }
 
   .cursor-blink {
     display: inline-block;
@@ -685,7 +685,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     gap: 0.75rem;
     padding: 0.55rem 0.875rem;
     font-family: "JetBrains Mono", monospace;
-    font-size: 0.68rem;
+    font-size: 0.82rem;
     font-weight: 500;
     letter-spacing: 0.06em;
     text-transform: uppercase;

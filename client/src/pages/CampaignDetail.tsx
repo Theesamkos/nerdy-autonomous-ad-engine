@@ -4,7 +4,7 @@ import { motion, AnimatePresence, animate } from "framer-motion";
 import { Zap, Brain, CheckCircle2, XCircle, Swords, Sparkles,
   BarChart3, ChevronDown, ChevronUp, Target, DollarSign, Award,
   SlidersHorizontal, Save, ArrowLeft, Copy, Check, Activity, Smartphone, Layers, Trophy,
-  Rocket, ExternalLink, ClipboardCheck, Info, Download, HelpCircle, Users, Bot
+  Rocket, ExternalLink, ClipboardCheck, Info, Download, HelpCircle, Users, Bot, Loader2, Cpu
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, Link } from "wouter";
@@ -655,7 +655,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
 
           <TabsContent value="meta" className="mt-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.45)" }}>
+              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Facebook / Instagram
               </span>
               {renderLimitsTooltip("meta")}
@@ -680,7 +680,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
 
           <TabsContent value="google" className="mt-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.45)" }}>
+              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Google Ads Responsive Search
               </span>
               {renderLimitsTooltip("google")}
@@ -690,7 +690,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
 
           <TabsContent value="linkedin" className="mt-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.45)" }}>
+              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 LinkedIn Sponsored Content
               </span>
               {renderLimitsTooltip("linkedin")}
@@ -700,7 +700,7 @@ function ReadyToLaunchPanel({ ad }: { ad: any }) {
 
           <TabsContent value="tiktok" className="mt-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.45)" }}>
+              <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 TikTok In-Feed
               </span>
               {renderLimitsTooltip("tiktok")}
@@ -808,6 +808,7 @@ export default function CampaignDetail() {
   const [abPrimaryAdId, setAbPrimaryAdId] = useState<number | null>(null);
   const [abResult, setAbResult] = useState<any | null>(null);
   const [abOpen, setAbOpen] = useState(false);
+  const [generatingAngleIdx, setGeneratingAngleIdx] = useState<number | null>(null);
 
   // ── Audience Split ──────────────────────────────────────────────────────────
   const [splitSourceAdId, setSplitSourceAdId] = useState<number | null>(null);
@@ -986,6 +987,19 @@ export default function CampaignDetail() {
     onError: (err) => { setIsBulkGenerating(false); setIsGenerating(false); setLogStep(0); toast.error(err.message); },
   });
 
+  const generateAndEvaluateMutation = trpc.ads.generateAndEvaluate.useMutation({
+    onSuccess: () => {
+      refetchAds();
+      refetchAnalytics();
+      setGeneratingAngleIdx(null);
+      toast.success("Ad generated from angle!");
+    },
+    onError: () => {
+      setGeneratingAngleIdx(null);
+      toast.error("Generation failed");
+    },
+  });
+
   const runAutopilotNowMutation = trpc.ads.bulkGenerate.useMutation({
     onSuccess: (result) => {
       setAutopilotRunLog((prev) => [
@@ -1089,6 +1103,59 @@ export default function CampaignDetail() {
       toast.success("Intelligence brief copied.");
     });
   };
+
+  const expandedAngles = useMemo<Array<{
+    angleName: string;
+    tone: string;
+    format: string;
+    emotionalHook: string;
+    audienceFraming: string;
+    exampleHeadline: string;
+    exampleCopy: string;
+  }>>(() => {
+    const tone = campaign?.tone || "confident";
+    const audience = campaign?.audienceSegment || "high-intent learners";
+    const product = campaign?.product || "your offer";
+
+    return [
+      {
+        angleName: "Outcome Acceleration",
+        tone,
+        format: "Benefit-first",
+        emotionalHook: "Future confidence",
+        audienceFraming: audience,
+        exampleHeadline: `Get ahead faster with ${product}`,
+        exampleCopy: `Build momentum now and see measurable progress sooner with a focused ${product} plan.`,
+      },
+      {
+        angleName: "Pain-to-Relief",
+        tone: "empathetic",
+        format: "Problem-solution",
+        emotionalHook: "Stress relief",
+        audienceFraming: audience,
+        exampleHeadline: "Turn overwhelm into a clear plan",
+        exampleCopy: `If things feel stuck, we make the next step simple and practical so results feel achievable again.`,
+      },
+      {
+        angleName: "Authority Proof",
+        tone: "credible",
+        format: "Proof-led",
+        emotionalHook: "Trust and certainty",
+        audienceFraming: audience,
+        exampleHeadline: "Guidance backed by proven outcomes",
+        exampleCopy: `Lean on a proven framework that combines expert support and a repeatable path to better performance.`,
+      },
+      {
+        angleName: "Urgent Opportunity",
+        tone: "motivational",
+        format: "Deadline push",
+        emotionalHook: "Fear of missing out",
+        audienceFraming: audience,
+        exampleHeadline: "Act now to stay on track",
+        exampleCopy: `A small move today can create outsized gains by the next key milestone - start while timing is on your side.`,
+      },
+    ];
+  }, [campaign?.audienceSegment, campaign?.product, campaign?.tone]);
 
   const WEIGHT_DIMS = [
     { key: "weightClarity" as const,           label: "Clarity",    color: "#60a5fa" },
@@ -1313,6 +1380,46 @@ export default function CampaignDetail() {
           ))}
         </motion.div>
 
+        {/* ── Sticky Action Bar ── */}
+        <div
+          className="sticky top-0 z-30 flex items-center gap-3 px-6 py-4 rounded-2xl"
+          style={{
+            background: "rgba(2,8,20,0.92)",
+            backdropFilter: "blur(24px)",
+            border: "1px solid rgba(34,211,238,0.15)",
+            boxShadow: "0 4px 32px rgba(0,0,0,0.5)",
+          }}
+        >
+          <div className="flex items-center gap-2 mr-auto">
+            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" style={{ boxShadow: "0 0 6px #22d3ee" }} />
+            <span className="font-mono text-xs tracking-widest uppercase" style={{ color: "rgba(34,211,238,0.7)" }}>
+              Quick Actions
+            </span>
+          </div>
+          <button
+            onClick={() => document.getElementById("generation-engine-panel")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="btn-primary flex items-center gap-2 text-sm"
+          >
+            <Zap size={15} />
+            Generate Ad
+          </button>
+          <button
+            onClick={() => document.getElementById("generation-engine-panel")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="btn-secondary flex items-center gap-2 text-sm"
+          >
+            <Layers size={15} />
+            Batch Generate
+          </button>
+          <button
+            onClick={() => toggleAutopilotMutation.mutate({ campaignId, enabled: !optimisticAutopilotEnabled })}
+            className={optimisticAutopilotEnabled ? "btn-primary flex items-center gap-2 text-sm" : "btn-secondary flex items-center gap-2 text-sm"}
+            disabled={toggleAutopilotMutation.isPending}
+          >
+            <Cpu size={15} />
+            {optimisticAutopilotEnabled ? "Autopilot ON" : "Autopilot OFF"}
+          </button>
+        </div>
+
         {/* ── Autopilot Status ── */}
         {optimisticAutopilotEnabled && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}
@@ -1325,10 +1432,10 @@ export default function CampaignDetail() {
               <div className="flex items-center gap-3">
                 <Bot size={14} style={{ color: "#34d399" }} />
                 <div className="text-left">
-                  <div className="font-mono font-semibold text-[11px] tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
+                  <div className="font-mono font-semibold text-sm tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
                     Autopilot Status
                   </div>
-                  <div className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.45)" }}>
+                  <div className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>
                     ACTIVE — runs every {autopilotStatus?.frequencyHours || 24}h
                   </div>
                 </div>
@@ -1348,25 +1455,25 @@ export default function CampaignDetail() {
                   <div className="p-5 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                       <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "rgba(100,116,139,0.45)" }}>NEXT RUN IN</div>
+                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>NEXT RUN IN</div>
                         <div className="font-mono text-[12px] font-bold" style={{ color: "#22d3ee" }}>{formatNextRunCountdown(autopilotStatus?.nextRunAt)}</div>
                       </div>
                       <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "rgba(100,116,139,0.45)" }}>LAST RUN</div>
+                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>LAST RUN</div>
                         <div className="font-mono text-[12px] font-bold" style={{ color: "#e2e8f0" }}>{formatRelativeTime(autopilotStatus?.lastRunAt)}</div>
                       </div>
                       <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "rgba(100,116,139,0.45)" }}>TOTAL RUNS</div>
+                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>TOTAL RUNS</div>
                         <div className="font-mono text-[12px] font-bold" style={{ color: "#34d399" }}>{autopilotStatus?.totalRuns || 0}</div>
                       </div>
                       <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "rgba(100,116,139,0.45)" }}>ADS GENERATED</div>
+                        <div className="font-mono text-[9px] tracking-widest uppercase mb-1" style={{ color: "#94a3b8" }}>ADS GENERATED</div>
                         <div className="font-mono text-[12px] font-bold" style={{ color: "#f59e0b" }}>{(autopilotStatus?.totalRuns || 0) * 10}</div>
                       </div>
                     </div>
 
                     <div className="rounded-lg p-3" style={{ background: "rgba(2,11,24,0.6)", border: "1px solid rgba(34,211,238,0.08)" }}>
-                      <div className="font-mono text-[9px] tracking-widest uppercase mb-2" style={{ color: "rgba(100,116,139,0.45)" }}>
+                      <div className="font-mono text-[9px] tracking-widest uppercase mb-2" style={{ color: "#94a3b8" }}>
                         Recent Autopilot Runs
                       </div>
                       <div className="space-y-1.5">
@@ -1413,23 +1520,23 @@ export default function CampaignDetail() {
         )}
 
         {/* ── Generation Engine ── */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+        <motion.div id="generation-engine-panel" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="ops-card overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4"
             style={{ borderBottom: "1px solid rgba(34,211,238,0.07)" }}>
             <div className="flex items-center gap-3">
               <Zap size={14} style={{ color: "#22d3ee" }} />
               <div>
-                <div className="font-mono font-semibold text-[11px] tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
+                <div className="font-mono font-semibold text-sm tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
                   Generation Engine
                 </div>
-                <div className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.45)" }}>
+                <div className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>
                   generate → evaluate → self-heal → approve
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.45)" }}>Max iter:</span>
+              <span className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>Max iter:</span>
               {[1, 2, 3].map(n => (
                 <button key={n} onClick={() => setMaxIterations(n)}
                   className="w-7 h-7 font-mono text-[11px] font-bold rounded transition-all"
@@ -1451,7 +1558,7 @@ export default function CampaignDetail() {
                   <div className="terminal-dot" style={{ background: "#f87171" }} />
                   <div className="terminal-dot" style={{ background: "#f59e0b" }} />
                   <div className="terminal-dot" style={{ background: "#34d399" }} />
-                  <span className="font-mono text-[9px] ml-2" style={{ color: "rgba(34,211,238,0.4)" }}>
+                  <span className="font-mono text-[9px] ml-2" style={{ color: "rgba(34,211,238,0.7)" }}>
                     adengine — bulk × 5 pipeline
                   </span>
                 </div>
@@ -1582,12 +1689,12 @@ export default function CampaignDetail() {
                       <Layers size={12} style={{ color: "#f59e0b" }} />
                       <span className="font-mono font-bold text-[10px] tracking-widest uppercase" style={{ color: "#f59e0b" }}>⚡ Batch Generation Engine</span>
                     </div>
-                    <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.6)" }}>VARIETY MATRIX ACTIVE</span>
+                    <span className="font-mono text-[9px]" style={{ color: "#94a3b8" }}>VARIETY MATRIX ACTIVE</span>
                   </div>
                   <div className="px-4 py-3 space-y-3">
                     {/* Batch size selector */}
                     <div className="space-y-1.5">
-                      <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.7)" }}>Batch Size</span>
+                      <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>Batch Size</span>
                       <div className="grid grid-cols-4 gap-1.5">
                         {([5, 10, 25, 50] as const).map(n => (
                           <button key={n} onClick={() => setBatchSize(n)}
@@ -1605,7 +1712,7 @@ export default function CampaignDetail() {
                     {/* Batch info row */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.6)" }}>
+                        <span className="font-mono text-[9px]" style={{ color: "#94a3b8" }}>
                           {batchSize} unique tone/format/hook combos
                         </span>
                         {batchSize >= 25 && (
@@ -1614,7 +1721,7 @@ export default function CampaignDetail() {
                           </span>
                         )}
                       </div>
-                      <span className="font-mono text-[9px]" style={{ color: "rgba(100,116,139,0.5)" }}>
+                      <span className="font-mono text-[9px]" style={{ color: "#94a3b8" }}>
                         ~{batchSize <= 5 ? "30s" : batchSize <= 10 ? "60s" : batchSize <= 25 ? "2-3min" : "4-6min"}
                       </span>
                     </div>
@@ -1633,6 +1740,70 @@ export default function CampaignDetail() {
                     </button>
                   </div>
                 </div>
+
+                {/* Smart Prompt Expansion */}
+                <div className="mt-4 rounded-lg p-4"
+                  style={{ background: "rgba(2,11,24,0.55)", border: "1px solid rgba(34,211,238,0.1)" }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-mono text-[10px] tracking-widest uppercase" style={{ color: "#22d3ee" }}>
+                      Smart Prompt Expansion
+                    </div>
+                    <span className="font-mono text-[9px]" style={{ color: "#94a3b8" }}>
+                      Generate from strategic angles
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {expandedAngles.map((angle, i) => (
+                      <div key={`${angle.angleName}-${i}`} className="rounded-lg p-3"
+                        style={{ background: "rgba(2,11,24,0.7)", border: "1px solid rgba(34,211,238,0.08)" }}>
+                        <div className="font-mono text-[10px] font-bold mb-2" style={{ color: "#e2e8f0" }}>
+                          {angle.angleName}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <span className="tag-ops tag-teal">{angle.tone}</span>
+                          <span className="tag-ops tag-dim">{angle.format}</span>
+                          <span className="tag-ops tag-gold">{angle.emotionalHook}</span>
+                        </div>
+                        <div className="font-mono text-[9px] mb-2" style={{ color: "#94a3b8" }}>
+                          Audience: {angle.audienceFraming}
+                        </div>
+                        <div className="rounded p-2 space-y-1 mb-3"
+                          style={{ background: "rgba(34,211,238,0.03)", border: "1px solid rgba(34,211,238,0.06)" }}>
+                          <div className="font-display text-sm" style={{ color: "#f8fafc" }}>{angle.exampleHeadline}</div>
+                          <p className="font-mono text-[10px] leading-relaxed" style={{ color: "rgba(148,163,184,0.75)" }}>
+                            {angle.exampleCopy}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setGeneratingAngleIdx(i);
+                            toast.info(`Generating ad in "${angle.angleName}" angle - ${angle.tone} tone, ${angle.format} format`);
+                            generateAndEvaluateMutation.mutate({
+                              campaignId,
+                              mode: "standard",
+                              maxIterations: 3,
+                            });
+                          }}
+                          disabled={generatingAngleIdx === i}
+                          className="font-mono text-[9px] tracking-widest uppercase px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+                          style={{
+                            border: "1px solid rgba(34,211,238,0.4)",
+                            background: "rgba(34,211,238,0.06)",
+                            color: "#22d3ee",
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(34,211,238,0.12)")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "rgba(34,211,238,0.06)")}
+                        >
+                          {generatingAngleIdx === i ? (
+                            <Loader2 size={10} className="animate-spin" />
+                          ) : (
+                            "Generate ->"
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -1645,7 +1816,7 @@ export default function CampaignDetail() {
             className="w-full flex items-center justify-between px-6 py-4 transition-colors hover:bg-white/[0.015]">
             <div className="flex items-center gap-3">
               <SlidersHorizontal size={14} style={{ color: "#f59e0b" }} />
-              <span className="font-mono font-semibold text-[11px] tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
+              <span className="font-mono font-semibold text-sm tracking-widest uppercase" style={{ color: "#e2e8f0" }}>
                 Quality Dimension Weights
               </span>
               <span className={`tag-ops ${weightTotal === 100 ? "tag-green" : "tag-red"}`}>
@@ -1937,7 +2108,7 @@ export default function CampaignDetail() {
                           <span style={{ color: winnerIsA ? "#f59e0b" : "rgba(226,232,240,0.82)" }}>
                             <AnimatedMetricValue value={metric.a} decimals={metric.decimals} suffix={metric.suffix || ""} prefix={metric.prefix || ""} />
                           </span>
-                          <span style={{ color: "rgba(100,116,139,0.45)" }}>vs</span>
+                          <span style={{ color: "#94a3b8" }}>vs</span>
                           <span style={{ color: winnerIsB ? "#f59e0b" : "rgba(226,232,240,0.82)" }}>
                             <AnimatedMetricValue value={metric.b} decimals={metric.decimals} suffix={metric.suffix || ""} prefix={metric.prefix || ""} />
                           </span>

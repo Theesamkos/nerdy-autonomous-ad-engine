@@ -27,7 +27,7 @@ export default function Dashboard() {
           <div className="flex flex-col items-center gap-3">
             <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
               style={{ borderColor: "rgba(34,211,238,0.15)", borderTopColor: "#22d3ee" }} />
-            <span className="font-mono text-[10px] tracking-widest" style={{ color: "rgba(100,116,139,0.5)" }}>LOADING</span>
+            <span className="font-mono text-[10px] tracking-widest" style={{ color: "#94a3b8" }}>LOADING</span>
           </div>
         </div>
       </AppLayout>
@@ -64,6 +64,8 @@ export default function Dashboard() {
     ? campaigns.reduce((s, c) => s + (c.currentQualityThreshold || 0), 0) / campaigns.length
     : 0;
 
+  const avgHealthColor = avgThreshold >= 8.0 ? "#34d399" : avgThreshold >= 7.0 ? "#f59e0b" : "#f87171";
+
   return (
     <AppLayout>
       <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-8">
@@ -73,7 +75,7 @@ export default function Dashboard() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <span className="status-live">Mission Control</span>
-              <span className="font-mono text-[9px] tracking-widest" style={{ color: "rgba(34,211,238,0.3)" }}>
+              <span className="font-mono text-[9px] tracking-widest" style={{ color: "rgba(34,211,238,0.65)" }}>
                 · {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
@@ -97,7 +99,7 @@ export default function Dashboard() {
           {[
             { label: "Campaigns",     value: String(campaigns?.length ?? 0), icon: Zap,        color: "#22d3ee", sub: "total" },
             { label: "Ads Generated", value: String(totalAds),               icon: Brain,      color: "#a78bfa", sub: "all time" },
-            { label: "Avg Quality",   value: avgThreshold.toFixed(1),        icon: TrendingUp, color: "#34d399", sub: "threshold" },
+            { label: "Avg Quality",   value: avgThreshold.toFixed(1),        icon: TrendingUp, color: "#34d399", sub: "avg threshold" },
             { label: "Total Spend",   value: "$" + totalCost.toFixed(3),     icon: Flame,      color: "#f59e0b", sub: "USD" },
           ].map((s, i) => (
             <motion.div key={s.label} {...fadeUp(0.06 + i * 0.05)} className="ops-card p-5">
@@ -106,10 +108,15 @@ export default function Dashboard() {
                   style={{ background: s.color + "12", border: "1px solid " + s.color + "22" }}>
                   <s.icon size={14} style={{ color: s.color }} />
                 </div>
-                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "rgba(100,116,139,0.5)" }}>{s.sub}</span>
+                <span className="font-mono text-[9px] tracking-widest uppercase" style={{ color: "#94a3b8" }}>{s.sub}</span>
               </div>
-              <div className="font-display font-bold" style={{ fontSize: "2rem", color: "#f8fafc", letterSpacing: "-0.04em", lineHeight: 1 }}>
-                {s.value}
+              <div className="flex items-center gap-2">
+                <div className="font-display font-bold" style={{ fontSize: "2rem", color: "#f8fafc", letterSpacing: "-0.04em", lineHeight: 1 }}>
+                  {s.value}
+                </div>
+                {s.label === "Avg Quality" && avgThreshold > 0 && (
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: avgHealthColor, boxShadow: `0 0 6px ${avgHealthColor}99` }} />
+                )}
               </div>
               <div className="font-mono text-[10px] tracking-wider uppercase mt-1.5" style={{ color: "rgba(100,116,139,0.55)" }}>
                 {s.label}
@@ -146,10 +153,10 @@ export default function Dashboard() {
                 <div className="py-16 px-6 text-center">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
                     style={{ background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.1)" }}>
-                    <Zap size={20} style={{ color: "rgba(34,211,238,0.35)" }} />
+                    <Zap size={20} style={{ color: "rgba(34,211,238,0.6)" }} />
                   </div>
                   <p className="font-display font-semibold text-sm mb-1.5" style={{ color: "#e2e8f0" }}>No campaigns yet</p>
-                  <p className="text-xs mb-6 leading-relaxed" style={{ color: "rgba(100,116,139,0.5)" }}>
+                  <p className="text-xs mb-6 leading-relaxed" style={{ color: "#94a3b8" }}>
                     Launch your first autonomous generation pipeline
                   </p>
                   <Link href="/campaigns/new">
@@ -170,22 +177,54 @@ export default function Dashboard() {
                             <Brain size={14} style={{ color: "#22d3ee" }} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-display font-semibold text-sm truncate mb-1" style={{ color: "#e2e8f0" }}>
+                            <div className="flex items-center gap-2 mb-1">
+                            {(() => {
+                              const health = !c.totalAdsGenerated ? "gray"
+                                : c.currentQualityThreshold >= 8.0 ? "green"
+                                : c.currentQualityThreshold >= 7.0 ? "amber"
+                                : "red";
+                              const dotStyle = health === "green" ? { background: "#34d399", boxShadow: "0 0 6px rgba(52,211,153,0.6)" }
+                                : health === "amber" ? { background: "#f59e0b", boxShadow: "0 0 6px rgba(245,158,11,0.5)" }
+                                : health === "red" ? { background: "#f87171", boxShadow: "0 0 6px rgba(248,113,113,0.5)" }
+                                : { background: "rgba(100,116,139,0.3)" };
+                              return <div className="w-2 h-2 rounded-full flex-shrink-0" style={dotStyle} />;
+                            })()}
+                            <div className="font-display font-semibold text-sm truncate" style={{ color: "#e2e8f0" }}>
                               {c.name}
                               {c.autopilotEnabled && (
                                 <span
                                   className="ml-2 font-mono text-[9px] px-1.5 py-0.5 rounded align-middle"
-                                  style={{ color: "#22d3ee", border: "1px solid rgba(34,211,238,0.25)", background: "rgba(34,211,238,0.08)" }}
+                                  style={{ color: "#22d3ee", border: "1px solid rgba(34,211,238,0.45)", background: "rgba(34,211,238,0.12)" }}
                                 >
                                   🤖 AUTO
                                 </span>
                               )}
                             </div>
+                            </div>
                             <div className="flex items-center gap-3">
                               <span className="tag-ops tag-teal text-[9px]">{(c.campaignGoal || "MULTI").toUpperCase()}</span>
-                              <span className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>
+                              <span className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>
                                 {c.totalAdsGenerated || 0} ads generated
                               </span>
+                              {(() => {
+                                const health = !c.totalAdsGenerated ? "gray"
+                                  : c.currentQualityThreshold >= 8.0 ? "green"
+                                  : c.currentQualityThreshold >= 7.0 ? "amber"
+                                  : "red";
+                                const cfg = health === "green"
+                                  ? { label: "HEALTHY", color: "#34d399", bg: "rgba(52,211,153,0.08)", border: "rgba(52,211,153,0.2)" }
+                                  : health === "amber"
+                                  ? { label: "MONITOR", color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)" }
+                                  : health === "red"
+                                  ? { label: "AT RISK", color: "#f87171", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.2)" }
+                                  : { label: "NO DATA", color: "#94a3b8", bg: "transparent", border: "rgba(100,116,139,0.15)" };
+                                return (
+                                  <span className="font-mono text-[8px] tracking-widest px-1.5 py-0.5 rounded"
+                                    style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+                                    {cfg.label}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
                           <div className="flex items-center gap-4 flex-shrink-0">
@@ -193,9 +232,9 @@ export default function Dashboard() {
                               <div className="font-mono font-bold text-sm" style={{ color: "#22d3ee" }}>
                                 {(c.currentQualityThreshold || 0).toFixed(1)}
                               </div>
-                              <div className="font-mono text-[9px] tracking-wider" style={{ color: "rgba(100,116,139,0.45)" }}>THRESHOLD</div>
+                              <div className="font-mono text-[9px] tracking-wider" style={{ color: "#94a3b8" }}>THRESHOLD</div>
                             </div>
-                            <ArrowRight size={13} style={{ color: "rgba(34,211,238,0.25)" }}
+                            <ArrowRight size={13} style={{ color: "rgba(34,211,238,0.5)" }}
                               className="group-hover:translate-x-0.5 transition-transform" />
                           </div>
                         </div>
@@ -232,9 +271,9 @@ export default function Dashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-display font-semibold text-xs" style={{ color: "#e2e8f0" }}>{a.label}</div>
-                        <div className="font-mono text-[10px]" style={{ color: "rgba(100,116,139,0.5)" }}>{a.sub}</div>
+                        <div className="font-mono text-[10px]" style={{ color: "#94a3b8" }}>{a.sub}</div>
                       </div>
-                      <ArrowRight size={11} style={{ color: "rgba(100,116,139,0.3)" }}
+                      <ArrowRight size={11} style={{ color: "#64748b" }}
                         className="group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </Link>
